@@ -10,9 +10,7 @@ function requireEnvironmentVariable(name: string): string {
   const value = process.env[name];
 
   if (!value) {
-    throw new Error(
-      "`${name} is missing. Check the project's .env.local file.",
-    );
+    throw new Error(`${name} is missing. Check the project's .env.local file.`);
   }
 
   return value;

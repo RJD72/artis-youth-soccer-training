@@ -1,0 +1,38 @@
+```
+└── 📁artis-youth-soccer-training
+    └── 📁app
+        ├── favicon.ico
+        ├── globals.css
+        ├── layout.tsx
+        ├── page.tsx
+    └── 📁db
+        ├── schema.ts
+    └── 📁drizzle
+        └── 📁meta
+            ├── _journal.json
+            ├── 0000_snapshot.json
+        ├── 0000_good_jamie_braddock.sql
+    └── 📁public
+        ├── file.svg
+        ├── globe.svg
+        ├── logo.png
+        ├── next.svg
+        ├── vercel.svg
+        ├── window.svg
+    └── 📁scripts
+        ├── test-db.ts
+    ├── .env.local
+    ├── .gitignore
+    ├── AGENTS.md
+    ├── CLAUDE.md
+    ├── drizzle.config.ts
+    ├── eslint.config.mjs
+    ├── next-env.d.ts
+    ├── next.config.ts
+    ├── package-lock.json
+    ├── package.json
+    ├── postcss.config.mjs
+    ├── README.md
+    ├── tsconfig.json
+    └── tsconfig.tsbuildinfo
+```
