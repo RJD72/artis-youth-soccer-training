@@ -4,8 +4,11 @@
 import {
   boolean,
   int,
+  mysqlEnum,
   mysqlTable,
+  time,
   timestamp,
+  uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
 
@@ -46,3 +49,54 @@ export const trainingGroups = mysqlTable("training_groups", {
 
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 });
+
+export const weeklySchedules = mysqlTable(
+  "weekly_sessions",
+  {
+    id: int("id", {
+      unsigned: true,
+    })
+      .autoincrement()
+      .primaryKey(),
+
+    trainingGroupId: int("training_group_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => trainingGroups.id, {
+        onDelete: "restrict",
+      }),
+
+    dayOfWeek: mysqlEnum("day_of_week", [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ]).notNull(),
+
+    sessionType: mysqlEnum("session_type", [
+      "training",
+      "game_training",
+    ]).notNull(),
+
+    startTime: time("start_time").notNull(),
+
+    endTime: time("end_time").notNull(),
+
+    isActive: boolean("is_active").notNull().default(true),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+
+    updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => [
+    uniqueIndex("weekly_sessions_group_day_start_unique").on(
+      table.trainingGroupId,
+      table.dayOfWeek,
+      table.startTime,
+    ),
+  ],
+);
