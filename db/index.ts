@@ -1,3 +1,7 @@
+// This file sets up the app's database connection.
+// It loads the environment settings, creates a shared MySQL connection pool,
+// and exports the Drizzle database object used throughout the app.
+
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql, { type Pool } from "mysql2/promise";

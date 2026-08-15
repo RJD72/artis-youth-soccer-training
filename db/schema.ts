@@ -1,3 +1,6 @@
+// This file describes the database tables and columns used by the app.
+// It tells Drizzle how the training group data is stored in MySQL.
+
 import {
   boolean,
   int,
