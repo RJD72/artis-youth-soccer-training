@@ -1,3 +1,7 @@
+// This file sets up the app's authentication system.
+// It connects Better Auth to the database, turns on email-and-password login,
+// and restricts admin sign-ups to approved email addresses.
+
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";

@@ -1,3 +1,7 @@
+// This file defines the database tables used for authentication.
+// It sets up users, login sessions, connected accounts, and verification records,
+// along with the relationships between them.
+
 import { relations } from "drizzle-orm";
 import {
   mysqlTable,
