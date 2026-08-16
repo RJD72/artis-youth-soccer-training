@@ -4,9 +4,12 @@
 import {
   boolean,
   char,
+  date,
+  index,
   int,
   mysqlEnum,
   mysqlTable,
+  text,
   time,
   timestamp,
   uniqueIndex,
@@ -151,3 +154,75 @@ export const programPackages = mysqlTable("program_packages", {
 
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 });
+
+export const guardians = mysqlTable("guardians", {
+  id: int("id", {
+    unsigned: true,
+  })
+    .autoincrement()
+    .primaryKey(),
+
+  fullName: varchar("full_name", {
+    length: 100,
+  }).notNull(),
+
+  email: varchar("email", {
+    length: 254,
+  })
+    .notNull()
+    .unique(),
+
+  phone: varchar("phone", {
+    length: 30,
+  }).notNull(),
+
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+
+  updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+});
+
+export const players = mysqlTable(
+  "players",
+  {
+    id: int("id", {
+      unsigned: true,
+    })
+      .autoincrement()
+      .primaryKey(),
+
+    guardianId: int("guardian_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => guardians.id, {
+        onDelete: "restrict",
+      }),
+
+    fullName: varchar("full_name", {
+      length: 100,
+    }).notNull(),
+
+    dateOfBirth: date("date_of_birth", {
+      mode: "string",
+    }).notNull(),
+
+    emergencyContactName: varchar("emergency_contact_name", {
+      length: 100,
+    }).notNull(),
+
+    emergencyContactRelationship: varchar("emergency_contact_relationship", {
+      length: 50,
+    }).notNull(),
+
+    emergencyContactPhone: varchar("emergency_contact_phone", {
+      length: 30,
+    }).notNull(),
+
+    medicalInformationEncrypted: text("medical_information_encrypted"),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+
+    updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => [index("players_guardian_id_index").on(table.guardianId)],
+);
