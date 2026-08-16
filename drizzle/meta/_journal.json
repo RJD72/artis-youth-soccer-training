@@ -15,6 +15,13 @@
       "when": 1786753873695,
       "tag": "0001_wooden_piledriver",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786878459865,
+      "tag": "0002_striped_butterfly",
+      "breakpoints": true
     }
   ]
 }

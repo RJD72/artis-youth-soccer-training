@@ -3,6 +3,7 @@
 
 import {
   boolean,
+  char,
   int,
   mysqlEnum,
   mysqlTable,
@@ -100,3 +101,53 @@ export const weeklySchedules = mysqlTable(
     ),
   ],
 );
+
+export const programPackages = mysqlTable("program_packages", {
+  id: int("id", {
+    unsigned: true,
+  })
+    .autoincrement()
+    .primaryKey(),
+
+  slug: varchar("slug", {
+    length: 50,
+  })
+    .notNull()
+    .unique(),
+
+  displayName: varchar("display_name", {
+    length: 100,
+  }).notNull(),
+
+  durationMonths: int("duration_months", {
+    unsigned: true,
+  }).notNull(),
+
+  priceCents: int("price_cents", {
+    unsigned: true,
+  }).notNull(),
+
+  currency: char("currency", {
+    length: 3,
+  })
+    .notNull()
+    .default("CAD"),
+
+  taxBehavior: mysqlEnum("tax_behavior", ["exclusive", "inclusive"])
+    .notNull()
+    .default("exclusive"),
+
+  stripePriceId: varchar("stripe_price_id", {
+    length: 255,
+  }).unique(),
+
+  isActive: boolean("is_active").notNull().default(true),
+
+  displayOrder: int("display_order", {
+    unsigned: true,
+  }).notNull(),
+
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+
+  updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+});
