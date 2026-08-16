@@ -12,7 +12,7 @@
 import { eq } from "drizzle-orm";
 
 import { db, pool } from "../db";
-import { trainingGroups, weeklySchedules } from "../db/schema";
+import { programPackages, trainingGroups, weeklySchedules } from "../db/schema";
 
 const initialTrainingGroups: (typeof trainingGroups.$inferInsert)[] = [
   {
@@ -30,6 +30,49 @@ const initialTrainingGroups: (typeof trainingGroups.$inferInsert)[] = [
     maximumAge: 13,
     capacity: 30,
     registrationOpen: false,
+  },
+];
+
+const initialProgramPackages: (typeof programPackages.$inferInsert)[] = [
+  {
+    slug: "1-month",
+    displayName: "1-Month Program",
+    durationMonths: 1,
+    priceCents: 15000,
+    currency: "CAD",
+    taxBehavior: "exclusive",
+    isActive: true,
+    displayOrder: 1,
+  },
+  {
+    slug: "2-month",
+    displayName: "2-Month Program",
+    durationMonths: 2,
+    priceCents: 29900,
+    currency: "CAD",
+    taxBehavior: "exclusive",
+    isActive: true,
+    displayOrder: 2,
+  },
+  {
+    slug: "6-month",
+    displayName: "6-Month Program",
+    durationMonths: 6,
+    priceCents: 85000,
+    currency: "CAD",
+    taxBehavior: "exclusive",
+    isActive: true,
+    displayOrder: 3,
+  },
+  {
+    slug: "1-year",
+    displayName: "1-Year Program",
+    durationMonths: 12,
+    priceCents: 170000,
+    currency: "CAD",
+    taxBehavior: "exclusive",
+    isActive: true,
+    displayOrder: 4,
   },
 ];
 
@@ -51,6 +94,22 @@ async function seedDatabase() {
         });
     }
 
+    for (const programPackage of initialProgramPackages) {
+      await db
+        .insert(programPackages)
+        .values(programPackage)
+        .onDuplicateKeyUpdate({
+          set: {
+            displayName: programPackage.displayName,
+            durationMonths: programPackage.durationMonths,
+            priceCents: programPackage.priceCents,
+            currency: programPackage.currency,
+            taxBehavior: programPackage.taxBehavior,
+            displayOrder: programPackage.displayOrder,
+          },
+        });
+    }
+
     // Read the groups back from MySQL so we can use their real generated IDs.
     const savedGroups = await db
       .select({
@@ -59,6 +118,14 @@ async function seedDatabase() {
         displayName: trainingGroups.displayName,
       })
       .from(trainingGroups);
+
+    const savedPackages = await db
+      .select()
+      .from(programPackages)
+      .orderBy(programPackages.displayOrder);
+
+    console.log("Program packages:");
+    console.table(savedPackages);
 
     // Convert the returned rows into a lookup such as:
     //
