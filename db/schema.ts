@@ -226,3 +226,94 @@ export const players = mysqlTable(
   },
   (table) => [index("players_guardian_id_index").on(table.guardianId)],
 );
+
+export const registrations = mysqlTable(
+  "registrations",
+  {
+    id: int("id", {
+      unsigned: true,
+    })
+      .autoincrement()
+      .primaryKey(),
+
+    playerId: int("player_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => players.id, {
+        onDelete: "restrict",
+      }),
+
+    trainingGroupId: int("training_group_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => trainingGroups.id, {
+        onDelete: "restrict",
+      }),
+
+    programPackageId: int("program_package_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => programPackages.id, {
+        onDelete: "restrict",
+      }),
+
+    status: mysqlEnum("status", [
+      "pending_payment",
+      "scheduled",
+      "active",
+      "waitlisted",
+      "expired",
+      "cancelled",
+    ])
+      .notNull()
+      .default("pending_payment"),
+
+    packagePriceCents: int("package_price_cents", {
+      unsigned: true,
+    }).notNull(),
+
+    currency: char("currency", {
+      length: 3,
+    })
+      .notNull()
+      .default("CAD"),
+
+    startsOn: date("starts_on", {
+      mode: "string",
+    }),
+
+    endsOn: date("ends_on", {
+      mode: "string",
+    }),
+
+    reservationExpiresAt: timestamp("reservation_expires_at"),
+
+    waitlistedAt: timestamp("waitlisted_at"),
+
+    activatedAt: timestamp("activated_at"),
+
+    cancelledAt: timestamp("cancelled_at"),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+
+    updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => [
+    index("registrations_player_id_index").on(table.playerId),
+
+    index("registrations_group_status_end_index").on(
+      table.trainingGroupId,
+      table.status,
+      table.endsOn,
+    ),
+
+    index("registrations_waitlist_order_index").on(
+      table.trainingGroupId,
+      table.status,
+      table.waitlistedAt,
+    ),
+  ],
+);
