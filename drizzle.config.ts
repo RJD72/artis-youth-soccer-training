@@ -24,7 +24,7 @@ if (!Number.isInteger(port)) {
 
 export default defineConfig({
   dialect: "mysql",
-  schema: "./db/schema.ts",
+  schema: ["./db/schema.ts", "./db/auth-schema.ts"],
   out: "./drizzle",
   dbCredentials: {
     host: requireEnvironmentVariable("DB_HOST"),

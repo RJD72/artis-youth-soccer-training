@@ -6,7 +6,13 @@ import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql, { type Pool } from "mysql2/promise";
 
-import * as schema from "./schema";
+import * as appSchema from "./schema";
+import * as authSchema from "./auth-schema";
+
+const schema = {
+  ...appSchema,
+  ...authSchema,
+};
 
 // Load local environment variables before we read any database settings.
 // `quiet: true` keeps startup output clean when the file is imported by app code.
