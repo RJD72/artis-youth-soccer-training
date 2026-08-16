@@ -24,10 +24,10 @@ const initialTrainingGroups: (typeof trainingGroups.$inferInsert)[] = [
     registrationOpen: false,
   },
   {
-    slug: "ages-11-14",
-    displayName: "Ages 11–14",
+    slug: "ages-11-13",
+    displayName: "Ages 11–13",
     minimumAge: 11,
-    maximumAge: 14,
+    maximumAge: 13,
     capacity: 30,
     registrationOpen: false,
   },
@@ -63,7 +63,7 @@ async function seedDatabase() {
     // Convert the returned rows into a lookup such as:
     //
     // "ages-8-10"  => 1
-    // "ages-11-14" => 2
+    // "ages-11-13" => 2
     //
     // The IDs may not always be 1 and 2, so we must not hard-code them.
     const groupIdBySlug = new Map(
@@ -84,7 +84,7 @@ async function seedDatabase() {
 
     const youngerGroupId = requireTrainingGroupId("ages-8-10");
 
-    const olderGroupId = requireTrainingGroupId("ages-11-14");
+    const olderGroupId = requireTrainingGroupId("ages-11-13");
 
     const initialWeeklySchedules: (typeof weeklySchedules.$inferInsert)[] = [
       {
