@@ -497,3 +497,61 @@ export const legalAcceptances = mysqlTable(
     index("legal_acceptances_document_id_index").on(table.legalDocumentId),
   ],
 );
+
+export const stripeWebhookEvents = mysqlTable(
+  "stripe_webhook_events",
+  {
+    id: int("id", {
+      unsigned: true,
+    })
+      .autoincrement()
+      .primaryKey(),
+
+    stripeEventId: varchar("stripe_event_id", {
+      length: 255,
+    })
+      .notNull()
+      .unique(),
+
+    eventType: varchar("event_type", {
+      length: 100,
+    }).notNull(),
+
+    stripeObjectId: varchar("stripe_object_id", {
+      length: 255,
+    }),
+
+    processingStatus: mysqlEnum("processing_status", [
+      "received",
+      "processing",
+      "processed",
+      "failed",
+    ])
+      .notNull()
+      .default("received"),
+
+    attemptCount: int("attempt_count", {
+      unsigned: true,
+    })
+      .notNull()
+      .default(0),
+
+    lastError: text("last_error"),
+
+    livemode: boolean("livemode").notNull().default(false),
+
+    receivedAt: timestamp("received_at").notNull().defaultNow(),
+
+    processedAt: timestamp("processed_at"),
+
+    updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => [
+    index("stripe_webhook_events_status_index").on(table.processingStatus),
+
+    index("stripe_webhook_events_object_index").on(
+      table.eventType,
+      table.stripeObjectId,
+    ),
+  ],
+);
