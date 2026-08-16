@@ -317,3 +317,80 @@ export const registrations = mysqlTable(
     ),
   ],
 );
+
+export const payments = mysqlTable(
+  "payments",
+  {
+    id: int("id", {
+      unsigned: true,
+    })
+      .autoincrement()
+      .primaryKey(),
+
+    registrationId: int("registration_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => registrations.id, {
+        onDelete: "restrict",
+      }),
+
+    status: mysqlEnum("status", [
+      "pending",
+      "succeeded",
+      "failed",
+      "cancelled",
+      "partially_refunded",
+      "refunded",
+    ])
+      .notNull()
+      .default("pending"),
+
+    stripeCheckoutSessionId: varchar("stripe_checkout_session_id", {
+      length: 255,
+    }).unique(),
+
+    stripePaymentIntentId: varchar("stripe_payment_intent_id", {
+      length: 255,
+    }).unique(),
+
+    subtotalCents: int("subtotal_cents", {
+      unsigned: true,
+    }).notNull(),
+
+    taxCents: int("tax_cents", {
+      unsigned: true,
+    })
+      .notNull()
+      .default(0),
+
+    totalCents: int("total_cents", {
+      unsigned: true,
+    }).notNull(),
+
+    refundedCents: int("refunded_cents", {
+      unsigned: true,
+    })
+      .notNull()
+      .default(0),
+
+    currency: char("currency", {
+      length: 3,
+    })
+      .notNull()
+      .default("CAD"),
+
+    paidAt: timestamp("paid_at"),
+
+    refundedAt: timestamp("refunded_at"),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+
+    updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => [
+    index("payments_registration_id_index").on(table.registrationId),
+
+    index("payments_status_index").on(table.status),
+  ],
+);

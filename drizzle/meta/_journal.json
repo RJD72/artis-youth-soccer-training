@@ -43,6 +43,13 @@
       "when": 1786881625849,
       "tag": "0005_luxuriant_namora",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1786881955594,
+      "tag": "0006_early_loa",
+      "breakpoints": true
     }
   ]
 }
