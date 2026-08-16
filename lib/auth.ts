@@ -43,6 +43,15 @@ export const auth = betterAuth({
         return;
       }
 
+      const accountCreationEnabled =
+        process.env.ADMIN_ACCOUNT_CREATION_ENABLED === "true";
+
+      if (!accountCreationEnabled) {
+        throw new APIError("FORBIDDEN", {
+          message: "Administrator registration is not available",
+        });
+      }
+
       const submittedEmail =
         typeof context.body?.email === "string"
           ? context.body.email.trim().toLowerCase()
