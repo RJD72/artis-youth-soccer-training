@@ -394,3 +394,106 @@ export const payments = mysqlTable(
     index("payments_status_index").on(table.status),
   ],
 );
+
+export const legalDocuments = mysqlTable(
+  "legal_documents",
+  {
+    id: int("id", {
+      unsigned: true,
+    })
+      .autoincrement()
+      .primaryKey(),
+
+    documentType: mysqlEnum("document_type", [
+      "participation_waiver",
+      "privacy_policy",
+      "cancellation_refund_policy",
+    ]).notNull(),
+
+    version: varchar("version", {
+      length: 50,
+    }).notNull(),
+
+    title: varchar("title", {
+      length: 200,
+    }).notNull(),
+
+    content: text("content").notNull(),
+
+    contentHash: char("content_hash", {
+      length: 64,
+    }).notNull(),
+
+    isActive: boolean("is_active").notNull().default(false),
+
+    publishedAt: timestamp("published_at"),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+
+    updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => [
+    uniqueIndex("legal_documents_type_version_unique").on(
+      table.documentType,
+      table.version,
+    ),
+
+    index("legal_documents_active_index").on(
+      table.documentType,
+      table.isActive,
+    ),
+  ],
+);
+
+export const legalAcceptances = mysqlTable(
+  "legal_acceptances",
+  {
+    id: int("id", {
+      unsigned: true,
+    })
+      .autoincrement()
+      .primaryKey(),
+
+    registrationId: int("registration_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => registrations.id, {
+        onDelete: "restrict",
+      }),
+
+    guardianId: int("guardian_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => guardians.id, {
+        onDelete: "restrict",
+      }),
+
+    legalDocumentId: int("legal_document_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => legalDocuments.id, {
+        onDelete: "restrict",
+      }),
+
+    acceptedByName: varchar("accepted_by_name", {
+      length: 100,
+    }).notNull(),
+
+    acceptedAt: timestamp("accepted_at").notNull().defaultNow(),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("legal_acceptances_registration_document_unique").on(
+      table.registrationId,
+      table.legalDocumentId,
+    ),
+
+    index("legal_acceptances_guardian_id_index").on(table.guardianId),
+
+    index("legal_acceptances_document_id_index").on(table.legalDocumentId),
+  ],
+);
