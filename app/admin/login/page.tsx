@@ -1,6 +1,3 @@
-// This page lets approved ARTIS administrators create a new admin account.
-// It shows a form, checks the password fields, and sends the signup request through the auth client.
-
 "use client";
 
 import { type SubmitEvent, useState } from "react";
@@ -12,46 +9,39 @@ function getTextField(formData: FormData, fieldName: string): string {
   return typeof value === "string" ? value : "";
 }
 
-export default function CreateAdminAccountPage() {
+export default function AdminLoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
-  const [accountCreated, setAccountCreated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginSuccessful, setLoginSuccessful] = useState(false);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
 
     const formData = new FormData(event.currentTarget);
-    const name = getTextField(formData, "name").trim();
     const email = getTextField(formData, "email").trim();
     const password = getTextField(formData, "password");
-    const confirmPassword = getTextField(formData, "confirmPassword");
-
-    if (password !== confirmPassword) {
-      setErrorMessage("Passwords do not match");
-      return;
-    }
 
     setIsSubmitting(true);
 
     try {
-      const { error } = await authClient.signUp.email({
-        name,
+      const { error } = await authClient.signIn.email({
         email,
         password,
+        rememberMe: true,
       });
 
       if (error) {
         setErrorMessage(
-          "The account could not be create. Make sure the email is approved and has not already been registered.",
+          "The email or password is incorrect. Please try again.",
         );
         return;
       }
 
-      setAccountCreated(true);
+      setLoginSuccessful(true);
     } catch {
       setErrorMessage(
-        "The server cound not be reached. Please wait a moment and try again.",
+        "The server could not be reached. Please wait a moment and try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -66,47 +56,32 @@ export default function CreateAdminAccountPage() {
         </p>
 
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-          Create an admin account
+          Administrator login
         </h1>
 
         <p className="mt-4 leading-7 text-slate-600">
-          This private setup page is only for approved ARTIS administrators. The
-          email address must appear in the server allowlist.
+          Sign in with the email address and password for your administrator
+          account.
         </p>
 
-        {accountCreated ? (
+        {loginSuccessful ? (
           <output className="mt-8 block rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
             <span className="block font-semibold text-emerald-950">
-              Account created successfully
+              Login successful
+            </span>
+            <span className="mt-2 block text-sm leading-6 text-emerald-800">
+              Better Auth created your login session. The next step will be
+              building the protected administrator page.
             </span>
           </output>
         ) : (
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <div>
               <label
-                htmlFor="name"
-                className="text-sm font-semibold text-slate-800"
-              >
-                Full name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                required
-                minLength={2}
-                maxLength={255}
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-blue-700 focus:ring-4 focus:ring-blue-700/10"
-              />
-            </div>
-
-            <div>
-              <label
                 htmlFor="email"
                 className="text-sm font-semibold text-slate-800"
               >
-                Approved email address
+                Email address
               </label>
               <input
                 id="email"
@@ -130,30 +105,7 @@ export default function CreateAdminAccountPage() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="new-password"
-                required
-                minLength={12}
-                maxLength={128}
-                aria-describedby="password-help"
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-blue-700 focus:ring-4 focus:ring-blue-700/10"
-              />
-              <p id="password-help" className="mt-2 text-sm text-slate-500">
-                Use at least 12 characters.
-              </p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="text-sm font-semibold text-slate-800"
-              >
-                Confirm password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
+                autoComplete="current-password"
                 required
                 minLength={12}
                 maxLength={128}
@@ -175,7 +127,7 @@ export default function CreateAdminAccountPage() {
               disabled={isSubmitting}
               className="flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/20 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Creating account…" : "Create admin account"}
+              {isSubmitting ? "Signing in…" : "Sign in"}
             </button>
           </form>
         )}
