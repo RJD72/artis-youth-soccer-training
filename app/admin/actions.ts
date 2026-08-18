@@ -18,13 +18,13 @@ function getTrainingGroupId(formData: FormData): number {
     throw new TypeError("A training group ID is required");
   }
 
-  const traingGroupId = Number(value);
+  const trainingGroupId = Number(value);
 
-  if (!Number.isSafeInteger(traingGroupId) || traingGroupId <= 0) {
+  if (!Number.isSafeInteger(trainingGroupId) || trainingGroupId <= 0) {
     throw new TypeError("The training group ID is invalid");
   }
 
-  return traingGroupId;
+  return trainingGroupId;
 }
 
 function getRegistrationOpen(formData: FormData): boolean {

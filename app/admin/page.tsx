@@ -5,6 +5,7 @@
 import { requireAdminSession } from "@/lib/admin-auth";
 import { getTrainingGroupCapacitySummaries } from "@/lib/admin-dashboard";
 
+import { updateTrainingGroupRegistrationStatus } from "./actions";
 import { SignOutButton } from "./sign-out-button";
 
 export default async function AdminPage() {
@@ -102,6 +103,35 @@ export default async function AdminPage() {
                       </dd>
                     </div>
                   </dl>
+
+                  <form
+                    action={updateTrainingGroupRegistrationStatus}
+                    className="mt-6 border-t border-artis-border pt-5"
+                  >
+                    <input
+                      type="hidden"
+                      name="trainingGroupId"
+                      value={group.id}
+                    />
+                    <input
+                      type="hidden"
+                      name="registrationOpen"
+                      value={String(!group.registrationOpen)}
+                    />
+
+                    <button
+                      type="submit"
+                      className={`min-h-12 w-full rounded-[10px] px-6 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-4 sm:w-auto ${
+                        group.registrationOpen
+                          ? "bg-artis-gold text-artis-deep-navy hover:bg-artis-gold/85 focus-visible:ring-artis-navy/20"
+                          : "bg-artis-navy text-artis-white hover:bg-artis-deep-navy focus-visible:ring-artis-gold/30"
+                      }`}
+                    >
+                      {group.registrationOpen
+                        ? "Close registration"
+                        : "Open registration"}
+                    </button>
+                  </form>
                 </article>
               ))}
             </div>
