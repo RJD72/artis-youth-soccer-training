@@ -1,3 +1,7 @@
+// This page protects the admin dashboard and only allows approved administrators to view it.
+// It checks the current user session, redirects anyone who is not signed in or not on the allowlist,
+// and then shows the admin UI for approved users.
+
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 

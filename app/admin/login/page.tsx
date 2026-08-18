@@ -2,6 +2,7 @@
 
 import { type SubmitEvent, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 function getTextField(formData: FormData, fieldName: string): string {
   const value = formData.get(fieldName);
@@ -12,7 +13,8 @@ function getTextField(formData: FormData, fieldName: string): string {
 export default function AdminLoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loginSuccessful, setLoginSuccessful] = useState(false);
+
+  const router = useRouter();
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,7 +40,8 @@ export default function AdminLoginPage() {
         return;
       }
 
-      setLoginSuccessful(true);
+      router.replace("/admin");
+      router.refresh();
     } catch {
       setErrorMessage(
         "The server could not be reached. Please wait a moment and try again.",
@@ -64,73 +67,61 @@ export default function AdminLoginPage() {
           account.
         </p>
 
-        {loginSuccessful ? (
-          <output className="mt-8 block rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-            <span className="block font-semibold text-emerald-950">
-              Login successful
-            </span>
-            <span className="mt-2 block text-sm leading-6 text-emerald-800">
-              Better Auth created your login session. The next step will be
-              building the protected administrator page.
-            </span>
-          </output>
-        ) : (
-          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="email"
-                className="text-sm font-semibold text-slate-800"
-              >
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                maxLength={255}
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-blue-700 focus:ring-4 focus:ring-blue-700/10"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="text-sm font-semibold text-slate-800"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                minLength={12}
-                maxLength={128}
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-blue-700 focus:ring-4 focus:ring-blue-700/10"
-              />
-            </div>
-
-            {errorMessage ? (
-              <p
-                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-800"
-                role="alert"
-              >
-                {errorMessage}
-              </p>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/20 disabled:cursor-not-allowed disabled:opacity-60"
+        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+          <div>
+            <label
+              htmlFor="email"
+              className="text-sm font-semibold text-slate-800"
             >
-              {isSubmitting ? "Signing in…" : "Sign in"}
-            </button>
-          </form>
-        )}
+              Email address
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              maxLength={255}
+              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-blue-700 focus:ring-4 focus:ring-blue-700/10"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="text-sm font-semibold text-slate-800"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              minLength={12}
+              maxLength={128}
+              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-blue-700 focus:ring-4 focus:ring-blue-700/10"
+            />
+          </div>
+
+          {errorMessage ? (
+            <p
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-800"
+              role="alert"
+            >
+              {errorMessage}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
       </section>
     </main>
   );
