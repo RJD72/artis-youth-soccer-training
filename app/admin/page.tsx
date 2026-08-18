@@ -7,6 +7,8 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 
+import { SignOutButton } from "./sign-out-button";
+
 function getAllowedAdminEmails(): Set<string> {
   const configuredEmails = process.env.ADMIN_EMAIL_ALLOWLIST ?? "";
 
@@ -49,10 +51,13 @@ export default async function AdminPage() {
           Welcome, {session.user.name}. Your administrator session is active and
           your email is approved for access.
         </p>
+        <div className="mt-8 flex flex-col gap-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-slate-800">Signed in as</p>
+            <p className="mt-1 text-slate-600">{session.user.email}</p>
+          </div>
 
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-          <p className="text-sm font-semibold text-slate-800">Signed in as</p>
-          <p className="mt-1 text-slate-600">{session.user.email}</p>
+          <SignOutButton />
         </div>
 
         <div className="mt-8 border-t border-slate-200 pt-8">
