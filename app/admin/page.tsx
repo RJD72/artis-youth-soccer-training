@@ -2,39 +2,11 @@
 // It checks the current user session, redirects anyone who is not signed in or not on the allowlist,
 // and then shows the admin UI for approved users.
 
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-
-import { auth } from "@/lib/auth";
-
+import { requireAdminSession } from "@/lib/admin-auth";
 import { SignOutButton } from "./sign-out-button";
 
-function getAllowedAdminEmails(): Set<string> {
-  const configuredEmails = process.env.ADMIN_EMAIL_ALLOWLIST ?? "";
-
-  return new Set(
-    configuredEmails
-      .split(",")
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
-
 export default async function AdminPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    redirect("/admin/login");
-  }
-
-  const normalizedEmail = session.user.email.trim().toLowerCase();
-  const allowedAdminEmails = getAllowedAdminEmails();
-
-  if (!allowedAdminEmails.has(normalizedEmail)) {
-    redirect("/admin/login");
-  }
+  const session = await requireAdminSession();
 
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-12 sm:px-6">
