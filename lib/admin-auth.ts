@@ -45,4 +45,6 @@ export async function requireAdminSession() {
   if (!session) {
     redirect("/admin/login");
   }
+
+  return session;
 }
