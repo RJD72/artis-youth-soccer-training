@@ -38,13 +38,16 @@ export function SignOutButton() {
         type="button"
         onClick={handleSignOut}
         disabled={isSigningOut}
-        className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/20 disabled:cursor-not-allowed disabled:opacity-60"
+        className="min-h-12 rounded-[10px] bg-artis-gold px-6 py-3 text-sm font-semibold text-artis-deep-navy transition hover:bg-artis-gold/85 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-navy/20 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSigningOut ? "Signing out…" : "Sign out"}
       </button>
 
       {errorMessage ? (
-        <p className="max-w-sm text-sm text-red-700" role="alert">
+        <p
+          className="max-w-sm rounded-[10px] border border-artis-error bg-artis-error/10 px-3 py-2 text-sm leading-6 text-artis-error"
+          role="alert"
+        >
           {errorMessage}
         </p>
       ) : null}
