@@ -52,17 +52,17 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-12">
-      <section className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">
+    <main className="flex min-h-screen items-center justify-center bg-artis-off-white px-4 py-12 sm:px-6">
+      <section className="w-full max-w-lg rounded-2xl border border-artis-border bg-artis-white p-6 sm:p-10">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-artis-gold">
           ARTIS Soccer Academy
         </p>
 
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-artis-navy">
           Administrator login
         </h1>
 
-        <p className="mt-4 leading-7 text-slate-600">
+        <p className="mt-4 leading-7 text-artis-slate">
           Sign in with the email address and password for your administrator
           account.
         </p>
@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
           <div>
             <label
               htmlFor="email"
-              className="text-sm font-semibold text-slate-800"
+              className="text-sm font-semibold text-artis-navy"
             >
               Email address
             </label>
@@ -82,14 +82,15 @@ export default function AdminLoginPage() {
               autoComplete="email"
               required
               maxLength={255}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-blue-700 focus:ring-4 focus:ring-blue-700/10"
+              placeholder="name@example.com"
+              className="mt-2 h-13 w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-artis-navy outline-none transition placeholder:text-artis-slate focus:border-artis-gold focus:ring-4 focus:ring-artis-gold/20"
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="text-sm font-semibold text-slate-800"
+              className="text-sm font-semibold text-artis-navy"
             >
               Password
             </label>
@@ -101,13 +102,14 @@ export default function AdminLoginPage() {
               required
               minLength={12}
               maxLength={128}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-950 outline-none transition focus:border-blue-700 focus:ring-4 focus:ring-blue-700/10"
+              placeholder="Enter your password"
+              className="mt-2 h-13 w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-artis-navy outline-none transition placeholder:text-artis-slate focus:border-artis-gold focus:ring-4 focus:ring-artis-gold/20"
             />
           </div>
 
           {errorMessage ? (
             <p
-              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-800"
+              className="rounded-[10px] border border-artis-error bg-artis-error/10 px-4 py-3 text-sm leading-6 text-artis-error"
               role="alert"
             >
               {errorMessage}
@@ -117,7 +119,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex min-h-12 w-full items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3 font-semibold text-artis-white transition hover:bg-artis-deep-navy focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Signing in…" : "Sign in"}
           </button>

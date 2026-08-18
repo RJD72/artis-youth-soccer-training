@@ -98,7 +98,7 @@ export default function CreateAdminAccountPage() {
                 minLength={2}
                 maxLength={255}
                 placeholder="Enter full name"
-                className="mt-2 h-[52px] w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-artis-navy outline-none transition placeholder:text-artis-slate focus:border-artis-gold focus:ring-4 focus:ring-artis-gold/20"
+                className="mt-2 h-13 w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-artis-navy outline-none transition placeholder:text-artis-slate focus:border-artis-gold focus:ring-4 focus:ring-artis-gold/20"
               />
             </div>
 
@@ -117,7 +117,7 @@ export default function CreateAdminAccountPage() {
                 required
                 maxLength={255}
                 placeholder="name@example.com"
-                className="mt-2 h-[52px] w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-artis-navy outline-none transition placeholder:text-artis-slate focus:border-artis-gold focus:ring-4 focus:ring-artis-gold/20"
+                className="mt-2 h-13 w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-artis-navy outline-none transition placeholder:text-artis-slate focus:border-artis-gold focus:ring-4 focus:ring-artis-gold/20"
               />
             </div>
 
@@ -138,7 +138,7 @@ export default function CreateAdminAccountPage() {
                 maxLength={128}
                 aria-describedby="password-help"
                 placeholder="Enter a password"
-                className="mt-2 h-[52px] w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-artis-navy outline-none transition placeholder:text-artis-slate focus:border-artis-gold focus:ring-4 focus:ring-artis-gold/20"
+                className="mt-2 h-13 w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-artis-navy outline-none transition placeholder:text-artis-slate focus:border-artis-gold focus:ring-4 focus:ring-artis-gold/20"
               />
               <p id="password-help" className="mt-2 text-sm text-artis-slate">
                 Use at least 12 characters.
@@ -161,7 +161,7 @@ export default function CreateAdminAccountPage() {
                 minLength={12}
                 maxLength={128}
                 placeholder="Re-enter your password"
-                className="mt-2 h-[52px] w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-artis-navy outline-none transition placeholder:text-artis-slate focus:border-artis-gold focus:ring-4 focus:ring-artis-gold/20"
+                className="mt-2 h-13 w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-artis-navy outline-none transition placeholder:text-artis-slate focus:border-artis-gold focus:ring-4 focus:ring-artis-gold/20"
               />
             </div>
 
