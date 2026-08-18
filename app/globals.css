@@ -39,3 +39,11 @@ body {
   color: var(--foreground);
   font-family: var(--font-manrope), Arial, Helvetica, sans-serif;
 }
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
