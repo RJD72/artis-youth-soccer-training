@@ -1,26 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  --background: #f7f8f6;
+  --foreground: #0b1f33;
+
+  --artis-primary-navy: #0b1f33;
+  --artis-deep-navy: #061522;
+  --artis-gold: #d3a62c;
+  --artis-soft-gold: #f5ecd1;
+  --artis-off-white: #f7f8f6;
+  --artis-white: #ffffff;
+  --artis-slate: #5e6874;
+  --artis-border: #dce1e5;
+  --artis-success: #217a57;
+  --artis-error: #c74646;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-artis-navy: var(--artis-primary-navy);
+  --color-artis-deep-navy: var(--artis-deep-navy);
+  --color-artis-gold: var(--artis-gold);
+  --color-artis-soft-gold: var(--artis-soft-gold);
+  --color-artis-off-white: var(--artis-off-white);
+  --color-artis-white: var(--artis-white);
+  --color-artis-slate: var(--artis-slate);
+  --color-artis-border: var(--artis-border);
+  --color-artis-success: var(--artis-success);
+  --color-artis-error: var(--artis-error);
+  --font-sans: var(--font-manrope);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-manrope), Arial, Helvetica, sans-serif;
 }
