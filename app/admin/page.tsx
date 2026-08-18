@@ -2,6 +2,8 @@
 // It checks the current user session, redirects anyone who is not signed in or not on the allowlist,
 // and then shows the admin UI for approved users.
 
+import Link from "next/link";
+
 import { requireAdminSession } from "@/lib/admin-auth";
 import { getTrainingGroupCapacitySummaries } from "@/lib/admin-dashboard";
 
@@ -38,6 +40,27 @@ export default async function AdminPage() {
 
           <SignOutButton />
         </div>
+
+        <nav className="mt-8" aria-label="Administrator tools">
+          <Link
+            href="/admin/registrations"
+            className="flex flex-col gap-5 rounded-2xl border border-artis-border bg-artis-white p-5 transition hover:border-artis-gold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+          >
+            <span>
+              <span className="block text-lg font-semibold text-artis-navy">
+                Player registrations
+              </span>
+              <span className="mt-1 block max-w-2xl text-sm leading-6 text-artis-slate">
+                Review recent registrations, guardian contact information,
+                selected programs, dates, and current statuses.
+              </span>
+            </span>
+
+            <span className="shrink-0 font-semibold text-artis-navy underline decoration-artis-gold decoration-2 underline-offset-4">
+              View registrations →
+            </span>
+          </Link>
+        </nav>
 
         <div className="mt-10 border-t border-artis-border pt-8">
           <h2 className="text-2xl font-semibold text-artis-navy">
