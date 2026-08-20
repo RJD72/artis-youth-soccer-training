@@ -5,43 +5,13 @@ import { connection } from "next/server";
 
 import { getRegistrationOptions } from "@/lib/registration-options";
 
+import ProgramSelector from "./program-selector";
+
 export const metadata: Metadata = {
   title: "Register for Training",
   description:
     "View the available ARTIS Soccer Academy training groups and program packages",
 };
-
-const currencyFormatter = new Intl.NumberFormat("en-CA", {
-  style: "currency",
-  currency: "CAD",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-const timeFormatter = new Intl.DateTimeFormat("en-CA", {
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "UTC",
-});
-
-function formatCurrency(priceCents: number): string {
-  return currencyFormatter.format(priceCents / 100);
-}
-
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(":").map(Number);
-  const date = new Date(Date.UTC(2000, 0, 1, hours, minutes));
-
-  return timeFormatter.format(date);
-}
-
-function formatDay(day: string): string {
-  return `${day.charAt(0).toUpperCase()}${day.slice(1)}`;
-}
-
-function formatSessionType(sessionType: string): string {
-  return sessionType === "game_training" ? "Game / match" : "Training";
-}
 
 export default async function RegisterPage() {
   // Registration availability can change in the admin dashboard. Waiting for a
@@ -117,102 +87,10 @@ export default async function RegisterPage() {
         <section className="px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
           <div className="mx-auto w-full max-w-7xl">
             {registrationAvailable ? (
-              <div className="rounded-2xl border border-artis-border bg-artis-white p-5 sm:p-8">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
-                    Program selection
-                  </p>
-                  <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-                    Choose the right training option
-                  </h2>
-                  <p className="mt-3 max-w-3xl leading-7 text-artis-slate">
-                    Review the age group schedule first, then choose the length
-                    of the program. All sessions take place at Central Huron
-                    Secondary School.
-                  </p>
-                </div>
-
-                <div className="mt-8">
-                  <h3 className="text-lg font-bold">Available age groups</h3>
-                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    {trainingGroups.map((group) => (
-                      <article
-                        key={group.id}
-                        className="rounded-2xl border border-artis-border bg-artis-off-white p-5 sm:p-6"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-artis-gold">
-                              Soccer development program
-                            </p>
-                            <h4 className="mt-2 text-xl font-bold">
-                              {group.displayName}
-                            </h4>
-                          </div>
-                          <span className="rounded-full bg-artis-soft-gold px-3 py-1 text-xs font-semibold">
-                            Maximum {group.capacity} players
-                          </span>
-                        </div>
-
-                        <ul className="mt-5 space-y-3">
-                          {group.weeklySchedule.map((session) => (
-                            <li
-                              key={session.id}
-                              className="flex flex-col gap-1 border-t border-artis-border pt-3 text-sm first:border-t-0 first:pt-0 sm:flex-row sm:items-center sm:justify-between"
-                            >
-                              <span className="font-semibold">
-                                {formatDay(session.dayOfWeek)}
-                              </span>
-                              <span className="text-artis-slate">
-                                {formatSessionType(session.sessionType)} ·{" "}
-                                {formatTime(session.startTime)}–
-                                {formatTime(session.endTime)}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-10">
-                  <h3 className="text-lg font-bold">Program packages</h3>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {programPackages.map((programPackage) => (
-                      <article
-                        key={programPackage.id}
-                        className="rounded-2xl border border-artis-border p-5"
-                      >
-                        <p className="text-sm font-semibold text-artis-slate">
-                          {programPackage.durationMonths} month
-                          {programPackage.durationMonths === 1 ? "" : "s"}
-                        </p>
-                        <h4 className="mt-2 text-lg font-bold">
-                          {programPackage.displayName}
-                        </h4>
-                        <p className="mt-5 text-2xl font-bold">
-                          {formatCurrency(programPackage.priceCents)}
-                        </p>
-                        <p className="mt-1 text-sm text-artis-slate">
-                          {programPackage.taxBehavior === "exclusive"
-                            ? "Plus HST"
-                            : "HST included"}
-                        </p>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-8 rounded-[10px] bg-artis-soft-gold p-5">
-                  <h3 className="font-semibold">Program dates</h3>
-                  <p className="mt-2 max-w-4xl text-sm leading-6 text-artis-slate">
-                    Fixed program periods begin on the first of the month and
-                    end on the final day of the applicable month. Confirmed
-                    dates will be shown before payment.
-                  </p>
-                </div>
-              </div>
+              <ProgramSelector
+                trainingGroups={trainingGroups}
+                programPackages={programPackages}
+              />
             ) : (
               <div className="rounded-2xl border border-artis-border bg-artis-white p-6 sm:p-8">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
