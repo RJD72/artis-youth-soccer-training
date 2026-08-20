@@ -1,15 +1,23 @@
 // This file provides the public-safe options needed to start a registration.
-// It returns only groups currently accepting registrations, their active weekly
-// sessions, and active program packages. It never returns personal information.
+// It returns only groups currently accepting registrations that still have
+// capacity, their active weekly sessions, and active program packages. It never
+// returns personal information.
 
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, gt, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db";
-import { programPackages, trainingGroups, weeklySchedules } from "@/db/schema";
+import {
+  programPackages,
+  registrations,
+  trainingGroups,
+  weeklySchedules,
+} from "@/db/schema";
 
 export async function getRegistrationOptions() {
+  const now = new Date();
+
   const [groupRows, scheduleRows, packageRows] = await Promise.all([
     db
       .select({
@@ -19,9 +27,31 @@ export async function getRegistrationOptions() {
         minimumAge: trainingGroups.minimumAge,
         maximumAge: trainingGroups.maximumAge,
         capacity: trainingGroups.capacity,
+        occupiedSpots: count(registrations.id),
       })
       .from(trainingGroups)
+      .leftJoin(
+        registrations,
+        and(
+          eq(registrations.trainingGroupId, trainingGroups.id),
+          or(
+            inArray(registrations.status, ["scheduled", "active"]),
+            and(
+              eq(registrations.status, "pending_payment"),
+              gt(registrations.reservationExpiresAt, now),
+            ),
+          ),
+        ),
+      )
       .where(eq(trainingGroups.registrationOpen, true))
+      .groupBy(
+        trainingGroups.id,
+        trainingGroups.slug,
+        trainingGroups.displayName,
+        trainingGroups.minimumAge,
+        trainingGroups.maximumAge,
+        trainingGroups.capacity,
+      )
       .orderBy(trainingGroups.minimumAge),
 
     db
@@ -61,12 +91,15 @@ export async function getRegistrationOptions() {
       .orderBy(programPackages.displayOrder),
   ]);
 
-  const trainingGroupOptions = groupRows.map((group) => ({
-    ...group,
-    weeklySchedule: scheduleRows.filter(
-      (session) => session.trainingGroupId === group.id,
-    ),
-  }));
+  const trainingGroupOptions = groupRows
+    .map(({ occupiedSpots, ...group }) => ({
+      ...group,
+      availableSpots: Math.max(group.capacity - occupiedSpots, 0),
+      weeklySchedule: scheduleRows.filter(
+        (session) => session.trainingGroupId === group.id,
+      ),
+    }))
+    .filter((group) => group.availableSpots > 0);
 
   return {
     trainingGroups: trainingGroupOptions,
