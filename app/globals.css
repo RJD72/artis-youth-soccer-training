@@ -8,6 +8,7 @@
 
   --artis-primary-navy: #0b1f33;
   --artis-deep-navy: #061522;
+  --artis-red: #b4232d;
   --artis-gold: #d3a62c;
   --artis-soft-gold: #f5ecd1;
   --artis-off-white: #f7f8f6;
@@ -23,6 +24,7 @@
   --color-foreground: var(--foreground);
   --color-artis-navy: var(--artis-primary-navy);
   --color-artis-deep-navy: var(--artis-deep-navy);
+  --color-artis-red: var(--artis-red);
   --color-artis-gold: var(--artis-gold);
   --color-artis-soft-gold: var(--artis-soft-gold);
   --color-artis-off-white: var(--artis-off-white);
