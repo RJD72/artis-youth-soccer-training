@@ -1,3 +1,4 @@
+// REDESIGNED PROGRAM SELECTOR — AUGUST 22, 2026
 "use client";
 
 import { useState } from "react";
@@ -44,16 +45,6 @@ const shortDayNames: Record<string, string> = {
   friday: "Fri",
   saturday: "Sat",
   sunday: "Sun",
-};
-
-const longDayNames: Record<string, string> = {
-  monday: "Monday",
-  tuesday: "Tuesday",
-  wednesday: "Wednesday",
-  thursday: "Thursday",
-  friday: "Friday",
-  saturday: "Saturday",
-  sunday: "Sunday",
 };
 
 const dayOrder: Record<string, number> = {
@@ -106,6 +97,36 @@ function formatTimeRange(startTime: string, endTime: string): string {
 
 function joinDays(days: string[], separator: string): string {
   return days.join(separator);
+}
+
+function sortSessionsByDay(
+  sessions: WeeklySessionOption[],
+): WeeklySessionOption[] {
+  return [...sessions].sort(
+    (first, second) =>
+      (dayOrder[first.dayOfWeek] ?? 8) - (dayOrder[second.dayOfWeek] ?? 8),
+  );
+}
+
+function formatScheduleOverview(sessions: WeeklySessionOption[]): string {
+  const orderedSessions = sortSessionsByDay(sessions);
+  const trainingDays = orderedSessions
+    .filter((session) => session.sessionType !== "game_training")
+    .map((session) => shortDayNames[session.dayOfWeek] ?? session.dayOfWeek);
+  const gameDays = orderedSessions
+    .filter((session) => session.sessionType === "game_training")
+    .map((session) => shortDayNames[session.dayOfWeek] ?? session.dayOfWeek);
+  const scheduleParts: string[] = [];
+
+  if (trainingDays.length > 0) {
+    scheduleParts.push(`${joinDays(trainingDays, " + ")} training`);
+  }
+
+  if (gameDays.length > 0) {
+    scheduleParts.push(`${joinDays(gameDays, " + ")} game / match`);
+  }
+
+  return scheduleParts.join(" · ");
 }
 
 function formatProgramStart(): string {
@@ -165,28 +186,20 @@ export default function ProgramSelector({
     );
   }
 
-  const trainingSessions = selectedGroup.weeklySchedule
-    .filter((session) => session.sessionType !== "game_training")
-    .sort(
-      (first, second) =>
-        (dayOrder[first.dayOfWeek] ?? 8) - (dayOrder[second.dayOfWeek] ?? 8),
-    );
-  const gameSessions = selectedGroup.weeklySchedule
-    .filter((session) => session.sessionType === "game_training")
-    .sort(
-      (first, second) =>
-        (dayOrder[first.dayOfWeek] ?? 8) - (dayOrder[second.dayOfWeek] ?? 8),
-    );
+  const trainingSessions = sortSessionsByDay(
+    selectedGroup.weeklySchedule.filter(
+      (session) => session.sessionType !== "game_training",
+    ),
+  );
+  const gameSessions = sortSessionsByDay(
+    selectedGroup.weeklySchedule.filter(
+      (session) => session.sessionType === "game_training",
+    ),
+  );
   const firstTrainingSession = trainingSessions[0];
   const firstGameSession = gameSessions[0];
-  const trainingDaysLong = trainingSessions.map(
-    (session) => longDayNames[session.dayOfWeek] ?? session.dayOfWeek,
-  );
   const trainingDaysShort = trainingSessions.map(
     (session) => shortDayNames[session.dayOfWeek] ?? session.dayOfWeek,
-  );
-  const gameDaysLong = gameSessions.map(
-    (session) => longDayNames[session.dayOfWeek] ?? session.dayOfWeek,
   );
   const gameDaysShort = gameSessions.map(
     (session) => shortDayNames[session.dayOfWeek] ?? session.dayOfWeek,
@@ -195,147 +208,229 @@ export default function ProgramSelector({
     selectedPackage.taxBehavior === "exclusive" ? " + HST" : " (HST included)";
 
   return (
-    <section className="rounded-2xl border border-artis-border bg-artis-white p-6 text-base leading-[25px]">
-      <h2 className="font-normal uppercase">Program selection</h2>
-
-      <fieldset className="mt-1">
-        <legend className="sr-only">Age group</legend>
-        <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-6">
-          <span aria-hidden="true">Age group:</span>
-          {trainingGroups.map((group) => (
-            <label
-              key={group.id}
-              className="flex cursor-pointer items-center gap-1.5"
-            >
-              <input
-                type="radio"
-                name="trainingGroupId"
-                value={group.id}
-                checked={group.id === selectedGroupId}
-                onChange={() => setSelectedGroupId(group.id)}
-                required
-                className="size-4 shrink-0 accent-artis-navy"
-              />
-              <span>{group.displayName}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="mt-7 sm:mt-1">
-        <legend className="sr-only">Term</legend>
-        <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-6">
-          <span aria-hidden="true" className="mb-1 uppercase sm:mb-0">
-            Term:
-          </span>
-          {programPackages.map((programPackage) => (
-            <label
-              key={programPackage.id}
-              className="flex cursor-pointer items-center gap-1.5"
-            >
-              <input
-                type="radio"
-                name="programPackageId"
-                value={programPackage.id}
-                checked={programPackage.id === selectedPackageId}
-                onChange={() => setSelectedPackageId(programPackage.id)}
-                required
-                className="size-4 shrink-0 accent-artis-navy"
-              />
-              <span>
-                {formatPackageDuration(programPackage.durationMonths)} —{" "}
-                {formatCurrency(
-                  programPackage.priceCents,
-                  programPackage.currency,
-                )}
-                {programPackage.taxBehavior === "exclusive"
-                  ? " + HST"
-                  : " (HST included)"}
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <div className="mt-7 sm:mt-1">
-        <p>
-          Schedule: {joinDays(trainingDaysLong, " + ")} training
-          {gameDaysLong.length > 0
-            ? ` · ${joinDays(gameDaysLong, " + ")} game / match`
-            : ""}
+    <section className="overflow-hidden rounded-2xl border border-artis-border bg-artis-white shadow-[0_12px_32px_rgba(11,31,51,0.06)]">
+      <div className="border-b border-artis-border bg-artis-off-white px-6 py-5 sm:px-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
+          Training options
         </p>
+        <h2 className="mt-2 text-2xl font-bold tracking-tight">
+          Choose a program
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-artis-slate">
+          Select the player&apos;s age group and the length of the training
+          program.
+        </p>
+      </div>
 
-        <output aria-live="polite" className="mt-7 block sm:mt-1">
-          <span className="block sm:hidden">Selected example:</span>
-          <span className="hidden sm:inline">Selected example: </span>
-          <span className="hidden sm:inline">{selectedGroup.displayName}</span>
-          {firstTrainingSession ? (
-            <>
-              <span className="block sm:hidden">
-                {joinDays(trainingDaysShort, " + ")} ·{" "}
-                {formatTimeRange(
-                  firstTrainingSession.startTime,
-                  firstTrainingSession.endTime,
-                )}
+      <div className="space-y-8 p-6 sm:p-8">
+        <fieldset>
+          <legend className="text-lg font-bold">Age group</legend>
+          <p className="mt-1 text-sm leading-6 text-artis-slate">
+            Choose the group that matches the player&apos;s age.
+          </p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {trainingGroups.map((group) => {
+              const selected = group.id === selectedGroupId;
+
+              return (
+                <label
+                  key={group.id}
+                  className={`flex cursor-pointer items-center gap-4 rounded-[10px] border p-4 transition-colors focus-within:ring-2 focus-within:ring-artis-gold focus-within:ring-offset-2 ${
+                    selected
+                      ? "border-artis-navy bg-artis-soft-gold"
+                      : "border-artis-border bg-artis-white hover:border-artis-navy hover:bg-artis-off-white"
+                  }`}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-lg font-bold">
+                      {group.displayName}
+                    </span>
+                    <span className="mt-1 block text-sm leading-5 text-artis-slate">
+                      {formatScheduleOverview(group.weeklySchedule)}
+                    </span>
+                  </span>
+                  <input
+                    type="radio"
+                    name="trainingGroupId"
+                    value={group.id}
+                    checked={selected}
+                    onChange={() => setSelectedGroupId(group.id)}
+                    required
+                    className="size-5 shrink-0 accent-artis-navy"
+                  />
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend className="text-lg font-bold">Program term</legend>
+          <p className="mt-1 text-sm leading-6 text-artis-slate">
+            Longer terms reduce the average monthly cost.
+          </p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {programPackages.map((programPackage) => {
+              const selected = programPackage.id === selectedPackageId;
+
+              return (
+                <label
+                  key={programPackage.id}
+                  className={`flex cursor-pointer items-start gap-3 rounded-[10px] border p-4 transition-colors focus-within:ring-2 focus-within:ring-artis-gold focus-within:ring-offset-2 ${
+                    selected
+                      ? "border-artis-navy bg-artis-navy text-artis-white"
+                      : "border-artis-border bg-artis-white hover:border-artis-navy hover:bg-artis-off-white"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="programPackageId"
+                    value={programPackage.id}
+                    checked={selected}
+                    onChange={() => setSelectedPackageId(programPackage.id)}
+                    required
+                    className="mt-1 size-5 shrink-0 accent-artis-gold"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">
+                      {formatPackageDuration(programPackage.durationMonths)}
+                    </span>
+                    <span className="mt-1 block text-xl font-bold">
+                      {formatCurrency(
+                        programPackage.priceCents,
+                        programPackage.currency,
+                      )}
+                    </span>
+                    <span
+                      className={`mt-1 block text-xs ${
+                        selected ? "text-artis-white/75" : "text-artis-slate"
+                      }`}
+                    >
+                      {programPackage.taxBehavior === "exclusive"
+                        ? "Plus HST"
+                        : "HST included"}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <output
+          aria-live="polite"
+          className="block rounded-[10px] border border-artis-border bg-artis-soft-gold p-5 sm:p-6"
+        >
+          <span className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <span>
+              <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-artis-gold">
+                Selected training
               </span>
-              <span className="hidden sm:inline">
-                {` · ${joinDays(trainingDaysShort, "/")} ${formatTimeRange(
-                  firstTrainingSession.startTime,
-                  firstTrainingSession.endTime,
-                )}`}
+              <span className="mt-2 block text-xl font-bold">
+                {selectedGroup.displayName}
               </span>
-            </>
-          ) : null}
-          {firstGameSession ? (
-            <>
-              <span className="block sm:hidden">
-                {joinDays(gameDaysShort, " + ")} ·{" "}
-                {formatTimeRange(
-                  firstGameSession.startTime,
-                  firstGameSession.endTime,
-                )}{" "}
-                Game / Match
+            </span>
+            <span className="w-fit rounded-full bg-artis-white px-3 py-1.5 text-sm font-semibold">
+              {formatPackageDuration(selectedPackage.durationMonths)} ·{" "}
+              {formatCurrency(
+                selectedPackage.priceCents,
+                selectedPackage.currency,
+              )}
+              {taxLabel}
+            </span>
+          </span>
+
+          <span className="mt-5 grid gap-4 border-t border-artis-gold/35 pt-5 md:grid-cols-3">
+            <span>
+              <span className="block text-xs font-semibold uppercase tracking-[0.1em] text-artis-slate">
+                Weekly schedule
               </span>
-              <span className="hidden sm:inline">
-                {` · ${joinDays(gameDaysShort, "/")} ${formatTimeRange(
-                  firstGameSession.startTime,
-                  firstGameSession.endTime,
-                )}`}
+              {firstTrainingSession ? (
+                <span className="mt-1 block text-sm font-semibold leading-6">
+                  {joinDays(trainingDaysShort, " + ")} ·{" "}
+                  {formatTimeRange(
+                    firstTrainingSession.startTime,
+                    firstTrainingSession.endTime,
+                  )}
+                </span>
+              ) : null}
+              {firstGameSession ? (
+                <span className="block text-sm font-semibold leading-6">
+                  {joinDays(gameDaysShort, " + ")} ·{" "}
+                  {formatTimeRange(
+                    firstGameSession.startTime,
+                    firstGameSession.endTime,
+                  )}{" "}
+                  Game / Match
+                </span>
+              ) : null}
+            </span>
+
+            <span>
+              <span className="block text-xs font-semibold uppercase tracking-[0.1em] text-artis-slate">
+                Location
               </span>
-            </>
-          ) : null}
-          <span className="sr-only">
-            {` · ${selectedPackage.displayName} · ${formatCurrency(
-              selectedPackage.priceCents,
-              selectedPackage.currency,
-            )}${taxLabel}`}
+              <span className="mt-1 block text-sm font-semibold leading-6">
+                Central Huron Secondary School gym
+              </span>
+            </span>
+
+            <span>
+              <span className="block text-xs font-semibold uppercase tracking-[0.1em] text-artis-slate">
+                Capacity
+              </span>
+              <span className="mt-1 block text-sm font-semibold leading-6">
+                Limited to {selectedGroup.capacity} players
+              </span>
+            </span>
           </span>
         </output>
 
-        <p>Location: Central Huron Secondary School gym</p>
-        <p>Capacity: Limited to {selectedGroup.capacity} players.</p>
-      </div>
+        <div className="border-t border-artis-border pt-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
+            Player kit
+          </p>
+          <h3 className="mt-2 text-xl font-bold">Jersey information</h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-artis-slate">
+            Each player receives one personalized ARTIS Soccer Academy jersey
+            per year.
+          </p>
 
-      <div className="mt-7">
-        <h3 className="font-normal uppercase">Jersey information</h3>
-        <p>Jersey size — [Size options pending client confirmation]</p>
-        <p>Preferred name to appear on jersey — Enter name</p>
-        <p>
-          One personalized ARTIS Soccer Academy jersey is provided per player
-          per year. Returning players who have already received a jersey should
-          continue using their existing jersey.
-        </p>
-      </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[10px] border border-artis-border bg-artis-off-white p-4">
+              <p className="text-sm font-semibold">Jersey size</p>
+              <p className="mt-1 text-sm leading-6 text-artis-slate">
+                Size options pending client confirmation
+              </p>
+            </div>
+            <div className="rounded-[10px] border border-artis-border bg-artis-off-white p-4">
+              <p className="text-sm font-semibold">Name on jersey</p>
+              <p className="mt-1 text-sm leading-6 text-artis-slate">
+                Enter the player&apos;s preferred name during registration
+              </p>
+            </div>
+          </div>
 
-      <div className="mt-7">
-        <p>
-          Programs begin on the first day of the month. Registrations submitted
-          after the month has started begin the following month.
-        </p>
-        <p>
-          Program start:{" "}
-          <span suppressHydrationWarning>{formatProgramStart()}</span>
-        </p>
+          <p className="mt-4 rounded-[10px] bg-artis-soft-gold p-4 text-sm leading-6 text-artis-slate">
+            Returning players who have already received a jersey should continue
+            using their existing jersey.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-4 rounded-[10px] bg-artis-deep-navy p-5 text-artis-white sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="max-w-3xl">
+            <h3 className="font-bold">Program start</h3>
+            <p className="mt-1 text-sm leading-6 text-artis-white/75">
+              Programs begin on the first day of the month. Registrations made
+              after a month has started begin the following month.
+            </p>
+          </div>
+          <p className="w-fit shrink-0 rounded-full bg-artis-white px-4 py-2 text-sm font-bold text-artis-navy">
+            <span suppressHydrationWarning>{formatProgramStart()}</span>
+          </p>
+        </div>
       </div>
     </section>
   );
