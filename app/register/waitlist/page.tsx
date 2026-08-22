@@ -47,7 +47,7 @@ export default async function WaitlistPage({
             Join the Waitlist
           </h1>
 
-          <p className="w-full text-base leading-[26px] text-artis-slate xl:text-lg xl:leading-7.5">
+          <p className="w-full text-base leading-6.5 text-artis-slate xl:text-lg xl:leading-7.5">
             No payment is required while your child is on the waitlist. ARTIS
             Soccer Academy will contact you if a place becomes available.
           </p>

@@ -11,7 +11,7 @@ export const metedata: Metadata = {
 
 function ImagePlaceholder() {
   return (
-    <div className="flex h-[195px] w-full max-w-[900px] items-center justify-center rounded-2xl border-2 border-dashed border-artis-border bg-artis-soft-gold p-5 text-center xl:h-[514px] xl:p-6">
+    <div className="flex h-48.75 w-full max-w-225 items-center justify-center rounded-2xl border-2 border-dashed border-artis-border bg-artis-soft-gold p-5 text-center xl:h-128.5 xl:p-6">
       <div>
         <p
           aria-hidden="true"
@@ -36,12 +36,12 @@ export default function AboutPage() {
       <SiteHeader />
 
       <main className="bg-artis-white">
-        <section className="mx-auto w-full max-w-[1280px] px-6 pt-10 pb-12 xl:px-0 xl:py-18">
+        <section className="mx-auto w-full max-w-7xl px-6 pt-10 pb-12 xl:px-0 xl:py-18">
           <h1 className="text-[40px] font-bold leading-12 tracking-[-1px] xl:text-[64px] xl:leading-18 xl:tracking-[-2px]">
             About ARTIS Soccer Academy
           </h1>
 
-          <p className="mt-6 max-w-[900px] text-base leading-[26px] text-artis-slate xl:mt-7 xl:text-lg xl:leading-[30px]">
+          <p className="mt-6 max-w-225 text-base leading-6.5 text-artis-slate xl:mt-7 xl:text-lg xl:leading-7.5">
             Master the Art. Build the Skill. Develop Discipline. Grow
             Confidence. Love the Game.
           </p>
@@ -50,7 +50,7 @@ export default function AboutPage() {
             <ImagePlaceholder />
           </div>
 
-          <h2 className="mt-6 max-w-[900px] text-[22px] font-semibold leading-[30px] xl:mt-7 xl:text-[36px] xl:font-bold xl:leading-11 xl:tracking-[-1px]">
+          <h2 className="mt-6 max-w-225 text-[22px] font-semibold leading-7.5 xl:mt-7 xl:text-[36px] xl:font-bold xl:leading-11 xl:tracking-[-1px]">
             Soccer is both an art and a skill.
           </h2>
 
