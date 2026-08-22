@@ -56,19 +56,19 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
       <SiteHeader />
 
       <main className="bg-artis-white">
-        <section className="mx-auto w-full max-w-[880px] px-6 pt-10 pb-12 xl:px-0 xl:py-18">
+        <section className="mx-auto w-full max-w-220 px-6 pt-10 pb-12 xl:px-0 xl:py-18">
           <h1 className="text-[40px] font-bold leading-12 tracking-[-1px] xl:text-[64px] xl:leading-18 xl:tracking-[-2px]">
             Contact Us
           </h1>
 
-          <p className="mt-5 text-base leading-[26px] text-artis-slate xl:mt-6 xl:text-lg xl:leading-[30px]">
+          <p className="mt-5 text-base leading-6.5 text-artis-slate xl:mt-6 xl:text-lg xl:leading-7.5">
             Contact form delivery will be enabled after the academy’s final
             email details are confirmed.
           </p>
 
           <form
             aria-describedby="contact-form-status"
-            className="mt-5 space-y-[18px] bg-artis-soft-gold px-4 py-5 xl:mt-6 xl:space-y-5 xl:p-8"
+            className="mt-5 space-y-4.5 bg-artis-soft-gold px-4 py-5 xl:mt-6 xl:space-y-5 xl:p-8"
           >
             <FormField id="fullName" label="Full name" required>
               <input

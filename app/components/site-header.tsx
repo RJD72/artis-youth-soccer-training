@@ -15,7 +15,7 @@ const primaryNavigation = [
 
 export default function SiteHeader() {
   return (
-    <header className="relative z-40 bg-artis-white">
+    <header className="sticky top-0  z-50 bg-artis-white">
       <div className="mx-auto flex h-[84px] w-full max-w-[1280px] items-center px-5 xl:h-28 xl:gap-10 xl:px-0">
         <Link
           href="/"
