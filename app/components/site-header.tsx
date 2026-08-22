@@ -2,8 +2,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { MobileFooterContent } from "./site-footer";
-
 const primaryNavigation = [
   { href: "/", label: "Home" },
   { href: "/#training", label: "Training" },
@@ -71,7 +69,6 @@ export default function SiteHeader() {
                 </Link>
               ))}
             </nav>
-            <MobileFooterContent />
           </div>
         </details>
       </div>
