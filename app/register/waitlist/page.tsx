@@ -42,17 +42,17 @@ export default async function WaitlistPage({
       <SiteHeader />
 
       <main className="bg-artis-white">
-        <section className="mx-auto flex w-full max-w-[880px] flex-col items-start gap-5 px-6 pt-10 pb-12 xl:gap-[22px] xl:px-0 xl:py-18">
-          <h1 className="w-full text-[40px] font-bold leading-[48px] tracking-[-1px] xl:text-[64px] xl:leading-[72px] xl:tracking-[-2px]">
+        <section className="mx-auto flex w-full max-w-220 flex-col items-start gap-5 px-6 pt-10 pb-12 xl:gap-5.5 xl:px-0 xl:py-18">
+          <h1 className="w-full text-[40px] font-bold leading-12 tracking-[-1px] xl:text-[64px] xl:leading-18 xl:tracking-[-2px]">
             Join the Waitlist
           </h1>
 
-          <p className="w-full text-base leading-[26px] text-artis-slate xl:text-lg xl:leading-[30px]">
+          <p className="w-full text-base leading-[26px] text-artis-slate xl:text-lg xl:leading-7.5">
             No payment is required while your child is on the waitlist. ARTIS
             Soccer Academy will contact you if a place becomes available.
           </p>
 
-          <form className="flex w-full flex-col gap-4 bg-artis-soft-gold px-4 py-5 xl:gap-[18px] xl:p-8">
+          <form className="flex w-full flex-col gap-4 bg-artis-soft-gold px-4 py-5 xl:gap-4.5 xl:p-8">
             <div className="flex h-20 w-full flex-col gap-2">
               <label
                 htmlFor="training-group"
@@ -60,7 +60,7 @@ export default async function WaitlistPage({
               >
                 Selected age group *
               </label>
-              <div className="relative h-[52px] w-full">
+              <div className="relative h-13 w-full">
                 <select
                   id="training-group"
                   name="trainingGroup"
@@ -193,7 +193,7 @@ export default async function WaitlistPage({
             <button
               type="button"
               disabled
-              className="inline-flex min-h-12 w-full items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-center text-[15px] font-semibold leading-5 text-artis-white xl:w-[220px]"
+              className="inline-flex min-h-12 w-full items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-center text-[15px] font-semibold leading-5 text-artis-white xl:w-55"
             >
               Join the Waitlist
             </button>

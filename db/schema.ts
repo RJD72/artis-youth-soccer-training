@@ -181,6 +181,73 @@ export const guardians = mysqlTable("guardians", {
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 });
 
+// A waitlist entry stores only the information needed to contact a family when
+// a place becomes available. It remains separate from players and
+// registrations because joining the waitlist does not require payment, a
+// program package, medical details, or emergency-contact information.
+export const waitlistEntries = mysqlTable(
+  "waitlist_entries",
+  {
+    id: int("id", {
+      unsigned: true,
+    })
+      .autoincrement()
+      .primaryKey(),
+
+    trainingGroupId: int("training_group_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => trainingGroups.id, {
+        onDelete: "restrict",
+      }),
+
+    childFirstName: varchar("child_first_name", {
+      length: 50,
+    }).notNull(),
+
+    childLastName: varchar("child_last_name", {
+      length: 50,
+    }).notNull(),
+
+    guardianFullName: varchar("guardian_full_name", {
+      length: 100,
+    }).notNull(),
+
+    email: varchar("email", {
+      length: 254,
+    }).notNull(),
+
+    phone: varchar("phone", {
+      length: 30,
+    }).notNull(),
+
+    notes: text("notes"),
+
+    status: mysqlEnum("status", [
+      "waiting",
+      "contacted",
+      "converted",
+      "cancelled",
+    ])
+      .notNull()
+      .default("waiting"),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+
+    updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+  },
+  (table) => [
+    index("waitlist_entries_group_status_created_index").on(
+      table.trainingGroupId,
+      table.status,
+      table.createdAt,
+    ),
+
+    index("waitlist_entries_email_index").on(table.email),
+  ],
+);
+
 export const players = mysqlTable(
   "players",
   {
