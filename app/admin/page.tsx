@@ -41,10 +41,13 @@ export default async function AdminPage() {
           <SignOutButton />
         </div>
 
-        <nav className="mt-8" aria-label="Administrator tools">
+        <nav
+          className="mt-8 grid gap-5 lg:grid-cols-2"
+          aria-label="Administrator tools"
+        >
           <Link
             href="/admin/registrations"
-            className="flex flex-col gap-5 rounded-2xl border border-artis-border bg-artis-white p-5 transition hover:border-artis-gold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+            className="flex h-full flex-col justify-between gap-5 rounded-2xl border border-artis-border bg-artis-white p-5 transition hover:border-artis-gold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30 sm:p-6"
           >
             <span>
               <span className="block text-lg font-semibold text-artis-navy">
@@ -58,6 +61,25 @@ export default async function AdminPage() {
 
             <span className="shrink-0 font-semibold text-artis-navy underline decoration-artis-gold decoration-2 underline-offset-4">
               View registrations →
+            </span>
+          </Link>
+
+          <Link
+            href="/admin/waitlist"
+            className="flex h-full flex-col justify-between gap-5 rounded-2xl border border-artis-border bg-artis-white p-5 transition hover:border-artis-gold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30 sm:p-6"
+          >
+            <span>
+              <span className="block text-lg font-semibold text-artis-navy">
+                Active waitlist
+              </span>
+              <span className="mt-1 block max-w-2xl text-sm leading-6 text-artis-slate">
+                Review waiting families, guardian contact information, selected
+                age groups, submission dates, and current statuses.
+              </span>
+            </span>
+
+            <span className="shrink-0 font-semibold text-artis-navy underline decoration-artis-gold decoration-2 underline-offset-4">
+              View waitlist →
             </span>
           </Link>
         </nav>
