@@ -1,8 +1,9 @@
-// ARTIS WAITLIST PAGE — AUGUST 22, 2026
 import type { Metadata } from "next";
 
 import SiteFooter from "../../components/site-footer";
 import SiteHeader from "../../components/site-header";
+
+import { joinWaitlist } from "./action";
 
 export const metadata: Metadata = {
   title: "Join the Waitlist",
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 
 type WaitlistPageProps = {
   searchParams: Promise<{
+    error?: string | string[];
     group?: string | string[];
   }>;
 };
@@ -29,30 +31,78 @@ function isTrainingGroupSlug(value: string): value is TrainingGroupSlug {
 const fieldClassName =
   "h-[52px] w-full rounded-[10px] border border-artis-border bg-artis-white px-4 py-3.5 text-[15px] leading-normal text-artis-navy outline-none placeholder:text-artis-slate focus:border-artis-navy focus:ring-2 focus:ring-artis-gold";
 
+const waitlistErrorMessages = {
+  "invalid-form": "Please check the information you entered and try again.",
+  "invalid-group": "Please choose a valid age group.",
+  "space-available":
+    "A space is currently available in this age group. Please use the regular registration form instead.",
+  "waitlist-unavailable":
+    "The waitlist is not currently available for this age group.",
+  "already-waitlisted":
+    "This child is already on the waitlist for the selected age group.",
+} as const;
+
+type WaitlistErrorCode = keyof typeof waitlistErrorMessages;
+
+function isWaitlistErrorCode(value: string): value is WaitlistErrorCode {
+  return value in waitlistErrorMessages;
+}
+
 export default async function WaitlistPage({
   searchParams,
 }: WaitlistPageProps) {
-  const { group: groupValue } = await searchParams;
+  const { error: errorValue, group: groupValue } = await searchParams;
   const requestedGroup = Array.isArray(groupValue) ? groupValue[0] : groupValue;
+  const requestedError = Array.isArray(errorValue) ? errorValue[0] : errorValue;
   const selectedGroup =
     requestedGroup && isTrainingGroupSlug(requestedGroup) ? requestedGroup : "";
+  const errorMessage =
+    requestedError && isWaitlistErrorCode(requestedError)
+      ? waitlistErrorMessages[requestedError]
+      : undefined;
 
   return (
     <div className="min-h-screen bg-artis-off-white text-artis-navy">
       <SiteHeader />
 
       <main className="bg-artis-white">
-        <section className="mx-auto flex w-full max-w-220 flex-col items-start gap-5 px-6 pt-10 pb-12 xl:gap-5.5 xl:px-0 xl:py-18">
-          <h1 className="w-full text-[40px] font-bold leading-12 tracking-[-1px] xl:text-[64px] xl:leading-18 xl:tracking-[-2px]">
+        <section className="mx-auto flex w-full max-w-[880px] flex-col items-start gap-5 px-6 pt-10 pb-12 xl:gap-[22px] xl:px-0 xl:py-18">
+          <h1 className="w-full text-[40px] font-bold leading-[48px] tracking-[-1px] xl:text-[64px] xl:leading-[72px] xl:tracking-[-2px]">
             Join the Waitlist
           </h1>
 
-          <p className="w-full text-base leading-6.5 text-artis-slate xl:text-lg xl:leading-7.5">
+          <p className="w-full text-base leading-[26px] text-artis-slate xl:text-lg xl:leading-[30px]">
             No payment is required while your child is on the waitlist. ARTIS
             Soccer Academy will contact you if a place becomes available.
           </p>
 
-          <form className="flex w-full flex-col gap-4 bg-artis-soft-gold px-4 py-5 xl:gap-4.5 xl:p-8">
+          <form
+            action={joinWaitlist}
+            className="relative flex w-full flex-col gap-4 bg-artis-soft-gold px-4 py-5 xl:gap-[18px] xl:p-8"
+          >
+            {errorMessage ? (
+              <output
+                aria-live="polite"
+                className="block w-full rounded-[10px] border border-artis-error bg-artis-white px-4 py-3 text-sm leading-6 text-artis-error"
+              >
+                {errorMessage}
+              </output>
+            ) : null}
+
+            <div
+              aria-hidden="true"
+              className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden"
+            >
+              <label htmlFor="website">Website</label>
+              <input
+                id="website"
+                name="website"
+                type="text"
+                autoComplete="off"
+                tabIndex={-1}
+              />
+            </div>
+
             <div className="flex h-20 w-full flex-col gap-2">
               <label
                 htmlFor="training-group"
@@ -60,7 +110,7 @@ export default async function WaitlistPage({
               >
                 Selected age group *
               </label>
-              <div className="relative h-13 w-full">
+              <div className="relative h-[52px] w-full">
                 <select
                   id="training-group"
                   name="trainingGroup"
@@ -97,6 +147,7 @@ export default async function WaitlistPage({
                 id="child-first-name"
                 name="childFirstName"
                 type="text"
+                maxLength={50}
                 required
                 placeholder="Enter first name"
                 className={fieldClassName}
@@ -114,6 +165,7 @@ export default async function WaitlistPage({
                 id="child-last-name"
                 name="childLastName"
                 type="text"
+                maxLength={50}
                 required
                 placeholder="Enter last name"
                 className={fieldClassName}
@@ -132,6 +184,7 @@ export default async function WaitlistPage({
                 name="guardianName"
                 type="text"
                 autoComplete="name"
+                maxLength={100}
                 required
                 placeholder="Enter full name"
                 className={fieldClassName}
@@ -150,6 +203,7 @@ export default async function WaitlistPage({
                 name="email"
                 type="email"
                 autoComplete="email"
+                maxLength={254}
                 required
                 placeholder="Enter email address"
                 className={fieldClassName}
@@ -168,6 +222,7 @@ export default async function WaitlistPage({
                 name="phoneNumber"
                 type="tel"
                 autoComplete="tel"
+                maxLength={30}
                 required
                 placeholder="Enter phone number"
                 className={fieldClassName}
@@ -185,15 +240,15 @@ export default async function WaitlistPage({
                 id="notes"
                 name="notes"
                 type="text"
+                maxLength={1000}
                 placeholder="Add notes"
                 className={fieldClassName}
               />
             </div>
 
             <button
-              type="button"
-              disabled
-              className="inline-flex min-h-12 w-full items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-center text-[15px] font-semibold leading-5 text-artis-white xl:w-55"
+              type="submit"
+              className="inline-flex min-h-12 w-full items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-center text-[15px] font-semibold leading-5 text-artis-white xl:w-[220px]"
             >
               Join the Waitlist
             </button>
