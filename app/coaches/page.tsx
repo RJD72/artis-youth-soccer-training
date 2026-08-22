@@ -18,7 +18,7 @@ const coachPlaceholders = [
 
 function CoachPhotoPlaceholder() {
   return (
-    <div className="flex h-[159px] w-full items-center justify-center rounded-2xl border-2 border-dashed border-artis-border bg-artis-soft-gold p-4 text-center xl:h-[178px]">
+    <div className="flex h-39.75 w-full items-center justify-center rounded-2xl border-2 border-dashed border-artis-border bg-artis-soft-gold p-4 text-center xl:h-44.5">
       <div>
         <p
           aria-hidden="true"
