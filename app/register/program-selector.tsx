@@ -36,11 +36,35 @@ type ProgramSelectorProps = {
   programPackages: ProgramPackageOption[];
 };
 
-const timeFormatter = new Intl.DateTimeFormat("en-CA", {
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "UTC",
-});
+const shortDayNames: Record<string, string> = {
+  monday: "Mon",
+  tuesday: "Tue",
+  wednesday: "Wed",
+  thursday: "Thu",
+  friday: "Fri",
+  saturday: "Sat",
+  sunday: "Sun",
+};
+
+const longDayNames: Record<string, string> = {
+  monday: "Monday",
+  tuesday: "Tuesday",
+  wednesday: "Wednesday",
+  thursday: "Thursday",
+  friday: "Friday",
+  saturday: "Saturday",
+  sunday: "Sunday",
+};
+
+const dayOrder: Record<string, number> = {
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+  sunday: 7,
+};
 
 function formatCurrency(priceCents: number, currency: string): string {
   return new Intl.NumberFormat("en-CA", {
@@ -51,19 +75,65 @@ function formatCurrency(priceCents: number, currency: string): string {
   }).format(priceCents / 100);
 }
 
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(":").map(Number);
-  const date = new Date(Date.UTC(2000, 0, 1, hours, minutes));
+function formatPackageDuration(durationMonths: number): string {
+  if (durationMonths === 12) {
+    return "1 Year";
+  }
 
-  return timeFormatter.format(date);
+  return `${durationMonths} Month${durationMonths === 1 ? "" : "s"}`;
 }
 
-function formatDay(day: string): string {
-  return `${day.charAt(0).toUpperCase()}${day.slice(1)}`;
+function formatClockTime(time: string): { value: string; period: string } {
+  const [hourValue = 0, minuteValue = 0] = time.split(":").map(Number);
+  const period = hourValue >= 12 ? "PM" : "AM";
+  const hour = hourValue % 12 || 12;
+  const minutes =
+    minuteValue === 0 ? "" : `:${String(minuteValue).padStart(2, "0")}`;
+
+  return { value: `${hour}${minutes}`, period };
 }
 
-function formatSessionType(sessionType: string): string {
-  return sessionType === "game_training" ? "Game / match" : "Training";
+function formatTimeRange(startTime: string, endTime: string): string {
+  const start = formatClockTime(startTime);
+  const end = formatClockTime(endTime);
+
+  if (start.period === end.period) {
+    return `${start.value}–${end.value} ${end.period}`;
+  }
+
+  return `${start.value} ${start.period}–${end.value} ${end.period}`;
+}
+
+function joinDays(days: string[], separator: string): string {
+  return days.join(separator);
+}
+
+function formatProgramStart(): string {
+  const now = new Date();
+  const torontoDateParts = new Intl.DateTimeFormat("en-CA", {
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+    timeZone: "America/Toronto",
+  }).formatToParts(now);
+
+  const currentDay = Number(
+    torontoDateParts.find((part) => part.type === "day")?.value,
+  );
+  const currentMonth = Number(
+    torontoDateParts.find((part) => part.type === "month")?.value,
+  );
+  const currentYear = Number(
+    torontoDateParts.find((part) => part.type === "year")?.value,
+  );
+  const startMonthIndex = currentDay === 1 ? currentMonth - 1 : currentMonth;
+  const startDate = new Date(Date.UTC(currentYear, startMonthIndex, 1));
+
+  return new Intl.DateTimeFormat("en-CA", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(startDate);
 }
 
 export default function ProgramSelector({
@@ -86,175 +156,185 @@ export default function ProgramSelector({
 
   if (!selectedGroup || !selectedPackage) {
     return (
-      <section className="rounded-2xl border border-artis-border bg-artis-white p-5 sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
-          Registration update
-        </p>
-        <h2 className="mt-3 text-2xl font-bold">No programs are available</h2>
-        <p className="mt-3 leading-7 text-artis-slate">
-          Please check back after registration options have been added.
+      <section className="rounded-2xl border border-artis-border bg-artis-white p-6">
+        <h2 className="text-base font-normal uppercase">Program selection</h2>
+        <p className="mt-2 leading-[25px] text-artis-slate">
+          Registration options are not currently available.
         </p>
       </section>
     );
   }
 
+  const trainingSessions = selectedGroup.weeklySchedule
+    .filter((session) => session.sessionType !== "game_training")
+    .sort(
+      (first, second) =>
+        (dayOrder[first.dayOfWeek] ?? 8) - (dayOrder[second.dayOfWeek] ?? 8),
+    );
+  const gameSessions = selectedGroup.weeklySchedule
+    .filter((session) => session.sessionType === "game_training")
+    .sort(
+      (first, second) =>
+        (dayOrder[first.dayOfWeek] ?? 8) - (dayOrder[second.dayOfWeek] ?? 8),
+    );
+  const firstTrainingSession = trainingSessions[0];
+  const firstGameSession = gameSessions[0];
+  const trainingDaysLong = trainingSessions.map(
+    (session) => longDayNames[session.dayOfWeek] ?? session.dayOfWeek,
+  );
+  const trainingDaysShort = trainingSessions.map(
+    (session) => shortDayNames[session.dayOfWeek] ?? session.dayOfWeek,
+  );
+  const gameDaysLong = gameSessions.map(
+    (session) => longDayNames[session.dayOfWeek] ?? session.dayOfWeek,
+  );
+  const gameDaysShort = gameSessions.map(
+    (session) => shortDayNames[session.dayOfWeek] ?? session.dayOfWeek,
+  );
+  const taxLabel =
+    selectedPackage.taxBehavior === "exclusive" ? " + HST" : " (HST included)";
+
   return (
-    <section className="rounded-2xl border border-artis-border bg-artis-white p-5 sm:p-8">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
-          Program selection
+    <section className="rounded-2xl border border-artis-border bg-artis-white p-6 text-base leading-[25px]">
+      <h2 className="font-normal uppercase">Program selection</h2>
+
+      <fieldset className="mt-1">
+        <legend className="sr-only">Age group</legend>
+        <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-6">
+          <span aria-hidden="true">Age group:</span>
+          {trainingGroups.map((group) => (
+            <label
+              key={group.id}
+              className="flex cursor-pointer items-center gap-1.5"
+            >
+              <input
+                type="radio"
+                name="trainingGroupId"
+                value={group.id}
+                checked={group.id === selectedGroupId}
+                onChange={() => setSelectedGroupId(group.id)}
+                required
+                className="size-4 shrink-0 accent-artis-navy"
+              />
+              <span>{group.displayName}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="mt-7 sm:mt-1">
+        <legend className="sr-only">Term</legend>
+        <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-6">
+          <span aria-hidden="true" className="mb-1 uppercase sm:mb-0">
+            Term:
+          </span>
+          {programPackages.map((programPackage) => (
+            <label
+              key={programPackage.id}
+              className="flex cursor-pointer items-center gap-1.5"
+            >
+              <input
+                type="radio"
+                name="programPackageId"
+                value={programPackage.id}
+                checked={programPackage.id === selectedPackageId}
+                onChange={() => setSelectedPackageId(programPackage.id)}
+                required
+                className="size-4 shrink-0 accent-artis-navy"
+              />
+              <span>
+                {formatPackageDuration(programPackage.durationMonths)} —{" "}
+                {formatCurrency(
+                  programPackage.priceCents,
+                  programPackage.currency,
+                )}
+                {programPackage.taxBehavior === "exclusive"
+                  ? " + HST"
+                  : " (HST included)"}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className="mt-7 sm:mt-1">
+        <p>
+          Schedule: {joinDays(trainingDaysLong, " + ")} training
+          {gameDaysLong.length > 0
+            ? ` · ${joinDays(gameDaysLong, " + ")} game / match`
+            : ""}
         </p>
-        <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-          Choose the right training option
-        </h2>
-        <p className="mt-3 max-w-3xl leading-7 text-artis-slate">
-          Select the player&apos;s age group and the length of the program. Your
-          selection will be included when the registration form is submitted.
+
+        <output aria-live="polite" className="mt-7 block sm:mt-1">
+          <span className="block sm:hidden">Selected example:</span>
+          <span className="hidden sm:inline">Selected example: </span>
+          <span className="hidden sm:inline">{selectedGroup.displayName}</span>
+          {firstTrainingSession ? (
+            <>
+              <span className="block sm:hidden">
+                {joinDays(trainingDaysShort, " + ")} ·{" "}
+                {formatTimeRange(
+                  firstTrainingSession.startTime,
+                  firstTrainingSession.endTime,
+                )}
+              </span>
+              <span className="hidden sm:inline">
+                {` · ${joinDays(trainingDaysShort, "/")} ${formatTimeRange(
+                  firstTrainingSession.startTime,
+                  firstTrainingSession.endTime,
+                )}`}
+              </span>
+            </>
+          ) : null}
+          {firstGameSession ? (
+            <>
+              <span className="block sm:hidden">
+                {joinDays(gameDaysShort, " + ")} ·{" "}
+                {formatTimeRange(
+                  firstGameSession.startTime,
+                  firstGameSession.endTime,
+                )}{" "}
+                Game / Match
+              </span>
+              <span className="hidden sm:inline">
+                {` · ${joinDays(gameDaysShort, "/")} ${formatTimeRange(
+                  firstGameSession.startTime,
+                  firstGameSession.endTime,
+                )}`}
+              </span>
+            </>
+          ) : null}
+          <span className="sr-only">
+            {` · ${selectedPackage.displayName} · ${formatCurrency(
+              selectedPackage.priceCents,
+              selectedPackage.currency,
+            )}${taxLabel}`}
+          </span>
+        </output>
+
+        <p>Location: Central Huron Secondary School gym</p>
+        <p>Capacity: Limited to {selectedGroup.capacity} players.</p>
+      </div>
+
+      <div className="mt-7">
+        <h3 className="font-normal uppercase">Jersey information</h3>
+        <p>Jersey size — [Size options pending client confirmation]</p>
+        <p>Preferred name to appear on jersey — Enter name</p>
+        <p>
+          One personalized ARTIS Soccer Academy jersey is provided per player
+          per year. Returning players who have already received a jersey should
+          continue using their existing jersey.
         </p>
       </div>
 
-      <fieldset className="mt-8">
-        <legend className="text-lg font-bold">Age group</legend>
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          {trainingGroups.map((group) => {
-            const selected = group.id === selectedGroupId;
-
-            return (
-              <label
-                key={group.id}
-                className={`block cursor-pointer rounded-2xl border p-5 transition-colors sm:p-6 ${
-                  selected
-                    ? "border-artis-navy bg-artis-soft-gold/40"
-                    : "border-artis-border bg-artis-off-white hover:border-artis-navy"
-                }`}
-              >
-                <span className="flex items-start gap-3">
-                  <input
-                    type="radio"
-                    name="trainingGroupId"
-                    value={group.id}
-                    checked={selected}
-                    onChange={() => setSelectedGroupId(group.id)}
-                    required
-                    className="mt-1 size-5 shrink-0 accent-artis-navy"
-                  />
-
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-start justify-between gap-3">
-                      <span>
-                        <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-artis-gold">
-                          Soccer development program
-                        </span>
-                        <span className="mt-2 block text-xl font-bold">
-                          {group.displayName}
-                        </span>
-                      </span>
-
-                      <span className="rounded-full bg-artis-soft-gold px-3 py-1 text-xs font-semibold">
-                        Maximum {group.capacity} players
-                      </span>
-                    </span>
-
-                    <span className="mt-5 block space-y-3">
-                      {group.weeklySchedule.map((session) => (
-                        <span
-                          key={session.id}
-                          className="flex flex-col gap-1 border-t border-artis-border pt-3 text-sm first:border-t-0 first:pt-0 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                          <span className="font-semibold">
-                            {formatDay(session.dayOfWeek)}
-                          </span>
-                          <span className="text-artis-slate">
-                            {formatSessionType(session.sessionType)} ·{" "}
-                            {formatTime(session.startTime)}–
-                            {formatTime(session.endTime)}
-                          </span>
-                        </span>
-                      ))}
-                    </span>
-                  </span>
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      </fieldset>
-
-      <fieldset className="mt-10">
-        <legend className="text-lg font-bold">Program package</legend>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {programPackages.map((programPackage) => {
-            const selected = programPackage.id === selectedPackageId;
-
-            return (
-              <label
-                key={programPackage.id}
-                className={`block cursor-pointer rounded-2xl border p-5 transition-colors ${
-                  selected
-                    ? "border-artis-navy bg-artis-soft-gold/40"
-                    : "border-artis-border hover:border-artis-navy"
-                }`}
-              >
-                <span className="flex items-start gap-3">
-                  <input
-                    type="radio"
-                    name="programPackageId"
-                    value={programPackage.id}
-                    checked={selected}
-                    onChange={() => setSelectedPackageId(programPackage.id)}
-                    required
-                    className="mt-1 size-5 shrink-0 accent-artis-navy"
-                  />
-
-                  <span>
-                    <span className="block text-sm font-semibold text-artis-slate">
-                      {programPackage.durationMonths} month
-                      {programPackage.durationMonths === 1 ? "" : "s"}
-                    </span>
-                    <span className="mt-2 block text-lg font-bold">
-                      {programPackage.displayName}
-                    </span>
-                    <span className="mt-5 block text-2xl font-bold">
-                      {formatCurrency(
-                        programPackage.priceCents,
-                        programPackage.currency,
-                      )}
-                    </span>
-                    <span className="mt-1 block text-sm text-artis-slate">
-                      {programPackage.taxBehavior === "exclusive"
-                        ? "Plus HST"
-                        : "HST included"}
-                    </span>
-                  </span>
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      </fieldset>
-
-      <output
-        aria-live="polite"
-        className="mt-8 block rounded-[10px] bg-artis-soft-gold p-5"
-      >
-        <span className="block font-semibold">Selected training</span>
-        <span className="mt-2 block text-sm leading-6 text-artis-slate">
-          {selectedGroup.displayName} · {selectedPackage.displayName} ·{" "}
-          {formatCurrency(selectedPackage.priceCents, selectedPackage.currency)}
-          {selectedPackage.taxBehavior === "exclusive" ? " plus HST" : ""}
-        </span>
-        <span className="mt-1 block text-sm leading-6 text-artis-slate">
-          Central Huron Secondary School · Limited to {selectedGroup.capacity}{" "}
-          players
-        </span>
-      </output>
-
-      <div className="mt-5 rounded-[10px] border border-artis-border p-5">
-        <h3 className="font-semibold">Program dates</h3>
-        <p className="mt-2 max-w-4xl text-sm leading-6 text-artis-slate">
-          Fixed program periods begin on the first of the month and end on the
-          final day of the applicable month. Confirmed dates will be shown
-          before payment.
+      <div className="mt-7">
+        <p>
+          Programs begin on the first day of the month. Registrations submitted
+          after the month has started begin the following month.
+        </p>
+        <p>
+          Program start:{" "}
+          <span suppressHydrationWarning>{formatProgramStart()}</span>
         </p>
       </div>
     </section>
