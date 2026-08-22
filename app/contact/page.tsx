@@ -126,7 +126,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
                 name="message"
                 rows={5}
                 placeholder="Enter message"
-                className={`${fieldClassName} min-h-[52px] resize-y`}
+                className={`${fieldClassName} min-h-13 resize-y`}
                 required
               />
             </FormField>
@@ -142,7 +142,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
             <button
               type="button"
               disabled
-              className="inline-flex min-h-12 w-full cursor-not-allowed items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold leading-5 text-artis-white opacity-60 xl:w-[180px]"
+              className="inline-flex min-h-12 w-full cursor-not-allowed items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold leading-5 text-artis-white opacity-60 xl:w-45"
             >
               Send Message
             </button>
