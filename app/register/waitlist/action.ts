@@ -9,6 +9,7 @@ import { and, count, eq, gt, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import { registrations, trainingGroups, waitlistEntries } from "@/db/schema";
+import { createWaitlistConfirmationReference } from "@/lib/waitlist-confirmation";
 
 type WaitlistErrorCode =
   | "invalid-form"
@@ -30,13 +31,17 @@ type ValidatedWaitlistSubmission = {
 type WaitlistSubmissionOutcome =
   | {
       status: "created";
-      groupSlug: string;
+      entryId: number;
     }
   | {
       status: "rejected";
       groupSlug?: string;
       code: WaitlistErrorCode;
     };
+
+type WaitlistConfirmationReference = ReturnType<
+  typeof createWaitlistConfirmationReference
+>;
 
 function getTextField(formData: FormData, fieldName: string): string | null {
   const value = formData.get(fieldName);
@@ -58,7 +63,7 @@ function hasValidLength(
 
 function isValidEmail(value: string | null): value is string {
   return (
-    hasValidLength(value, 3, 254) && /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(value)
+    hasValidLength(value, 3, 254) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
   );
 }
 
@@ -121,11 +126,15 @@ function redirectToForm(
   redirect(`/register/waitlist?${parameters.toString()}`);
 }
 
-function redirectToConfirmation(groupSlug?: string): never {
+function redirectToConfirmation(
+  reference?: WaitlistConfirmationReference,
+): never {
   const parameters = new URLSearchParams();
 
-  if (groupSlug) {
-    parameters.set("group", groupSlug);
+  if (reference) {
+    parameters.set("entry", reference.entry);
+    parameters.set("expires", reference.expires);
+    parameters.set("signature", reference.signature);
   }
 
   const queryString = parameters.toString();
@@ -150,7 +159,7 @@ export async function joinWaitlist(formData: FormData) {
     (typeof website === "string" && website.trim() !== "") ||
     (website !== null && typeof website !== "string")
   ) {
-    redirectToConfirmation(safeGroupSlug);
+    redirectToConfirmation();
   }
 
   const submission = validateSubmission(formData);
@@ -233,7 +242,7 @@ export async function joinWaitlist(formData: FormData) {
         };
       }
 
-      await transaction.insert(waitlistEntries).values({
+      const [insertResult] = await transaction.insert(waitlistEntries).values({
         trainingGroupId: trainingGroup.id,
         childFirstName: submission.childFirstName,
         childLastName: submission.childLastName,
@@ -244,9 +253,15 @@ export async function joinWaitlist(formData: FormData) {
         status: "waiting",
       });
 
+      const entryId = insertResult.insertId;
+
+      if (!Number.isSafeInteger(entryId) || entryId <= 0) {
+        throw new Error("The waitlist entry was created without a valid ID.");
+      }
+
       return {
         status: "created",
-        groupSlug: trainingGroup.slug,
+        entryId,
       };
     },
   );
@@ -255,5 +270,9 @@ export async function joinWaitlist(formData: FormData) {
     redirectToForm(outcome.code, outcome.groupSlug);
   }
 
-  redirectToConfirmation(outcome.groupSlug);
+  const confirmationReference = createWaitlistConfirmationReference(
+    outcome.entryId,
+  );
+
+  redirectToConfirmation(confirmationReference);
 }
