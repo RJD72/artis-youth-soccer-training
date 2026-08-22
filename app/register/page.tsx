@@ -72,7 +72,7 @@ export default async function RegisterPage() {
   return (
     <div className="min-h-screen bg-artis-off-white text-artis-navy">
       <header className="relative z-40 bg-artis-white">
-        <div className="mx-auto flex h-[84px] w-full max-w-[1280px] items-center px-5 xl:h-28 xl:gap-10 xl:px-0">
+        <div className="mx-auto flex h-21 w-full max-w-7xl items-center px-5 xl:h-28 xl:gap-10 xl:px-0">
           <Link
             href="/"
             className="flex shrink-0 items-center"
@@ -83,14 +83,14 @@ export default async function RegisterPage() {
               alt=""
               width={64}
               height={64}
-              className="size-[52px] object-contain xl:size-16"
+              className="size-13 object-contain xl:size-16"
               priority
             />
           </Link>
 
           <nav
             aria-label="Primary navigation"
-            className="hidden items-center gap-6 whitespace-nowrap text-[15px] font-semibold leading-[22px] xl:flex"
+            className="hidden items-center gap-6 whitespace-nowrap text-[15px] font-semibold leading-5.5 xl:flex"
           >
             {primaryNavigation.map((item) => (
               <Link key={item.href} href={item.href}>
@@ -108,7 +108,7 @@ export default async function RegisterPage() {
           </Link>
 
           <details className="group static ml-auto xl:hidden">
-            <summary className="w-14 cursor-pointer list-none text-right text-[13px] font-semibold leading-[19px] [&::-webkit-details-marker]:hidden">
+            <summary className="w-14 cursor-pointer list-none text-right text-[13px] font-semibold leading-4.75 [&::-webkit-details-marker]:hidden">
               MENU
             </summary>
             <div className="absolute inset-x-0 top-full z-50 shadow-[0_18px_30px_rgba(6,21,34,0.16)]">
@@ -120,7 +120,7 @@ export default async function RegisterPage() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="flex min-h-15 items-center text-xl font-semibold leading-[30px]"
+                    className="flex min-h-15 items-center text-xl font-semibold leading-"
                   >
                     {item.label}
                   </Link>
