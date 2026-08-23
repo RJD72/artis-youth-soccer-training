@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { getActiveAdminWaitlistEntries } from "@/lib/admin-waitlist";
 
-import { updateWaitlistEntryStatus } from "./actions";
+import { WaitlistEntryActions } from "./waitlist-entry-actions";
 
 export const metadata: Metadata = {
   title: "Waitlist",
@@ -34,7 +34,7 @@ export default async function AdminWaitlistPage() {
 
   return (
     <main className="min-h-screen bg-artis-off-white px-4 py-12 sm:px-6 lg:px-8">
-      <section className="mx-auto w-full max-w-6xl">
+      <section className="mx-auto w-full max-w-[1400px]">
         <Link
           href="/admin"
           className="inline-flex text-sm font-semibold text-artis-navy underline decoration-artis-gold decoration-2 underline-offset-4"
@@ -56,35 +56,37 @@ export default async function AdminWaitlistPage() {
         </p>
 
         {waitlistEntries.length > 0 ? (
-          <ol className="mt-8 grid gap-5 lg:grid-cols-2">
+          <ol className="mt-8 space-y-4">
             {waitlistEntries.map((entry) => (
               <li
                 key={entry.id}
-                className="rounded-2xl border border-artis-border bg-artis-white p-5 sm:p-6"
+                className="rounded-2xl border border-artis-border bg-artis-white p-5 sm:p-6 lg:grid lg:grid-cols-[minmax(180px,0.8fr)_minmax(250px,1.15fr)_minmax(230px,1fr)_180px] lg:items-start lg:gap-6 lg:rounded-[10px] lg:px-6 lg:py-5"
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-artis-gold">
-                      Waitlist entry #{entry.id}
-                    </p>
-                    <h2 className="mt-2 text-xl font-semibold text-artis-navy">
-                      {entry.childName}
-                    </h2>
-                    <p className="mt-1 text-sm text-artis-slate">
-                      {entry.trainingGroupName}
-                    </p>
-                  </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-start justify-between gap-3 lg:block">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-artis-gold">
+                        Entry #{entry.id}
+                      </p>
+                      <h2 className="mt-2 text-xl font-semibold text-artis-navy">
+                        {entry.childName}
+                      </h2>
+                      <p className="mt-1 text-sm text-artis-slate">
+                        {entry.trainingGroupName}
+                      </p>
+                    </div>
 
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClassName(
-                      entry.status,
-                    )}`}
-                  >
-                    {formatStatus(entry.status)}
-                  </span>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold lg:mt-3 lg:inline-flex ${getStatusClassName(
+                        entry.status,
+                      )}`}
+                    >
+                      {formatStatus(entry.status)}
+                    </span>
+                  </div>
                 </div>
 
-                <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+                <dl className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2 lg:mt-0 lg:grid-cols-1">
                   <div>
                     <dt className="text-xs font-semibold uppercase tracking-wide text-artis-slate">
                       Parent or guardian
@@ -113,97 +115,47 @@ export default async function AdminWaitlistPage() {
                       </a>
                     </dd>
                   </div>
-
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-artis-slate">
-                      Joined waitlist
-                    </dt>
-                    <dd className="mt-1 text-sm text-artis-navy">
-                      {formatDateTime(entry.createdAt)}
-                    </dd>
-                  </div>
-
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-artis-slate">
-                      Last updated
-                    </dt>
-                    <dd className="mt-1 text-sm text-artis-navy">
-                      {formatDateTime(entry.updatedAt)}
-                    </dd>
-                  </div>
                 </dl>
 
-                {entry.notes ? (
-                  <div className="mt-5 rounded-[10px] bg-artis-off-white px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-artis-slate">
-                      Notes from family
-                    </p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-artis-navy">
-                      {entry.notes}
-                    </p>
-                  </div>
-                ) : null}
+                <div className="mt-6 min-w-0 lg:mt-0">
+                  <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                    <div>
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-artis-slate">
+                        Joined waitlist
+                      </dt>
+                      <dd className="mt-1 text-sm text-artis-navy">
+                        {formatDateTime(entry.createdAt)}
+                      </dd>
+                    </div>
 
-                <div className="mt-6 border-t border-artis-border pt-5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <form action={updateWaitlistEntryStatus}>
-                      <input
-                        type="hidden"
-                        name="waitlistEntryId"
-                        value={entry.id}
-                      />
-                      <button
-                        type="submit"
-                        name="status"
-                        value={
-                          entry.status === "waiting" ? "contacted" : "waiting"
-                        }
-                        className="min-h-12 w-full rounded-[10px] bg-artis-navy px-5 py-3 text-sm font-semibold text-artis-white transition hover:bg-artis-deep-navy focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30 sm:w-auto"
-                      >
-                        {entry.status === "waiting"
-                          ? "Mark as contacted"
-                          : "Return to waiting"}
-                      </button>
-                    </form>
+                    <div>
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-artis-slate">
+                        Last updated
+                      </dt>
+                      <dd className="mt-1 text-sm text-artis-navy">
+                        {formatDateTime(entry.updatedAt)}
+                      </dd>
+                    </div>
+                  </dl>
 
-                    <details className="group rounded-[10px] border border-artis-border bg-artis-off-white sm:max-w-[290px]">
-                      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-sm font-semibold text-artis-error [&::-webkit-details-marker]:hidden">
-                        Cancel entry
-                        <span
-                          aria-hidden="true"
-                          className="text-base transition group-open:rotate-45"
-                        >
-                          +
-                        </span>
-                      </summary>
+                  {entry.notes ? (
+                    <div className="mt-4 rounded-[10px] bg-artis-off-white px-3 py-2.5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-artis-slate">
+                        Notes
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-artis-navy">
+                        {entry.notes}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
 
-                      <div className="border-t border-artis-border px-4 py-4">
-                        <p className="text-sm leading-6 text-artis-slate">
-                          This removes the family from the active waitlist but
-                          keeps the record in the database.
-                        </p>
-
-                        <form
-                          action={updateWaitlistEntryStatus}
-                          className="mt-3"
-                        >
-                          <input
-                            type="hidden"
-                            name="waitlistEntryId"
-                            value={entry.id}
-                          />
-                          <button
-                            type="submit"
-                            name="status"
-                            value="cancelled"
-                            className="min-h-11 w-full rounded-[10px] bg-artis-error px-4 py-2.5 text-sm font-semibold text-artis-white transition hover:bg-artis-error/85 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-error/25"
-                          >
-                            Confirm cancellation
-                          </button>
-                        </form>
-                      </div>
-                    </details>
-                  </div>
+                <div className="mt-6 border-t border-artis-border pt-5 lg:mt-0 lg:border-t-0 lg:pt-0">
+                  <WaitlistEntryActions
+                    entryId={entry.id}
+                    entryStatus={entry.status}
+                    childName={entry.childName}
+                  />
                 </div>
               </li>
             ))}
