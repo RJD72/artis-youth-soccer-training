@@ -176,6 +176,18 @@ export const guardians = mysqlTable("guardians", {
     length: 30,
   }).notNull(),
 
+  secondaryPhone: varchar("secondary_phone", {
+    length: 30,
+  }),
+
+  preferredContactMethod: mysqlEnum("preferred_contact_method", [
+    "email",
+    "phone",
+    "text",
+  ])
+    .notNull()
+    .default("email"),
+
   createdAt: timestamp("created_at").notNull().defaultNow(),
 
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
@@ -269,9 +281,21 @@ export const players = mysqlTable(
       length: 100,
     }).notNull(),
 
+    preferredName: varchar("preferred_name", {
+      length: 50,
+    }),
+
     dateOfBirth: date("date_of_birth", {
       mode: "string",
     }).notNull(),
+
+    currentPlayingLevel: varchar("current_playing_level", {
+      length: 100,
+    }),
+
+    currentTeamOrClub: varchar("current_team_or_club", {
+      length: 100,
+    }),
 
     emergencyContactName: varchar("emergency_contact_name", {
       length: 100,
@@ -286,6 +310,8 @@ export const players = mysqlTable(
     }).notNull(),
 
     medicalInformationEncrypted: text("medical_information_encrypted"),
+
+    coachInformationEncrypted: text("coach_information_encrypted"),
 
     createdAt: timestamp("created_at").notNull().defaultNow(),
 
@@ -327,6 +353,10 @@ export const registrations = mysqlTable(
         onDelete: "restrict",
       }),
 
+    guardianRelationship: varchar("guardian_relationship", {
+      length: 50,
+    }),
+
     status: mysqlEnum("status", [
       "pending_payment",
       "scheduled",
@@ -363,6 +393,18 @@ export const registrations = mysqlTable(
     activatedAt: timestamp("activated_at"),
 
     cancelledAt: timestamp("cancelled_at"),
+
+    authorizedRegistrantConfirmedAt: timestamp(
+      "authorized_registrant_confirmed_at",
+    ),
+
+    informationAccuracyConfirmedAt: timestamp(
+      "information_accuracy_confirmed_at",
+    ),
+
+    marketingConsent: boolean("marketing_consent").notNull().default(false),
+
+    photoVideoConsent: boolean("photo_video_consent").notNull().default(false),
 
     createdAt: timestamp("created_at").notNull().defaultNow(),
 
@@ -412,6 +454,14 @@ export const payments = mysqlTable(
     ])
       .notNull()
       .default("pending"),
+
+    paymentMethod: mysqlEnum("payment_method", ["stripe", "e_transfer"])
+      .notNull()
+      .default("stripe"),
+
+    manualPaymentReference: varchar("manual_payment_reference", {
+      length: 50,
+    }).unique(),
 
     stripeCheckoutSessionId: varchar("stripe_checkout_session_id", {
       length: 255,
@@ -472,7 +522,9 @@ export const legalDocuments = mysqlTable(
       .primaryKey(),
 
     documentType: mysqlEnum("document_type", [
+      "terms_conditions",
       "participation_waiver",
+      "gym_facility_rules",
       "privacy_policy",
       "cancellation_refund_policy",
     ]).notNull(),
