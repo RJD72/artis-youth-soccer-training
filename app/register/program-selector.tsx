@@ -251,7 +251,7 @@ function CheckboxField({
         }
         className="mt-0.5 size-6 shrink-0 rounded-[5px] border-artis-border accent-artis-navy"
       />
-      <label htmlFor={id} className="text-sm leading-[21px]">
+      <label htmlFor={id} className="text-sm leading-5.25">
         {children}
       </label>
     </div>
@@ -267,8 +267,8 @@ function FormSectionHeader({
 }) {
   return (
     <div>
-      <h2 className="text-[26px] font-bold leading-[34px]">{title}</h2>
-      <p className="mt-1.5 text-sm leading-[21px] text-artis-slate">
+      <h2 className="text-[26px] font-bold leading-8.5">{title}</h2>
+      <p className="mt-1.5 text-sm leading-5.25 text-artis-slate">
         {description}
       </p>
     </div>
@@ -298,7 +298,7 @@ function ProgressStep({
         {number}
       </span>
       <span>
-        <span className="block text-[15px] font-semibold leading-[22px]">
+        <span className="block text-[15px] font-semibold leading-5.5">
           {label}
         </span>
         <span
@@ -316,10 +316,8 @@ function ProgressStep({
 function RegistrationProgress() {
   return (
     <section className="rounded-[14px] border border-artis-border bg-artis-white p-6">
-      <h2 className="text-xl font-bold leading-[29px]">
-        Registration progress
-      </h2>
-      <div className="mt-[18px] space-y-[18px]">
+      <h2 className="text-xl font-bold leading-7.25">Registration progress</h2>
+      <div className="mt-4.5 space-y-4.5">
         <ProgressStep number={1} label="Player Information" status="ACTIVE" />
         <ProgressStep
           number={2}
@@ -351,7 +349,7 @@ function SelectedTrainingSummary({
       <p className="mt-3.5 w-fit rounded-full bg-artis-soft-gold px-2.5 py-1.5 text-[13px] font-semibold">
         {group.displayName} Soccer Development Program
       </p>
-      <div className="mt-3.5 space-y-3.5 text-sm leading-[21px] text-artis-slate">
+      <div className="mt-3.5 space-y-3.5 text-sm leading-5.25 text-artis-slate">
         <p>Age group: {group.displayName}</p>
         <p>Schedule: {formatScheduleOverview(group.weeklySchedule)}</p>
         <p>Location: Central Huron Secondary School gym</p>
@@ -382,7 +380,7 @@ function PlayerInformationSection() {
         description="Tell us about the player. Optional details are used only for registration, safety, and training preparation."
       />
 
-      <div className="mt-[22px] grid gap-[22px] sm:grid-cols-2 sm:gap-x-4">
+      <div className="mt-5.5 grid gap-5.5 sm:grid-cols-2 sm:gap-x-4">
         <TextField
           id="childFirstName"
           name="childFirstName"
@@ -436,7 +434,7 @@ function PlayerInformationSection() {
           maxLength={100}
         />
 
-        <div className="border-t border-artis-border pt-[22px] sm:col-span-2">
+        <div className="border-t border-artis-border pt-5.5 sm:col-span-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
             Jersey information
           </p>
@@ -483,7 +481,7 @@ function PlayerInformationSection() {
         />
       </div>
 
-      <p className="mt-3 text-[13px] font-medium leading-[19px] text-artis-slate">
+      <p className="mt-3 text-[13px] font-medium leading-4.75 text-artis-slate">
         Privacy note: Sensitive information should be used only for
         registration, safety, and training preparation.
       </p>
@@ -494,7 +492,7 @@ function PlayerInformationSection() {
         label="Additional information the coach should know (optional)"
         placeholder="Add relevant information"
         maxLength={2000}
-        className="mt-[22px]"
+        className="mt-5.5"
       />
     </section>
   );
@@ -508,7 +506,7 @@ function GuardianInformationSection() {
         description="Provide contact details for the adult completing this registration."
       />
 
-      <div className="mt-[22px] grid gap-[22px] sm:grid-cols-2 sm:gap-x-4">
+      <div className="mt-5.5 grid gap-5.5 sm:grid-cols-2 sm:gap-x-4">
         <TextField
           id="guardianFirstName"
           name="guardianFirstName"
@@ -602,7 +600,7 @@ function EmergencyContactSection({
         description="If no different contact is provided, the parent or guardian details above may serve as the emergency contact."
       />
 
-      <div className="mt-[22px]">
+      <div className="mt-5.5">
         <CheckboxField
           id="emergencyContactDifferent"
           name="emergencyContactDifferent"
@@ -613,7 +611,7 @@ function EmergencyContactSection({
         </CheckboxField>
       </div>
 
-      <div className="mt-[22px] grid gap-[22px] sm:grid-cols-2 sm:gap-x-4">
+      <div className="mt-5.5 grid gap-5.5 sm:grid-cols-2 sm:gap-x-4">
         <TextField
           id="emergencyContactName"
           name="emergencyContactName"
@@ -664,7 +662,7 @@ function ConsentSection() {
         description="Review each statement. Optional choices are separate from the required registration confirmations."
       />
 
-      <div className="mt-[22px] space-y-[22px]">
+      <div className="mt-5.5 space-y-5.5">
         <CheckboxField
           id="authorizedRegistrantConfirmed"
           name="authorizedRegistrantConfirmed"
@@ -716,8 +714,8 @@ function ConsentSection() {
         </CheckboxField>
       </div>
 
-      <div className="mt-[22px] rounded-[10px] border border-artis-border bg-artis-soft-gold p-5">
-        <h3 className="font-semibold leading-[23px]">
+      <div className="mt-5.5 rounded-[10px] border border-artis-border bg-artis-soft-gold p-5">
+        <h3 className="font-semibold leading-5.75">
           Participation waiver / informed consent
         </h3>
         <p className="mt-2.5 text-sm leading-5 text-artis-slate">
@@ -899,7 +897,7 @@ export default function ProgramSelector({
 
   return (
     <form action={formAction} className="space-y-8">
-      <div className="pointer-events-none absolute -left-[10000px] top-auto size-px overflow-hidden">
+      <div className="pointer-events-none absolute left-[-10000px] top-auto size-px overflow-hidden">
         <label htmlFor="website">Website</label>
         <input
           id="website"
@@ -946,7 +944,7 @@ export default function ProgramSelector({
                 name="paymentMethod"
                 value="stripe"
                 disabled={isPending}
-                className="min-h-12 rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold text-artis-white disabled:opacity-60 sm:w-[300px]"
+                className="min-h-12 rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold text-artis-white disabled:opacity-60 sm:w-75"
               >
                 {isPending
                   ? "Submitting registration…"
@@ -957,7 +955,7 @@ export default function ProgramSelector({
                 name="paymentMethod"
                 value="e_transfer"
                 disabled={isPending}
-                className="min-h-12 rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold text-artis-navy disabled:opacity-60 sm:w-[250px]"
+                className="min-h-12 rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold text-artis-navy disabled:opacity-60 sm:w-62.5"
               >
                 {isPending ? "Submitting registration…" : "Pay by E-transfer"}
               </button>
@@ -967,7 +965,7 @@ export default function ProgramSelector({
               >
                 Back to Training Options
               </Link>
-              <p className="text-[13px] font-medium leading-[19px] text-artis-slate">
+              <p className="text-[13px] font-medium leading-4.75 text-artis-slate">
                 Credit or debit card continues to secure Stripe checkout.
                 E-transfer submits the registration and opens payment
                 instructions.
@@ -983,7 +981,7 @@ export default function ProgramSelector({
             programPackage={selectedPackage}
           />
           <section className="rounded-[10px] bg-artis-soft-gold p-5">
-            <h2 className="font-semibold leading-[23px]">Before payment</h2>
+            <h2 className="font-semibold leading-5.75">Before payment</h2>
             <p className="mt-2.5 text-sm leading-5 text-artis-slate">
               This screen collects registration information only. Payment
               details are entered on the next secure checkout screen.
