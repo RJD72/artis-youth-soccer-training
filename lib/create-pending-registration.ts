@@ -1,6 +1,7 @@
 // This file creates a complete pending registration inside one database
 // transaction. Every price, age limit, package duration, legal document, and
 // capacity value is re-read from MySQL instead of trusting the browser.
+// JERSEY SIZE STORAGE REVISION — AUGUST 23, 2026
 
 import "server-only";
 
@@ -424,6 +425,7 @@ async function saveNewPlayer(
     guardianId,
     fullName: context.playerFullName,
     preferredName: context.submission.preferredName,
+    jerseySize: context.submission.jerseySize,
     dateOfBirth: context.submission.dateOfBirth,
     currentPlayingLevel: context.submission.currentPlayingLevel,
     currentTeamOrClub: context.submission.currentTeamOrClub,
