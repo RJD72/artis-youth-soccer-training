@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import { getActiveAdminWaitlistEntries } from "@/lib/admin-waitlist";
 
+import { updateWaitlistEntryStatus } from "./actions";
+
 export const metadata: Metadata = {
   title: "Waitlist",
 };
@@ -141,6 +143,68 @@ export default async function AdminWaitlistPage() {
                     </p>
                   </div>
                 ) : null}
+
+                <div className="mt-6 border-t border-artis-border pt-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <form action={updateWaitlistEntryStatus}>
+                      <input
+                        type="hidden"
+                        name="waitlistEntryId"
+                        value={entry.id}
+                      />
+                      <button
+                        type="submit"
+                        name="status"
+                        value={
+                          entry.status === "waiting" ? "contacted" : "waiting"
+                        }
+                        className="min-h-12 w-full rounded-[10px] bg-artis-navy px-5 py-3 text-sm font-semibold text-artis-white transition hover:bg-artis-deep-navy focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30 sm:w-auto"
+                      >
+                        {entry.status === "waiting"
+                          ? "Mark as contacted"
+                          : "Return to waiting"}
+                      </button>
+                    </form>
+
+                    <details className="group rounded-[10px] border border-artis-border bg-artis-off-white sm:max-w-[290px]">
+                      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-sm font-semibold text-artis-error [&::-webkit-details-marker]:hidden">
+                        Cancel entry
+                        <span
+                          aria-hidden="true"
+                          className="text-base transition group-open:rotate-45"
+                        >
+                          +
+                        </span>
+                      </summary>
+
+                      <div className="border-t border-artis-border px-4 py-4">
+                        <p className="text-sm leading-6 text-artis-slate">
+                          This removes the family from the active waitlist but
+                          keeps the record in the database.
+                        </p>
+
+                        <form
+                          action={updateWaitlistEntryStatus}
+                          className="mt-3"
+                        >
+                          <input
+                            type="hidden"
+                            name="waitlistEntryId"
+                            value={entry.id}
+                          />
+                          <button
+                            type="submit"
+                            name="status"
+                            value="cancelled"
+                            className="min-h-11 w-full rounded-[10px] bg-artis-error px-4 py-2.5 text-sm font-semibold text-artis-white transition hover:bg-artis-error/85 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-error/25"
+                          >
+                            Confirm cancellation
+                          </button>
+                        </form>
+                      </div>
+                    </details>
+                  </div>
+                </div>
               </li>
             ))}
           </ol>
