@@ -1,4 +1,4 @@
-// FIGMA REGISTRATION FORM — AUGUST 23, 2026
+// FIGMA REGISTRATION FORM — JERSEY REVISION — AUGUST 23, 2026
 "use client";
 
 import Link from "next/link";
@@ -141,16 +141,6 @@ function formatPackageDuration(durationMonths: number): string {
   return `${durationMonths} Month${durationMonths === 1 ? "" : "s"}`;
 }
 
-function formatClockTime(time: string): string {
-  const [hourValue = 0, minuteValue = 0] = time.split(":").map(Number);
-  const period = hourValue >= 12 ? "PM" : "AM";
-  const hour = hourValue % 12 || 12;
-  const minutes =
-    minuteValue === 0 ? "" : `:${String(minuteValue).padStart(2, "0")}`;
-
-  return `${hour}${minutes} ${period}`;
-}
-
 function sortSessionsByDay(
   sessions: WeeklySessionOption[],
 ): WeeklySessionOption[] {
@@ -158,20 +148,6 @@ function sortSessionsByDay(
     (first, second) =>
       (dayOrder[first.dayOfWeek] ?? 8) - (dayOrder[second.dayOfWeek] ?? 8),
   );
-}
-
-function formatSchedule(sessions: WeeklySessionOption[]): string {
-  return sortSessionsByDay(sessions)
-    .map((session) => {
-      const day = shortDayNames[session.dayOfWeek] ?? session.dayOfWeek;
-      const sessionLabel =
-        session.sessionType === "game_training" ? "game / match" : "training";
-
-      return `${day} ${formatClockTime(session.startTime)}–${formatClockTime(
-        session.endTime,
-      )} ${sessionLabel}`;
-    })
-    .join(" · ");
 }
 
 function formatScheduleOverview(sessions: WeeklySessionOption[]): string {
@@ -433,13 +409,6 @@ function PlayerInformationSection() {
           autoComplete="bday"
           required
         />
-        <TextField
-          id="preferredName"
-          name="preferredName"
-          label="Preferred name (optional)"
-          placeholder="Enter preferred name"
-          maxLength={50}
-        />
         <SelectField
           id="currentPlayingLevel"
           name="currentPlayingLevel"
@@ -466,6 +435,44 @@ function PlayerInformationSection() {
           placeholder="Enter team or club"
           maxLength={100}
         />
+
+        <div className="border-t border-artis-border pt-[22px] sm:col-span-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
+            Jersey information
+          </p>
+          <p className="mt-2 text-sm leading-6 text-artis-slate">
+            One personalized ARTIS Soccer Academy jersey is provided per player
+            per year. Size options are pending client confirmation.
+          </p>
+        </div>
+
+        <SelectField
+          id="jerseySize"
+          name="jerseySize"
+          label="Jersey size (pending confirmation)"
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Choose a size
+          </option>
+          <option value="small">Small</option>
+          <option value="medium">Medium</option>
+          <option value="large">Large</option>
+          <option value="extra_large">Extra Large</option>
+        </SelectField>
+        <TextField
+          id="preferredName"
+          name="preferredName"
+          label="Name on jersey (optional until confirmed)"
+          placeholder="Enter name for the jersey"
+          maxLength={50}
+        />
+
+        <p className="rounded-[10px] bg-artis-soft-gold p-4 text-sm leading-6 text-artis-slate sm:col-span-2">
+          Returning players who have already received a jersey should continue
+          using their existing jersey.
+        </p>
+
         <TextField
           id="medicalInformation"
           name="medicalInformation"
@@ -735,13 +742,6 @@ function ProgramSelection({
   setSelectedGroupId: (value: number) => void;
   setSelectedPackageId: (value: number) => void;
 }) {
-  const selectedGroup = trainingGroups.find(
-    (group) => group.id === selectedGroupId,
-  );
-  const selectedPackage = programPackages.find(
-    (programPackage) => programPackage.id === selectedPackageId,
-  );
-
   return (
     <section
       id="program-selection"
@@ -848,40 +848,6 @@ function ProgramSelection({
             })}
           </div>
         </fieldset>
-
-        {selectedGroup && selectedPackage ? (
-          <output
-            aria-live="polite"
-            className="block rounded-[10px] border border-artis-border bg-artis-soft-gold p-5"
-          >
-            <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-artis-gold">
-              Selected training
-            </span>
-            <span className="mt-2 block text-xl font-bold">
-              {selectedGroup.displayName} ·{" "}
-              {formatPackageDuration(selectedPackage.durationMonths)}
-            </span>
-            <span className="mt-2 block text-sm leading-6 text-artis-slate">
-              {formatSchedule(selectedGroup.weeklySchedule)} · Central Huron
-              Secondary School gym
-            </span>
-          </output>
-        ) : null}
-
-        <div className="border-t border-artis-border pt-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
-            Jersey information
-          </p>
-          <p className="mt-2 text-sm leading-6 text-artis-slate">
-            One personalized ARTIS Soccer Academy jersey is provided per player
-            per year. The preferred name entered below will appear on the
-            jersey. Size options are pending client confirmation.
-          </p>
-          <p className="mt-4 rounded-[10px] bg-artis-soft-gold p-4 text-sm leading-6 text-artis-slate">
-            Returning players who have already received a jersey should continue
-            using their existing jersey.
-          </p>
-        </div>
 
         <div className="flex flex-col gap-3 rounded-[10px] bg-artis-deep-navy p-5 text-artis-white sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-6 text-artis-white/80">
