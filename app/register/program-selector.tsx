@@ -4,10 +4,13 @@
 import Link from "next/link";
 import {
   useActionState,
+  useEffect,
+  useRef,
   useState,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
+  type SubmitEvent,
 } from "react";
 
 import {
@@ -76,6 +79,12 @@ type CheckboxFieldProps = {
   onChange?: (checked: boolean) => void;
 };
 
+type FormControlSnapshot = {
+  name: string;
+  value: string;
+  checked?: boolean;
+};
+
 const initialActionState: RegistrationActionState = { status: "idle" };
 
 const registrationErrorMessages: Record<RegistrationActionErrorCode, string> = {
@@ -98,7 +107,7 @@ const registrationErrorMessages: Record<RegistrationActionErrorCode, string> = {
   "guardian-verification-required":
     "An account already exists for this email address. Please contact ARTIS Soccer Academy before continuing.",
   "renewal-required":
-    "This player has registered before and must use the returning-player renewal process.",
+    "This player has registered before. Returning-player renewal is not available yet, so please contact ARTIS Soccer Academy for assistance.",
 };
 
 const shortDayNames: Record<string, string> = {
@@ -123,6 +132,74 @@ const dayOrder: Record<string, number> = {
 
 const inputClassName =
   "h-[52px] w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-[15px] text-artis-navy outline-none transition-colors placeholder:text-artis-slate focus:border-artis-navy focus:ring-2 focus:ring-artis-gold/35";
+
+function isRestorableFormControl(
+  element: Element,
+): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
+  return (
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLSelectElement ||
+    element instanceof HTMLTextAreaElement
+  );
+}
+
+function shouldSkipFormControl(
+  element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+): boolean {
+  return (
+    !element.name ||
+    (element instanceof HTMLInputElement &&
+      ["button", "file", "reset", "submit"].includes(element.type))
+  );
+}
+
+function captureFormControls(form: HTMLFormElement): FormControlSnapshot[] {
+  const snapshots: FormControlSnapshot[] = [];
+
+  for (const element of Array.from(form.elements)) {
+    if (!isRestorableFormControl(element) || shouldSkipFormControl(element)) {
+      continue;
+    }
+
+    const isCheckableInput =
+      element instanceof HTMLInputElement &&
+      (element.type === "checkbox" || element.type === "radio");
+
+    snapshots.push({
+      name: element.name,
+      value: element.value,
+      checked: isCheckableInput ? element.checked : undefined,
+    });
+  }
+
+  return snapshots;
+}
+
+function restoreFormControls(
+  form: HTMLFormElement,
+  snapshots: FormControlSnapshot[],
+): void {
+  for (const element of Array.from(form.elements)) {
+    if (!isRestorableFormControl(element) || shouldSkipFormControl(element)) {
+      continue;
+    }
+
+    const isCheckableInput =
+      element instanceof HTMLInputElement &&
+      (element.type === "checkbox" || element.type === "radio");
+    const snapshot = snapshots.find(
+      (candidate) =>
+        candidate.name === element.name &&
+        (!isCheckableInput || candidate.value === element.value),
+    );
+
+    if (isCheckableInput) {
+      element.checked = snapshot?.checked ?? false;
+    } else if (snapshot) {
+      element.value = snapshot.value;
+    }
+  }
+}
 
 function formatCurrency(priceCents: number, currency: string): string {
   return new Intl.NumberFormat("en-CA", {
@@ -251,7 +328,7 @@ function CheckboxField({
         }
         className="mt-0.5 size-6 shrink-0 rounded-[5px] border-artis-border accent-artis-navy"
       />
-      <label htmlFor={id} className="text-sm leading-5.25">
+      <label htmlFor={id} className="text-sm leading-[21px]">
         {children}
       </label>
     </div>
@@ -267,8 +344,8 @@ function FormSectionHeader({
 }) {
   return (
     <div>
-      <h2 className="text-[26px] font-bold leading-8.5">{title}</h2>
-      <p className="mt-1.5 text-sm leading-5.25 text-artis-slate">
+      <h2 className="text-[26px] font-bold leading-[34px]">{title}</h2>
+      <p className="mt-1.5 text-sm leading-[21px] text-artis-slate">
         {description}
       </p>
     </div>
@@ -298,7 +375,7 @@ function ProgressStep({
         {number}
       </span>
       <span>
-        <span className="block text-[15px] font-semibold leading-5.5">
+        <span className="block text-[15px] font-semibold leading-[22px]">
           {label}
         </span>
         <span
@@ -316,8 +393,10 @@ function ProgressStep({
 function RegistrationProgress() {
   return (
     <section className="rounded-[14px] border border-artis-border bg-artis-white p-6">
-      <h2 className="text-xl font-bold leading-7.25">Registration progress</h2>
-      <div className="mt-4.5 space-y-4.5">
+      <h2 className="text-xl font-bold leading-[29px]">
+        Registration progress
+      </h2>
+      <div className="mt-[18px] space-y-[18px]">
         <ProgressStep number={1} label="Player Information" status="ACTIVE" />
         <ProgressStep
           number={2}
@@ -349,7 +428,7 @@ function SelectedTrainingSummary({
       <p className="mt-3.5 w-fit rounded-full bg-artis-soft-gold px-2.5 py-1.5 text-[13px] font-semibold">
         {group.displayName} Soccer Development Program
       </p>
-      <div className="mt-3.5 space-y-3.5 text-sm leading-5.25 text-artis-slate">
+      <div className="mt-3.5 space-y-3.5 text-sm leading-[21px] text-artis-slate">
         <p>Age group: {group.displayName}</p>
         <p>Schedule: {formatScheduleOverview(group.weeklySchedule)}</p>
         <p>Location: Central Huron Secondary School gym</p>
@@ -380,7 +459,7 @@ function PlayerInformationSection() {
         description="Tell us about the player. Optional details are used only for registration, safety, and training preparation."
       />
 
-      <div className="mt-5.5 grid gap-5.5 sm:grid-cols-2 sm:gap-x-4">
+      <div className="mt-[22px] grid gap-[22px] sm:grid-cols-2 sm:gap-x-4">
         <TextField
           id="childFirstName"
           name="childFirstName"
@@ -434,7 +513,7 @@ function PlayerInformationSection() {
           maxLength={100}
         />
 
-        <div className="border-t border-artis-border pt-5.5 sm:col-span-2">
+        <div className="border-t border-artis-border pt-[22px] sm:col-span-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
             Jersey information
           </p>
@@ -481,7 +560,7 @@ function PlayerInformationSection() {
         />
       </div>
 
-      <p className="mt-3 text-[13px] font-medium leading-4.75 text-artis-slate">
+      <p className="mt-3 text-[13px] font-medium leading-[19px] text-artis-slate">
         Privacy note: Sensitive information should be used only for
         registration, safety, and training preparation.
       </p>
@@ -492,7 +571,7 @@ function PlayerInformationSection() {
         label="Additional information the coach should know (optional)"
         placeholder="Add relevant information"
         maxLength={2000}
-        className="mt-5.5"
+        className="mt-[22px]"
       />
     </section>
   );
@@ -506,7 +585,7 @@ function GuardianInformationSection() {
         description="Provide contact details for the adult completing this registration."
       />
 
-      <div className="mt-5.5 grid gap-5.5 sm:grid-cols-2 sm:gap-x-4">
+      <div className="mt-[22px] grid gap-[22px] sm:grid-cols-2 sm:gap-x-4">
         <TextField
           id="guardianFirstName"
           name="guardianFirstName"
@@ -600,7 +679,7 @@ function EmergencyContactSection({
         description="If no different contact is provided, the parent or guardian details above may serve as the emergency contact."
       />
 
-      <div className="mt-5.5">
+      <div className="mt-[22px]">
         <CheckboxField
           id="emergencyContactDifferent"
           name="emergencyContactDifferent"
@@ -611,7 +690,7 @@ function EmergencyContactSection({
         </CheckboxField>
       </div>
 
-      <div className="mt-5.5 grid gap-5.5 sm:grid-cols-2 sm:gap-x-4">
+      <div className="mt-[22px] grid gap-[22px] sm:grid-cols-2 sm:gap-x-4">
         <TextField
           id="emergencyContactName"
           name="emergencyContactName"
@@ -662,7 +741,7 @@ function ConsentSection() {
         description="Review each statement. Optional choices are separate from the required registration confirmations."
       />
 
-      <div className="mt-5.5 space-y-5.5">
+      <div className="mt-[22px] space-y-[22px]">
         <CheckboxField
           id="authorizedRegistrantConfirmed"
           name="authorizedRegistrantConfirmed"
@@ -714,8 +793,8 @@ function ConsentSection() {
         </CheckboxField>
       </div>
 
-      <div className="mt-5.5 rounded-[10px] border border-artis-border bg-artis-soft-gold p-5">
-        <h3 className="font-semibold leading-5.75">
+      <div className="mt-[22px] rounded-[10px] border border-artis-border bg-artis-soft-gold p-5">
+        <h3 className="font-semibold leading-[23px]">
           Participation waiver / informed consent
         </h3>
         <p className="mt-2.5 text-sm leading-5 text-artis-slate">
@@ -873,6 +952,8 @@ export default function ProgramSelector({
     programPackages[0]?.id ?? 0,
   );
   const [usesDifferentContact, setUsesDifferentContact] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const preservedFormControlsRef = useRef<FormControlSnapshot[]>([]);
   const [actionState, formAction, isPending] = useActionState(
     submitRegistration,
     initialActionState,
@@ -883,6 +964,21 @@ export default function ProgramSelector({
   const selectedPackage = programPackages.find(
     (programPackage) => programPackage.id === selectedPackageId,
   );
+
+  useEffect(() => {
+    if (actionState.status !== "error" || !formRef.current) {
+      return;
+    }
+
+    restoreFormControls(formRef.current, preservedFormControlsRef.current);
+  }, [actionState]);
+
+  function preserveFormControls(event: SubmitEvent<HTMLFormElement>): void {
+    // React resets uncontrolled form fields after a Server Action finishes.
+    // Keep an in-memory snapshot so a rejected submission can be restored
+    // without placing names, contact details, or medical notes in web storage.
+    preservedFormControlsRef.current = captureFormControls(event.currentTarget);
+  }
 
   if (!selectedGroup || !selectedPackage) {
     return (
@@ -896,8 +992,13 @@ export default function ProgramSelector({
   }
 
   return (
-    <form action={formAction} className="space-y-8">
-      <div className="pointer-events-none absolute left-[-10000px] top-auto size-px overflow-hidden">
+    <form
+      ref={formRef}
+      action={formAction}
+      onSubmit={preserveFormControls}
+      className="space-y-8"
+    >
+      <div className="pointer-events-none absolute -left-[10000px] top-auto size-px overflow-hidden">
         <label htmlFor="website">Website</label>
         <input
           id="website"
@@ -944,7 +1045,7 @@ export default function ProgramSelector({
                 name="paymentMethod"
                 value="stripe"
                 disabled={isPending}
-                className="min-h-12 rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold text-artis-white disabled:opacity-60 sm:w-75"
+                className="min-h-12 rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold text-artis-white disabled:opacity-60 sm:w-[300px]"
               >
                 {isPending
                   ? "Submitting registration…"
@@ -955,7 +1056,7 @@ export default function ProgramSelector({
                 name="paymentMethod"
                 value="e_transfer"
                 disabled={isPending}
-                className="min-h-12 rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold text-artis-navy disabled:opacity-60 sm:w-62.5"
+                className="min-h-12 rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold text-artis-navy disabled:opacity-60 sm:w-[250px]"
               >
                 {isPending ? "Submitting registration…" : "Pay by E-transfer"}
               </button>
@@ -965,7 +1066,7 @@ export default function ProgramSelector({
               >
                 Back to Training Options
               </Link>
-              <p className="text-[13px] font-medium leading-4.75 text-artis-slate">
+              <p className="text-[13px] font-medium leading-[19px] text-artis-slate">
                 Credit or debit card continues to secure Stripe checkout.
                 E-transfer submits the registration and opens payment
                 instructions.
@@ -981,7 +1082,7 @@ export default function ProgramSelector({
             programPackage={selectedPackage}
           />
           <section className="rounded-[10px] bg-artis-soft-gold p-5">
-            <h2 className="font-semibold leading-5.75">Before payment</h2>
+            <h2 className="font-semibold leading-[23px]">Before payment</h2>
             <p className="mt-2.5 text-sm leading-5 text-artis-slate">
               This screen collects registration information only. Payment
               details are entered on the next secure checkout screen.
