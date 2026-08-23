@@ -285,6 +285,12 @@ export const players = mysqlTable(
       length: 50,
     }),
 
+    // Kept as a nullable string rather than an enum because the client still
+    // needs to confirm whether jerseys use youth sizes, adult sizes, or both.
+    jerseySize: varchar("jersey_size", {
+      length: 30,
+    }),
+
     dateOfBirth: date("date_of_birth", {
       mode: "string",
     }).notNull(),

@@ -1,0 +1,1 @@
+ALTER TABLE `players` ADD `jersey_size` varchar(30);
