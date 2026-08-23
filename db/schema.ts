@@ -326,6 +326,47 @@ export const players = mysqlTable(
   (table) => [index("players_guardian_id_index").on(table.guardianId)],
 );
 
+// A returning family must prove that it controls the guardian email address
+// before the app may reveal or reuse an existing player's information. Only a
+// SHA-256 hash of the emailed token is stored, so a database leak would not
+// expose a working renewal link. Tokens are short-lived and single-use.
+export const renewalVerificationTokens = mysqlTable(
+  "renewal_verification_tokens",
+  {
+    id: int("id", {
+      unsigned: true,
+    })
+      .autoincrement()
+      .primaryKey(),
+
+    playerId: int("player_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => players.id, {
+        onDelete: "restrict",
+      }),
+
+    tokenHash: char("token_hash", {
+      length: 64,
+    }).notNull(),
+
+    expiresAt: timestamp("expires_at").notNull(),
+
+    consumedAt: timestamp("consumed_at"),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("renewal_verification_tokens_hash_unique").on(table.tokenHash),
+
+    index("renewal_verification_tokens_player_expiry_index").on(
+      table.playerId,
+      table.expiresAt,
+    ),
+  ],
+);
+
 export const registrations = mysqlTable(
   "registrations",
   {
