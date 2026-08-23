@@ -14,7 +14,11 @@ import { validateRegistrationSubmission } from "@/lib/registration-form-validati
 import { createRegistrationPaymentReference } from "@/lib/registration-payment-reference";
 
 const reservationLifetimeMilliseconds = {
-  stripe: 30 * 60 * 1_000,
+  // Stripe requires a Checkout Session to remain valid for at least 30
+  // minutes after that session is created. Reserving the place for 60 minutes
+  // gives the server enough time to create a session whose expiry still fits
+  // completely inside the database reservation window.
+  stripe: 60 * 60 * 1_000,
   e_transfer: 24 * 60 * 60 * 1_000,
 } as const;
 
