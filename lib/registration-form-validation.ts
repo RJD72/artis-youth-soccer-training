@@ -8,6 +8,8 @@ export type PreferredContactMethod = "email" | "phone" | "text";
 
 export type RegistrationPaymentMethod = "stripe" | "e_transfer";
 
+export type JerseySize = "small" | "medium" | "large" | "extra_large";
+
 export type ValidatedRegistrationSubmission = {
   trainingGroupId: number;
   programPackageId: number;
@@ -15,6 +17,7 @@ export type ValidatedRegistrationSubmission = {
   childLastName: string;
   dateOfBirth: string;
   preferredName: string | null;
+  jerseySize: JerseySize | null;
   currentPlayingLevel: string;
   currentTeamOrClub: string | null;
   medicalInformation: string | null;
@@ -180,6 +183,28 @@ function readEnum<const T extends readonly string[]>(
   return validValue(result.value as T[number]);
 }
 
+function readOptionalEnum<const T extends readonly string[]>(
+  formData: FormData,
+  fieldName: string,
+  allowedValues: T,
+): ParsedValue<T[number] | null> {
+  const result = readOptionalText(formData, fieldName, 30);
+
+  if (!result.valid) {
+    return invalidValue;
+  }
+
+  if (result.value === null) {
+    return validValue(null);
+  }
+
+  if (!allowedValues.includes(result.value)) {
+    return invalidValue;
+  }
+
+  return validValue(result.value as T[number]);
+}
+
 function isValidEmail(value: string): boolean {
   return (
     value.length >= 3 &&
@@ -255,6 +280,12 @@ export function validateRegistrationSubmission(
   const childLastName = readRequiredText(formData, "childLastName", 50);
   const dateOfBirth = readRequiredText(formData, "dateOfBirth", 10);
   const preferredName = readOptionalText(formData, "preferredName", 50);
+  const jerseySize = readOptionalEnum(formData, "jerseySize", [
+    "small",
+    "medium",
+    "large",
+    "extra_large",
+  ] as const);
   const currentPlayingLevel = readRequiredText(
     formData,
     "currentPlayingLevel",
@@ -339,6 +370,7 @@ export function validateRegistrationSubmission(
     childLastName,
     dateOfBirth,
     preferredName,
+    jerseySize,
     currentPlayingLevel,
     currentTeamOrClub,
     medicalInformation,
@@ -377,6 +409,7 @@ export function validateRegistrationSubmission(
     !childLastName.valid ||
     !dateOfBirth.valid ||
     !preferredName.valid ||
+    !jerseySize.valid ||
     !currentPlayingLevel.valid ||
     !currentTeamOrClub.valid ||
     !medicalInformation.valid ||
@@ -452,6 +485,7 @@ export function validateRegistrationSubmission(
       childLastName: childLastName.value,
       dateOfBirth: dateOfBirth.value,
       preferredName: preferredName.value,
+      jerseySize: jerseySize.value,
       currentPlayingLevel: currentPlayingLevel.value,
       currentTeamOrClub: currentTeamOrClub.value,
       medicalInformation: medicalInformation.value,
