@@ -113,6 +113,18 @@ function getStripeCurrency(currency: string): string | null {
   return /^[a-z]{3}$/.test(normalizedCurrency) ? normalizedCurrency : null;
 }
 
+function getStripeReturnUrl(): string {
+  const returnPageUrl = new URL(
+    "/register/payment/stripe/return",
+    getApplicationOrigin(),
+  );
+
+  // Stripe must receive this template variable with its braces intact. Using
+  // URLSearchParams would encode the braces as %7B and %7D, preventing Stripe
+  // from replacing the template with the completed Checkout Session ID.
+  return `${returnPageUrl.toString()}?session_id={CHECKOUT_SESSION_ID}`;
+}
+
 async function findPendingStripePayment(
   registrationId: number,
   paymentId: number,
@@ -219,12 +231,6 @@ function buildStripeSessionParameters(
 ): Stripe.Checkout.SessionCreateParams {
   const registrationId = String(payment.registrationId);
   const paymentId = String(payment.paymentId);
-  const returnUrl = new URL(
-    "/register/payment/stripe/return",
-    getApplicationOrigin(),
-  );
-
-  returnUrl.searchParams.set("session_id", "{CHECKOUT_SESSION_ID}");
 
   return {
     ui_mode: "elements",
@@ -233,7 +239,7 @@ function buildStripeSessionParameters(
     customer_email: payment.guardianEmail,
     client_reference_id: registrationId,
     expires_at: expiresAt,
-    return_url: returnUrl.toString(),
+    return_url: getStripeReturnUrl(),
     line_items: [
       {
         quantity: 1,
@@ -334,7 +340,7 @@ export async function prepareStripeCheckout(
     referenceValues.signature,
   );
 
-  if (reference?.method !== "stripe") {
+  if (!reference || reference.method !== "stripe") {
     return { status: "unavailable" };
   }
 
