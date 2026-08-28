@@ -16,6 +16,7 @@ import {
   trainingGroups,
   weeklySchedules,
 } from "@/db/schema";
+import { reconcilePaidStripeCheckoutSession } from "@/lib/process-stripe-webhook-event";
 import { createRegistrationPaymentReference } from "@/lib/registration-payment-reference";
 import { getStripeClient } from "@/lib/stripe";
 
@@ -298,13 +299,27 @@ async function getReturnPageData(
       return { status: "unavailable" };
     }
 
+    const paymentSucceeded =
+      session.status === "complete" && session.payment_status === "paid";
+
+    if (paymentSucceeded) {
+      const reconciliation = await reconcilePaidStripeCheckoutSession(session);
+
+      // Never display a confirmed registration unless the corresponding MySQL
+      // records were confirmed too. A mismatched or stale Stripe session is
+      // deliberately treated as unavailable rather than trusted by the page.
+      if (reconciliation !== "payment-confirmed") {
+        return { status: "unavailable" };
+      }
+    }
+
     const details: VerifiedReturnDetails = {
       ...summary,
       confirmationNumber: `ARTIS-${String(registrationId).padStart(6, "0")}`,
       retryUrl: buildRetryUrl(registrationId, paymentId),
     };
 
-    return session.status === "complete" && session.payment_status === "paid"
+    return paymentSucceeded
       ? { status: "success", details }
       : { status: "declined", details };
   } catch (error) {

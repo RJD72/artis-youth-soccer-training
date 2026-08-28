@@ -158,12 +158,15 @@ async function findLatestRegistration(playerId: number) {
       trainingGroups,
       eq(registrations.trainingGroupId, trainingGroups.id),
     )
-    .innerJoin(payments, eq(payments.registrationId, registrations.id))
     .where(
       and(
         eq(registrations.playerId, playerId),
-        inArray(registrations.status, ["scheduled", "active", "expired"]),
-        eq(payments.status, "succeeded"),
+        inArray(registrations.status, [
+          "pending_payment",
+          "scheduled",
+          "active",
+          "expired",
+        ]),
       ),
     )
     .orderBy(desc(registrations.endsOn), desc(registrations.createdAt))

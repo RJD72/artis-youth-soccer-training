@@ -30,6 +30,7 @@ import {
   trainingGroups,
 } from "@/db/schema";
 import { requireAdminSession } from "@/lib/admin-auth";
+import { synchronizeRegistrationStatuses } from "@/lib/synchronize-registration-statuses";
 
 const DEFAULT_PAGE_SIZE = 25;
 const LEGACY_RECENT_PAGE_SIZE = 50;
@@ -198,6 +199,9 @@ async function queryAdminRegistrations(
 
   const query = normalizeQuery(input);
   const now = new Date();
+
+  await synchronizeRegistrationStatuses(now);
+
   const whereCondition = combineConditions(
     getStatusCondition(query.status, now),
     getSearchCondition(query.search),

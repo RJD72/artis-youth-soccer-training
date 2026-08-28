@@ -14,9 +14,12 @@ import {
   trainingGroups,
   weeklySchedules,
 } from "@/db/schema";
+import { synchronizeRegistrationStatuses } from "@/lib/synchronize-registration-statuses";
 
 export async function getRegistrationOptions() {
   const now = new Date();
+
+  await synchronizeRegistrationStatuses(now);
 
   const [groupRows, scheduleRows, packageRows] = await Promise.all([
     db

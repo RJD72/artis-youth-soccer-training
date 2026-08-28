@@ -5,7 +5,7 @@
 import "server-only";
 
 import type Stripe from "stripe";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { payments, registrations, stripeWebhookEvents } from "@/db/schema";
@@ -209,7 +209,6 @@ function sessionMatchesPayment(
 function canConfirmPayment(
   session: Stripe.Checkout.Session,
   registration: LockedStripeRegistration,
-  today: string,
 ): registration is LockedStripeRegistration & {
   startsOn: string;
   endsOn: string;
@@ -218,11 +217,23 @@ function canConfirmPayment(
     session.status === "complete" &&
     session.payment_status === "paid" &&
     registration.paymentStatus === "pending" &&
-    registration.registrationStatus === "pending_payment" &&
+    (registration.registrationStatus === "pending_payment" ||
+      registration.registrationStatus === "expired") &&
     registration.startsOn !== null &&
-    registration.endsOn !== null &&
-    registration.endsOn >= today
+    registration.endsOn !== null
   );
+}
+
+function getPaidRegistrationStatus(
+  startsOn: string,
+  endsOn: string,
+  today: string,
+): "scheduled" | "active" | "expired" {
+  if (endsOn < today) {
+    return "expired";
+  }
+
+  return startsOn <= today ? "active" : "scheduled";
 }
 
 async function updateSuccessfulPayment(
@@ -255,17 +266,22 @@ async function updateSuccessfulPayment(
     throw new Error("The Stripe payment could not be confirmed.");
   }
 
-  const registrationStartsNow = registration.startsOn <= today;
+  const registrationStatus = getPaidRegistrationStatus(
+    registration.startsOn,
+    registration.endsOn,
+    today,
+  );
+
   const [registrationUpdate] = await transaction
     .update(registrations)
     .set({
-      status: registrationStartsNow ? "active" : "scheduled",
-      activatedAt: registrationStartsNow ? now : null,
+      status: registrationStatus,
+      activatedAt: registrationStatus === "active" ? now : null,
     })
     .where(
       and(
         eq(registrations.id, registration.registrationId),
-        eq(registrations.status, "pending_payment"),
+        inArray(registrations.status, ["pending_payment", "expired"]),
       ),
     );
 
@@ -302,14 +318,15 @@ async function processSuccessfulCheckout(
   if (
     registration.paymentStatus === "succeeded" &&
     (registration.registrationStatus === "scheduled" ||
-      registration.registrationStatus === "active")
+      registration.registrationStatus === "active" ||
+      registration.registrationStatus === "expired")
   ) {
     return "payment-confirmed";
   }
 
   const today = getTorontoCalendarDate(now);
 
-  if (!canConfirmPayment(session, registration, today)) {
+  if (!canConfirmPayment(session, registration)) {
     return "ignored";
   }
 
@@ -322,6 +339,24 @@ async function processSuccessfulCheckout(
   );
 
   return "payment-confirmed";
+}
+
+/**
+ * Reconciles a Checkout Session retrieved directly from Stripe when its
+ * webhook was delayed or missed. The normal session ID, metadata, amount,
+ * currency and database-state checks still apply.
+ */
+export async function reconcilePaidStripeCheckoutSession(
+  session: Stripe.Checkout.Session,
+  now: Date = new Date(),
+): Promise<StripeWebhookAction> {
+  if (Number.isNaN(now.getTime())) {
+    throw new TypeError("A valid reconciliation date is required.");
+  }
+
+  return db.transaction((transaction) =>
+    processSuccessfulCheckout(transaction, session, now),
+  );
 }
 
 async function updateUnsuccessfulPayment(

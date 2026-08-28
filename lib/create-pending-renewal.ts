@@ -39,6 +39,7 @@ import {
 } from "@/lib/registration-calculations";
 import { createManualPaymentReference } from "@/lib/registration-payment-reference";
 import { getRenewalVerificationTokenHash } from "@/lib/renewal-verification-token";
+import { synchronizeRegistrationStatuses } from "@/lib/synchronize-registration-statuses";
 
 const requiredLegalDocumentTypes = [
   "terms_conditions",
@@ -779,6 +780,9 @@ export async function createPendingRenewal(
   }
 
   const now = new Date();
+
+  await synchronizeRegistrationStatuses(now);
+
   const context: RenewalTransactionContext = {
     tokenHash,
     submission,

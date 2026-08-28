@@ -6,9 +6,12 @@ import { and, count, eq, gt, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import { registrations, trainingGroups } from "@/db/schema";
+import { synchronizeRegistrationStatuses } from "@/lib/synchronize-registration-statuses";
 
 export async function getTrainingGroupCapacitySummaries() {
   const now = new Date();
+
+  await synchronizeRegistrationStatuses(now);
 
   const groups = await db
     .select({
