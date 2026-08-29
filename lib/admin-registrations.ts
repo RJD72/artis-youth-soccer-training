@@ -1,8 +1,9 @@
 // This file contains protected, read-only registration queries for administrators.
 // Filtering, searching, and pagination happen in MySQL so the browser never
 // receives every family's contact information at once. The overview deliberately
-// excludes medical, emergency-contact, payment-provider, and legal-acceptance
-// details because the list does not need that sensitive information.
+// excludes medical, emergency-contact, payment-provider identifiers, and
+// legal-acceptance details. It includes only the operational payment fields an
+// administrator needs to confirm an e-transfer.
 
 import "server-only";
 
@@ -24,6 +25,7 @@ import {
 import { db } from "@/db";
 import {
   guardians,
+  payments,
   players,
   programPackages,
   registrations,
@@ -230,6 +232,11 @@ async function queryAdminRegistrations(
       waitlistedAt: registrations.waitlistedAt,
       packagePriceCents: registrations.packagePriceCents,
       currency: registrations.currency,
+      paymentId: payments.id,
+      paymentStatus: payments.status,
+      paymentMethod: payments.paymentMethod,
+      manualPaymentReference: payments.manualPaymentReference,
+      paidAt: payments.paidAt,
       playerName: players.fullName,
       guardianName: guardians.fullName,
       guardianEmail: guardians.email,
@@ -240,6 +247,7 @@ async function queryAdminRegistrations(
     .from(registrations)
     .innerJoin(players, eq(registrations.playerId, players.id))
     .innerJoin(guardians, eq(players.guardianId, guardians.id))
+    .leftJoin(payments, eq(payments.registrationId, registrations.id))
     .innerJoin(
       trainingGroups,
       eq(registrations.trainingGroupId, trainingGroups.id),
