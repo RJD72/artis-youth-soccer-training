@@ -133,7 +133,11 @@ function ReservationTiming({
 }: {
   registration: AdminRegistration;
 }) {
-  if (!registration.reservationExpiresAt) {
+  const hasPaymentReservationStatus =
+    registration.status === "pending_payment" ||
+    registration.status === "expired";
+
+  if (!hasPaymentReservationStatus || !registration.reservationExpiresAt) {
     return null;
   }
 
