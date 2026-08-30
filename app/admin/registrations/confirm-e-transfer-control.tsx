@@ -65,6 +65,7 @@ export function ConfirmETransferControl({
     confirmETransferPaymentAction,
     initialActionState,
   );
+  const paymentWasConfirmed = state.status === "success";
 
   useEffect(() => {
     if (state.status === "success") {
@@ -73,7 +74,9 @@ export function ConfirmETransferControl({
   }, [state]);
 
   function openConfirmationDialog() {
-    confirmationDialog.current?.showModal();
+    if (!paymentWasConfirmed) {
+      confirmationDialog.current?.showModal();
+    }
   }
 
   function closeConfirmationDialog() {
@@ -87,19 +90,37 @@ export function ConfirmETransferControl({
       <button
         type="button"
         onClick={openConfirmationDialog}
-        className="min-h-11 w-full rounded-[10px] bg-artis-navy px-4 py-2.5 text-sm font-semibold text-artis-white transition hover:bg-artis-deep-navy focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30"
+        disabled={paymentWasConfirmed}
+        className="min-h-11 w-full rounded-[10px] bg-artis-navy px-4 py-2.5 text-sm font-semibold text-artis-white transition hover:bg-artis-deep-navy focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30 disabled:cursor-not-allowed disabled:bg-artis-slate disabled:opacity-70"
       >
-        Confirm e-transfer
+        {paymentWasConfirmed ? "Payment confirmed" : "Confirm e-transfer"}
       </button>
 
       {state.status === "success" ? (
-        <p
-          className="mt-2 text-xs font-semibold text-artis-success"
-          role="status"
+        <output
+          className={`mt-2 block rounded-[8px] px-3 py-2 text-xs font-semibold leading-5 ${
+            state.emailStatus === "failed"
+              ? "bg-artis-soft-gold text-artis-navy"
+              : "bg-artis-success/10 text-artis-success"
+          }`}
         >
-          Payment confirmed. Registration is now{" "}
-          {formatRegistrationStatus(state.registrationStatus)}.
-        </p>
+          {state.emailStatus === "failed" ? (
+            <>
+              Payment confirmed and registration is now{" "}
+              {formatRegistrationStatus(state.registrationStatus)}, but the
+              confirmation email could not be sent. Contact the family manually,
+              then refresh this page.
+            </>
+          ) : (
+            <>
+              Payment confirmed. Registration is now{" "}
+              {formatRegistrationStatus(state.registrationStatus)}.
+              {state.emailStatus === "sent"
+                ? " The confirmation email was sent."
+                : " No duplicate email was sent."}
+            </>
+          )}
+        </output>
       ) : null}
 
       <dialog
