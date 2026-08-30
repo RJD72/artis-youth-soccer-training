@@ -2,7 +2,7 @@
 // Browser-submitted identifiers are treated as untrusted input; the service
 // validates them again and performs the payment update inside a transaction.
 
-"use-server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 

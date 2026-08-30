@@ -6,6 +6,8 @@ import {
   type AdminRegistrationStatusFilter,
 } from "@/lib/admin-registrations";
 
+import { ConfirmETransferControl } from "./confirm-e-transfer-control";
+
 export const metadata: Metadata = {
   title: "Registrations",
 };
@@ -102,6 +104,29 @@ function formatStatus(status: string): string {
   }
 }
 
+function formatPaymentMethod(paymentMethod: string): string {
+  return paymentMethod === "e_transfer" ? "E-transfer" : "Stripe";
+}
+
+function formatPaymentStatus(paymentStatus: string): string {
+  switch (paymentStatus) {
+    case "pending":
+      return "Pending";
+    case "succeeded":
+      return "Paid";
+    case "failed":
+      return "Failed";
+    case "cancelled":
+      return "Cancelled";
+    case "partially_refunded":
+      return "Partially refunded";
+    case "refunded":
+      return "Refunded";
+    default:
+      return paymentStatus;
+  }
+}
+
 function getStatusClassName(status: string): string {
   switch (status) {
     case "active":
@@ -125,6 +150,51 @@ function StatusBadge({ status }: { status: string }) {
     >
       {formatStatus(status)}
     </span>
+  );
+}
+
+function PaymentSummary({ registration }: { registration: AdminRegistration }) {
+  if (!registration.paymentMethod || !registration.paymentStatus) {
+    return <p className="text-xs text-artis-error">Payment unavailable</p>;
+  }
+
+  return (
+    <div className="text-xs leading-5 text-artis-slate">
+      <p>
+        {formatPaymentMethod(registration.paymentMethod)} ·{" "}
+        {formatPaymentStatus(registration.paymentStatus)}
+      </p>
+      {registration.paidAt ? (
+        <p>Paid {formatDateTime(registration.paidAt)}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function RegistrationActions({
+  registration,
+}: {
+  registration: AdminRegistration;
+}) {
+  if (
+    registration.paymentMethod !== "e_transfer" ||
+    registration.paymentStatus !== "pending" ||
+    registration.paymentId === null
+  ) {
+    return <span className="text-xs text-artis-slate">No active actions</span>;
+  }
+
+  return (
+    <ConfirmETransferControl
+      registrationId={registration.id}
+      paymentId={registration.paymentId}
+      playerName={registration.playerName}
+      amountLabel={formatCurrency(
+        registration.packagePriceCents,
+        registration.currency,
+      )}
+      paymentReference={registration.manualPaymentReference}
+    />
   );
 }
 
@@ -188,6 +258,9 @@ function RegistrationTable({
             <th scope="col" className="px-4 py-3.5 text-xs font-semibold">
               Timeline
             </th>
+            <th scope="col" className="px-4 py-3.5 text-xs font-semibold">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-artis-border">
@@ -245,6 +318,9 @@ function RegistrationTable({
               </td>
               <td className="px-4 py-4">
                 <StatusBadge status={registration.status} />
+                <div className="mt-2">
+                  <PaymentSummary registration={registration} />
+                </div>
               </td>
               <td className="min-w-48 px-4 py-4 text-xs leading-5">
                 <p className="text-artis-slate">
@@ -256,6 +332,9 @@ function RegistrationTable({
                     Waitlisted {formatDateTime(registration.waitlistedAt)}
                   </p>
                 ) : null}
+              </td>
+              <td className="min-w-52 px-4 py-4">
+                <RegistrationActions registration={registration} />
               </td>
             </tr>
           ))}
@@ -352,7 +431,24 @@ function RegistrationCards({
                 ) : null}
               </dd>
             </div>
+
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-artis-slate">
+                Payment
+              </dt>
+              <dd className="mt-1">
+                <PaymentSummary registration={registration} />
+              </dd>
+            </div>
           </dl>
+
+          {registration.paymentMethod === "e_transfer" &&
+          registration.paymentStatus === "pending" &&
+          registration.paymentId !== null ? (
+            <div className="mt-5 border-t border-artis-border pt-5">
+              <RegistrationActions registration={registration} />
+            </div>
+          ) : null}
         </li>
       ))}
     </ul>
