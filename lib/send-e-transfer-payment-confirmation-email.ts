@@ -191,6 +191,62 @@ function formatRegistrationStatus(status: "scheduled" | "active"): string {
   return status === "active" ? "Active" : "Scheduled";
 }
 
+async function getEmailJsRejectionCategory(
+  response: Response,
+): Promise<string> {
+  if (response.status === 401 || response.status === 403) {
+    return "authorization";
+  }
+
+  if (response.status === 429) {
+    return "rate-limit";
+  }
+
+  if (response.status >= 500) {
+    return "provider-unavailable";
+  }
+
+  let providerMessage: string;
+
+  try {
+    providerMessage = (await response.text()).toLowerCase();
+  } catch {
+    return "unreadable-provider-response";
+  }
+
+  if (
+    providerMessage.includes("access token") ||
+    providerMessage.includes("private key") ||
+    providerMessage.includes("authorization")
+  ) {
+    return "authorization";
+  }
+
+  if (
+    providerMessage.includes("public key") ||
+    providerMessage.includes("user_id")
+  ) {
+    return "account-configuration";
+  }
+
+  if (providerMessage.includes("template")) {
+    return "template-configuration";
+  }
+
+  if (providerMessage.includes("service")) {
+    return "service-configuration";
+  }
+
+  if (
+    providerMessage.includes("recipient") ||
+    providerMessage.includes("email address")
+  ) {
+    return "recipient-configuration";
+  }
+
+  return "invalid-request";
+}
+
 export async function sendETransferPaymentConfirmationEmail(
   email: ETransferPaymentConfirmationEmail,
 ): Promise<void> {
@@ -243,13 +299,30 @@ export async function sendETransferPaymentConfirmationEmail(
       body: JSON.stringify(requestBody),
       signal: AbortSignal.timeout(EMAILJS_REQUEST_TIMEOUT_MILLISECONDS),
     });
-  } catch {
+  } catch (error) {
+    // Log only the error class. Fetch errors can otherwise expose request
+    // details, while the class still distinguishes timeouts from network or
+    // runtime failures.
+    const errorType = error instanceof Error ? error.name : "UnknownError";
+
+    console.error(
+      "EmailJS e-transfer confirmation request failed before receiving a response.",
+      { errorType },
+    );
+
     throw new Error("The e-transfer confirmation email could not be sent.");
   }
 
   if (!response.ok) {
-    // Provider responses can contain account details. Do not copy their body
-    // into browser errors or application logs.
+    // Read the provider response only to classify it. Never log its raw body:
+    // it can contain account, service or recipient details.
+    const category = await getEmailJsRejectionCategory(response);
+
+    console.error("EmailJS rejected the e-transfer confirmation email.", {
+      status: response.status,
+      category,
+    });
+
     throw new Error("The e-transfer confirmation email could not be sent.");
   }
 }
