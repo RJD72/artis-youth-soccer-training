@@ -5,7 +5,11 @@
 import "server-only";
 
 import RenewalVerificationEmail from "@/emails/renewal-verification-email";
-import { getResendClient, getResendFromAddress } from "@/lib/email/resend";
+import {
+  getResendClient,
+  getResendFromAddress,
+  getResendRecipient,
+} from "@/lib/email/resend";
 import { getRenewalVerificationTokenHash } from "@/lib/renewal-verification-token";
 
 const MAX_NAME_LENGTH = 100;
@@ -170,7 +174,7 @@ export async function sendRenewalVerificationEmail(
   try {
     result = await getResendClient().emails.send({
       from: getResendFromAddress(),
-      to: guardianEmail,
+      to: getResendRecipient(guardianEmail),
       subject: EMAIL_SUBJECT,
       react: RenewalVerificationEmail({
         guardianName,
