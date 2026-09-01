@@ -1,18 +1,23 @@
-// Sends a payment-confirmation email after an administrator verifies an
-// e-transfer. EmailJS credentials remain server-only, and every value sent to
-// the template is validated before the external request is made.
+// Sends an e-transfer confirmation after an administrator verifies payment.
+// The exported type and function stay provider-neutral so the admin action does
+// not need to know that Resend delivers the message.
 
 import "server-only";
 
-const EMAILJS_SEND_ENDPOINT = "https://api.emailjs.com/api/v1.0/email/send";
-const EMAILJS_REQUEST_TIMEOUT_MILLISECONDS = 10_000;
-const EMAILJS_IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+import ETransferConfirmationEmail from "@/emails/e-transfer-confirmation-email";
+import {
+  getResendClient,
+  getResendFromAddress,
+  getResendRecipient,
+} from "@/lib/email/resend";
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CALENDAR_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const PAYMENT_REFERENCE_PATTERN = /^[A-Za-z0-9-]{1,50}$/;
 const MAX_NAME_LENGTH = 100;
 const MAX_LABEL_LENGTH = 150;
 const MAX_EMAIL_LENGTH = 254;
+const EMAIL_SUBJECT = "Your ARTIS Soccer Academy payment confirmation";
 
 export type ETransferPaymentConfirmationEmail = {
   registrationId: number;
@@ -30,11 +35,18 @@ export type ETransferPaymentConfirmationEmail = {
   registrationStatus: "scheduled" | "active";
 };
 
-type EmailJsConfiguration = {
-  serviceId: string;
-  templateId: string;
-  publicKey: string;
-  privateKey: string;
+type FormattedConfirmation = {
+  guardianName: string;
+  guardianEmail: string;
+  playerName: string;
+  trainingGroupName: string;
+  programPackageName: string;
+  registrationId: string;
+  paymentReference: string;
+  amount: string;
+  paidAt: string;
+  trainingDates: string;
+  registrationStatus: string;
 };
 
 const torontoDateTimeFormatter = new Intl.DateTimeFormat("en-CA", {
@@ -48,50 +60,22 @@ const calendarDateFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: "UTC",
 });
 
-function getRequiredEnvironmentValue(name: string): string {
-  const value = process.env[name]?.trim();
-
-  if (!value) {
-    throw new TypeError(`${name} is missing. Check project's .env.local file`);
-  }
-  return value;
-}
-
-function getEmailJsIdentifier(name: string): string {
-  const value = getRequiredEnvironmentValue(name);
-
-  if (!EMAILJS_IDENTIFIER_PATTERN.test(value)) {
-    throw new TypeError(`${name} is not a valid EmailJS identifier`);
-  }
-  return value;
-}
-
-function getEmailJsConfiguration(): EmailJsConfiguration {
-  return {
-    serviceId: getEmailJsIdentifier("EMAILJS_SERVICE_ID"),
-    templateId: getEmailJsIdentifier(
-      "EMAILJS_E_TRANSFER_CONFIRMATION_TEMPLATE_ID",
-    ),
-    publicKey: getEmailJsIdentifier("EMAILJS_PUBLIC_KEY"),
-    privateKey: getRequiredEnvironmentValue("EMAILJS_PRIVATE_KEY"),
-  };
-}
-
 function normalizeText(
   value: string,
   fieldName: string,
   maximumLength: number,
 ): string {
-  const normaliedValue = value.trim().replace(/\s+/g, " ");
+  const normalizedValue = value.trim().replace(/\s+/g, " ");
 
   if (
-    normaliedValue.length < 2 ||
-    normaliedValue.length > maximumLength ||
+    normalizedValue.length < 2 ||
+    normalizedValue.length > maximumLength ||
     /[\r\n]/.test(value)
   ) {
-    throw new TypeError(`${fieldName} is invalid`);
+    throw new TypeError(`${fieldName} is invalid.`);
   }
-  return normaliedValue;
+
+  return normalizedValue;
 }
 
 function normalizeEmail(value: string): string {
@@ -141,11 +125,9 @@ function formatAmount(amountCents: number, currencyValue: string): string {
     throw new TypeError("The payment amount is invalid.");
   }
 
-  const currency = getCurrency(currencyValue);
-
   return new Intl.NumberFormat("en-CA", {
     style: "currency",
-    currency,
+    currency: getCurrency(currencyValue),
   }).format(amountCents / 100);
 }
 
@@ -191,137 +173,112 @@ function formatRegistrationStatus(status: "scheduled" | "active"): string {
   return status === "active" ? "Active" : "Scheduled";
 }
 
-async function getEmailJsRejectionCategory(
-  response: Response,
-): Promise<string> {
-  if (response.status === 401 || response.status === 403) {
-    return "authorization";
+function formatConfirmation(
+  email: ETransferPaymentConfirmationEmail,
+): FormattedConfirmation {
+  return {
+    guardianName: normalizeText(
+      email.guardianName,
+      "The guardian name",
+      MAX_NAME_LENGTH,
+    ),
+    guardianEmail: normalizeEmail(email.guardianEmail),
+    playerName: normalizeText(
+      email.playerName,
+      "The player name",
+      MAX_NAME_LENGTH,
+    ),
+    trainingGroupName: normalizeText(
+      email.trainingGroupName,
+      "The training group name",
+      MAX_LABEL_LENGTH,
+    ),
+    programPackageName: normalizeText(
+      email.programPackageName,
+      "The package name",
+      MAX_LABEL_LENGTH,
+    ),
+    registrationId: getRegistrationId(email.registrationId),
+    paymentReference: normalizePaymentReference(email.paymentReference),
+    amount: formatAmount(email.amountCents, email.currency),
+    paidAt: formatPaidAt(email.paidAt),
+    trainingDates: formatTrainingDates(email.startsOn, email.endsOn),
+    registrationStatus: formatRegistrationStatus(email.registrationStatus),
+  };
+}
+
+function createPlainTextMessage(details: FormattedConfirmation): string {
+  return [
+    `Hello ${details.guardianName},`,
+    "",
+    `ARTIS Soccer Academy has received and verified your e-transfer payment for ${details.playerName}.`,
+    "",
+    `Registration status: ${details.registrationStatus}`,
+    `Training group: ${details.trainingGroupName}`,
+    `Package: ${details.programPackageName}`,
+    `Training dates: ${details.trainingDates}`,
+    `Amount paid: ${details.amount}`,
+    `Payment reference: ${details.paymentReference}`,
+    `Payment confirmed: ${details.paidAt}`,
+    `Registration number: ${details.registrationId}`,
+    "",
+    "Please keep this email for your records.",
+    "",
+    "ARTIS Soccer Academy",
+  ].join("\n");
+}
+
+function getResendErrorSummary(error: unknown): {
+  errorType: string;
+  status?: number;
+} {
+  if (!error || typeof error !== "object") {
+    return { errorType: "UnknownError" };
   }
 
-  if (response.status === 429) {
-    return "rate-limit";
-  }
+  const errorRecord = error as Record<string, unknown>;
+  const errorType =
+    typeof errorRecord.name === "string" ? errorRecord.name : "UnknownError";
+  const status =
+    typeof errorRecord.statusCode === "number"
+      ? errorRecord.statusCode
+      : undefined;
 
-  if (response.status >= 500) {
-    return "provider-unavailable";
-  }
-
-  let providerMessage: string;
-
-  try {
-    providerMessage = (await response.text()).toLowerCase();
-  } catch {
-    return "unreadable-provider-response";
-  }
-
-  if (
-    providerMessage.includes("access token") ||
-    providerMessage.includes("private key") ||
-    providerMessage.includes("authorization")
-  ) {
-    return "authorization";
-  }
-
-  if (
-    providerMessage.includes("public key") ||
-    providerMessage.includes("user_id")
-  ) {
-    return "account-configuration";
-  }
-
-  if (providerMessage.includes("template")) {
-    return "template-configuration";
-  }
-
-  if (providerMessage.includes("service")) {
-    return "service-configuration";
-  }
-
-  if (
-    providerMessage.includes("recipient") ||
-    providerMessage.includes("email address")
-  ) {
-    return "recipient-configuration";
-  }
-
-  return "invalid-request";
+  return status === undefined ? { errorType } : { errorType, status };
 }
 
 export async function sendETransferPaymentConfirmationEmail(
   email: ETransferPaymentConfirmationEmail,
 ): Promise<void> {
-  const configuration = getEmailJsConfiguration();
-  const requestBody = {
-    service_id: configuration.serviceId,
-    template_id: configuration.templateId,
-    user_id: configuration.publicKey,
-    accessToken: configuration.privateKey,
-    template_params: {
-      guardian_name: normalizeText(
-        email.guardianName,
-        "The guardian name",
-        MAX_NAME_LENGTH,
-      ),
-      guardian_email: normalizeEmail(email.guardianEmail),
-      player_name: normalizeText(
-        email.playerName,
-        "The player name",
-        MAX_NAME_LENGTH,
-      ),
-      training_group: normalizeText(
-        email.trainingGroupName,
-        "The training group name",
-        MAX_LABEL_LENGTH,
-      ),
-      package_name: normalizeText(
-        email.programPackageName,
-        "The package name",
-        MAX_LABEL_LENGTH,
-      ),
-      registration_id: getRegistrationId(email.registrationId),
-      payment_method: "E-transfer",
-      payment_reference: normalizePaymentReference(email.paymentReference),
-      amount: formatAmount(email.amountCents, email.currency),
-      paid_at: formatPaidAt(email.paidAt),
-      training_dates: formatTrainingDates(email.startsOn, email.endsOn),
-      registration_status: formatRegistrationStatus(email.registrationStatus),
-    },
-  };
-
-  let response: Response;
+  const details = formatConfirmation(email);
+  let result: Awaited<
+    ReturnType<ReturnType<typeof getResendClient>["emails"]["send"]>
+  >;
 
   try {
-    response = await fetch(EMAILJS_SEND_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(EMAILJS_REQUEST_TIMEOUT_MILLISECONDS),
+    result = await getResendClient().emails.send({
+      from: getResendFromAddress(),
+      to: getResendRecipient(details.guardianEmail),
+      subject: EMAIL_SUBJECT,
+      react: ETransferConfirmationEmail(details),
+      text: createPlainTextMessage(details),
     });
   } catch (error) {
-    // Log only the error class. Fetch errors can otherwise expose request
-    // details, while the class still distinguishes timeouts from network or
-    // runtime failures.
-    const errorType = error instanceof Error ? error.name : "UnknownError";
-
     console.error(
-      "EmailJS e-transfer confirmation request failed before receiving a response.",
-      { errorType },
+      "Resend e-transfer confirmation request failed before receiving a response.",
+      getResendErrorSummary(error),
     );
 
     throw new Error("The e-transfer confirmation email could not be sent.");
   }
 
-  if (!response.ok) {
-    // Read the provider response only to classify it. Never log its raw body:
-    // it can contain account, service or recipient details.
-    const category = await getEmailJsRejectionCategory(response);
-
-    console.error("EmailJS rejected the e-transfer confirmation email.", {
-      status: response.status,
-      category,
-    });
+  if (result.error) {
+    // Never log the raw provider message: it may include recipient or account
+    // details. The error category and status are enough for diagnosis.
+    console.error(
+      "Resend rejected the e-transfer confirmation email.",
+      getResendErrorSummary(result.error),
+    );
 
     throw new Error("The e-transfer confirmation email could not be sent.");
   }
