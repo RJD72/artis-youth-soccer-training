@@ -1,16 +1,17 @@
-// This server-only module sends a returning player's verification link through
-// a predefined EmailJS template. Keeping EmailJS behind this function means the
-// rest of the renewal flow will not need to change if the email provider does.
+// Sends a returning player's private renewal link through Resend. The public
+// function and input type stay provider-neutral so the renewal flow does not
+// need to know which email service delivers the message.
 
 import "server-only";
 
+import RenewalVerificationEmail from "@/emails/renewal-verification-email";
+import { getResendClient, getResendFromAddress } from "@/lib/email/resend";
 import { getRenewalVerificationTokenHash } from "@/lib/renewal-verification-token";
 
-const EMAILJS_SEND_ENDPOINT = "https://api.emailjs.com/api/v1.0/email/send";
-const EMAILJS_REQUEST_TIMEOUT_MILLISECONDS = 10_000;
 const MAX_NAME_LENGTH = 100;
 const MAX_EMAIL_LENGTH = 254;
-const EMAILJS_IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_SUBJECT = "Your ARTIS Soccer Academy renewal link";
 
 export type RenewalVerificationEmail = {
   guardianName: string;
@@ -20,43 +21,11 @@ export type RenewalVerificationEmail = {
   expiresAt: Date;
 };
 
-type EmailJsConfiguration = {
-  serviceId: string;
-  templateId: string;
-  publicKey: string;
-  privateKey: string;
-};
-
-function getRequiredEnvironmentValue(name: string): string {
-  const value = process.env[name]?.trim();
-
-  if (!value) {
-    throw new TypeError(
-      `${name} is missing. Check the project's .env.local file.`,
-    );
-  }
-
-  return value;
-}
-
-function getEmailJsIdentifier(name: string): string {
-  const value = getRequiredEnvironmentValue(name);
-
-  if (!EMAILJS_IDENTIFIER_PATTERN.test(value)) {
-    throw new TypeError(`${name} contains an invalid EmailJS identifier.`);
-  }
-
-  return value;
-}
-
-function getEmailJsConfiguration(): EmailJsConfiguration {
-  return {
-    serviceId: getEmailJsIdentifier("EMAILJS_SERVICE_ID"),
-    templateId: getEmailJsIdentifier("EMAILJS_RENEWAL_TEMPLATE_ID"),
-    publicKey: getEmailJsIdentifier("EMAILJS_PUBLIC_KEY"),
-    privateKey: getEmailJsIdentifier("EMAILJS_PRIVATE_KEY"),
-  };
-}
+const torontoDateTimeFormatter = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "America/Toronto",
+});
 
 function getApplicationOrigin(): string {
   const configuredUrl =
@@ -113,7 +82,7 @@ function normalizeEmail(value: string): string {
   if (
     normalizedEmail.length < 3 ||
     normalizedEmail.length > MAX_EMAIL_LENGTH ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+    !EMAIL_PATTERN.test(normalizedEmail)
   ) {
     throw new TypeError("The guardian email address is invalid.");
   }
@@ -135,51 +104,104 @@ function createRenewalVerificationUrl(token: string): string {
   return verificationUrl.toString();
 }
 
-function getExpiryIsoString(expiresAt: Date): string {
+function getValidExpiry(expiresAt: Date): Date {
   if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now()) {
     throw new TypeError("The renewal verification expiry is invalid.");
   }
 
-  return expiresAt.toISOString();
+  return expiresAt;
+}
+
+function createPlainTextMessage(
+  guardianName: string,
+  playerName: string,
+  renewalUrl: string,
+  expiresAt: string,
+): string {
+  return [
+    `Hello ${guardianName},`,
+    "",
+    `We received a request to review renewal options for ${playerName}.`,
+    "",
+    `Continue securely: ${renewalUrl}`,
+    "",
+    `This private, single-use link expires at ${expiresAt}.`,
+    "",
+    "If you did not request this email, you can safely ignore it. No changes will be made.",
+    "",
+    "ARTIS Soccer Academy",
+  ].join("\n");
+}
+
+function getResendErrorSummary(error: unknown): {
+  errorType: string;
+  status?: number;
+} {
+  if (!error || typeof error !== "object") {
+    return { errorType: "UnknownError" };
+  }
+
+  const errorRecord = error as Record<string, unknown>;
+  const errorType =
+    typeof errorRecord.name === "string" ? errorRecord.name : "UnknownError";
+  const status =
+    typeof errorRecord.statusCode === "number"
+      ? errorRecord.statusCode
+      : undefined;
+
+  return status === undefined ? { errorType } : { errorType, status };
 }
 
 export async function sendRenewalVerificationEmail(
   email: RenewalVerificationEmail,
 ): Promise<void> {
-  const configuration = getEmailJsConfiguration();
-  const requestBody = {
-    service_id: configuration.serviceId,
-    template_id: configuration.templateId,
-    user_id: configuration.publicKey,
-    accessToken: configuration.privateKey,
-    template_params: {
-      guardian_name: normalizeName(email.guardianName, "The guardian name"),
-      guardian_email: normalizeEmail(email.guardianEmail),
-      player_name: normalizeName(email.playerName, "The player name"),
-      renewal_url: createRenewalVerificationUrl(email.token),
-      expires_at: getExpiryIsoString(email.expiresAt),
-      expires_in: "30 minutes",
-    },
-  };
+  const guardianName = normalizeName(email.guardianName, "The guardian name");
+  const guardianEmail = normalizeEmail(email.guardianEmail);
+  const playerName = normalizeName(email.playerName, "The player name");
+  const renewalUrl = createRenewalVerificationUrl(email.token);
+  const expiresAt = torontoDateTimeFormatter.format(
+    getValidExpiry(email.expiresAt),
+  );
 
-  let response: Response;
+  let result: Awaited<
+    ReturnType<ReturnType<typeof getResendClient>["emails"]["send"]>
+  >;
 
   try {
-    response = await fetch(EMAILJS_SEND_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(EMAILJS_REQUEST_TIMEOUT_MILLISECONDS),
+    result = await getResendClient().emails.send({
+      from: getResendFromAddress(),
+      to: guardianEmail,
+      subject: EMAIL_SUBJECT,
+      react: RenewalVerificationEmail({
+        guardianName,
+        playerName,
+        renewalUrl,
+        expiresAt,
+      }),
+      text: createPlainTextMessage(
+        guardianName,
+        playerName,
+        renewalUrl,
+        expiresAt,
+      ),
     });
-  } catch {
+  } catch (error) {
+    console.error(
+      "Resend renewal verification request failed before receiving a response.",
+      getResendErrorSummary(error),
+    );
+
     throw new Error("The renewal verification email could not be sent.");
   }
 
-  if (!response.ok) {
-    // Do not include EmailJS's response body: provider errors can contain
-    // account details that should not be exposed to the browser or logs.
+  if (result.error) {
+    // Never log the raw provider message: it may include recipient or account
+    // details. The error category and status are enough for diagnosis.
+    console.error(
+      "Resend rejected the renewal verification email.",
+      getResendErrorSummary(result.error),
+    );
+
     throw new Error("The renewal verification email could not be sent.");
   }
 }
