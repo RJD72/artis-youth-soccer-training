@@ -1,13 +1,24 @@
 "use client";
 
-import { useActionState, useCallback, useState } from "react";
+import {
+  useActionState,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
-import { submitContactMessage, type ContactFormActionState } from "./actions";
+import {
+  submitContactMessage,
+  type ContactFormActionState,
+  type ContactFormFieldErrors,
+  type ContactFormFieldName,
+} from "./actions";
 
 const initialActionState: ContactFormActionState = { status: "idle" };
 
-const fieldClassName =
-  "h-[52px] w-full rounded-[10px] border border-artis-border bg-artis-white px-4 py-3.5 text-[15px] leading-5 text-artis-navy outline-none placeholder:text-artis-slate focus:border-artis-gold focus:ring-2 focus:ring-artis-gold/25 disabled:cursor-not-allowed disabled:bg-artis-off-white disabled:opacity-70";
+const fieldBaseClassName =
+  "h-[52px] w-full rounded-[10px] border bg-artis-white px-4 py-3.5 text-[15px] leading-5 text-artis-navy outline-none placeholder:text-artis-slate focus:ring-2 disabled:cursor-not-allowed disabled:bg-artis-off-white disabled:opacity-70";
 
 const enquiryTypes = [
   "General Enquiry",
@@ -31,8 +42,6 @@ type ContactFormValues = {
 };
 
 const errorMessages = {
-  "invalid-form":
-    "Please check the information you entered. Your message must contain at least 10 characters.",
   "rate-limited":
     "Too many messages have been submitted. Please wait 10 minutes before trying again.",
   "unable-to-send":
@@ -43,11 +52,13 @@ function FormField({
   id,
   label,
   required = false,
+  error,
   children,
 }: {
   id: string;
   label: string;
   required?: boolean;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -57,8 +68,24 @@ function FormField({
         {required ? " *" : ""}
       </label>
       <div className="mt-2">{children}</div>
+      {error ? (
+        <p
+          id={`${id}-error`}
+          className="mt-1.5 text-[13px] font-semibold leading-5 text-artis-error"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
+}
+
+function getFieldClassName(error?: string): string {
+  const stateClassName = error
+    ? "border-artis-error focus:border-artis-error focus:ring-artis-error/25"
+    : "border-artis-border focus:border-artis-gold focus:ring-artis-gold/25";
+
+  return `${fieldBaseClassName} ${stateClassName}`;
 }
 
 function getInitialValues(
@@ -74,16 +101,22 @@ function getInitialValues(
 }
 
 export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [values, setValues] = useState<ContactFormValues>(() =>
     getInitialValues(defaultEnquiry),
   );
   const [hasEditedSinceResult, setHasEditedSinceResult] = useState(false);
+  const [dismissedFieldErrors, setDismissedFieldErrors] = useState<
+    Set<ContactFormFieldName>
+  >(() => new Set());
   const submitAction = useCallback(
     async (
       previousState: ContactFormActionState,
       formData: FormData,
     ): Promise<ContactFormActionState> => {
       const nextState = await submitContactMessage(previousState, formData);
+
+      setDismissedFieldErrors(new Set());
 
       if (nextState.status === "success") {
         setValues(getInitialValues(defaultEnquiry));
@@ -98,6 +131,33 @@ export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
     initialActionState,
   );
 
+  useEffect(() => {
+    if (actionState.status !== "error" || actionState.code !== "invalid-form") {
+      return;
+    }
+
+    const fieldOrder: ContactFormFieldName[] = [
+      "fullName",
+      "email",
+      "phone",
+      "enquiryType",
+      "message",
+    ];
+    const firstInvalidField = fieldOrder.find(
+      (fieldName) => actionState.fieldErrors[fieldName] !== undefined,
+    );
+
+    if (!firstInvalidField) {
+      return;
+    }
+
+    const field = formRef.current?.elements.namedItem(firstInvalidField);
+
+    if (field instanceof HTMLElement) {
+      field.focus();
+    }
+  }, [actionState]);
+
   function updateValue<Key extends keyof ContactFormValues>(
     field: Key,
     value: ContactFormValues[Key],
@@ -106,16 +166,44 @@ export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
       ...currentValues,
       [field]: value,
     }));
+    setDismissedFieldErrors((currentFields) => {
+      if (currentFields.has(field)) {
+        return currentFields;
+      }
+
+      const nextFields = new Set(currentFields);
+      nextFields.add(field);
+
+      return nextFields;
+    });
     setHasEditedSinceResult(true);
   }
+
+  const returnedFieldErrors: ContactFormFieldErrors =
+    actionState.status === "error" && actionState.code === "invalid-form"
+      ? actionState.fieldErrors
+      : {};
+  const fieldErrors: ContactFormFieldErrors = Object.fromEntries(
+    Object.entries(returnedFieldErrors).filter(
+      ([fieldName]) =>
+        !dismissedFieldErrors.has(fieldName as ContactFormFieldName),
+    ),
+  );
+  const hasFieldErrors = Object.keys(fieldErrors).length > 0;
 
   const statusMessage = isPending
     ? "Sending your message…"
     : !hasEditedSinceResult && actionState.status === "success"
       ? "Thank you. Your message has been sent to ARTIS Soccer Academy."
-      : !hasEditedSinceResult && actionState.status === "error"
-        ? errorMessages[actionState.code]
-        : null;
+      : actionState.status === "error" &&
+          actionState.code === "invalid-form" &&
+          hasFieldErrors
+        ? "Please correct the highlighted fields below."
+        : !hasEditedSinceResult &&
+            actionState.status === "error" &&
+            actionState.code !== "invalid-form"
+          ? errorMessages[actionState.code]
+          : null;
   const statusClassName =
     actionState.status === "success" && !isPending
       ? "border-artis-success text-artis-success"
@@ -125,26 +213,19 @@ export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
 
   return (
     <form
+      ref={formRef}
       action={formAction}
+      noValidate
       aria-describedby={statusMessage ? "contact-form-status" : undefined}
       className="relative mt-5 space-y-4.5 bg-artis-soft-gold px-4 py-5 xl:mt-6 xl:space-y-5 xl:p-8"
       onSubmit={() => setHasEditedSinceResult(false)}
     >
-      <div
-        aria-hidden="true"
-        className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden"
+      <FormField
+        id="fullName"
+        label="Full name"
+        required
+        error={fieldErrors.fullName}
       >
-        <label htmlFor="contact-website">Website</label>
-        <input
-          id="contact-website"
-          name="website"
-          type="text"
-          autoComplete="off"
-          tabIndex={-1}
-        />
-      </div>
-
-      <FormField id="fullName" label="Full name" required>
         <input
           id="fullName"
           name="fullName"
@@ -156,12 +237,19 @@ export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
           disabled={isPending}
           value={values.fullName}
           onChange={(event) => updateValue("fullName", event.target.value)}
+          aria-invalid={fieldErrors.fullName !== undefined}
+          aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
           placeholder="Enter full name"
-          className={fieldClassName}
+          className={getFieldClassName(fieldErrors.fullName)}
         />
       </FormField>
 
-      <FormField id="email" label="Email address" required>
+      <FormField
+        id="email"
+        label="Email address"
+        required
+        error={fieldErrors.email}
+      >
         <input
           id="email"
           name="email"
@@ -173,12 +261,18 @@ export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
           disabled={isPending}
           value={values.email}
           onChange={(event) => updateValue("email", event.target.value)}
+          aria-invalid={fieldErrors.email !== undefined}
+          aria-describedby={fieldErrors.email ? "email-error" : undefined}
           placeholder="Enter email address"
-          className={fieldClassName}
+          className={getFieldClassName(fieldErrors.email)}
         />
       </FormField>
 
-      <FormField id="phone" label="Phone number (optional)">
+      <FormField
+        id="phone"
+        label="Phone number (optional)"
+        error={fieldErrors.phone}
+      >
         <input
           id="phone"
           name="phone"
@@ -189,12 +283,19 @@ export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
           disabled={isPending}
           value={values.phone}
           onChange={(event) => updateValue("phone", event.target.value)}
+          aria-invalid={fieldErrors.phone !== undefined}
+          aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
           placeholder="Enter phone number"
-          className={fieldClassName}
+          className={getFieldClassName(fieldErrors.phone)}
         />
       </FormField>
 
-      <FormField id="enquiryType" label="Enquiry type" required>
+      <FormField
+        id="enquiryType"
+        label="Enquiry type"
+        required
+        error={fieldErrors.enquiryType}
+      >
         <select
           id="enquiryType"
           name="enquiryType"
@@ -204,7 +305,11 @@ export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
           onChange={(event) =>
             updateValue("enquiryType", event.target.value as ContactEnquiryType)
           }
-          className={fieldClassName}
+          aria-invalid={fieldErrors.enquiryType !== undefined}
+          aria-describedby={
+            fieldErrors.enquiryType ? "enquiryType-error" : undefined
+          }
+          className={getFieldClassName(fieldErrors.enquiryType)}
         >
           {enquiryTypes.map((enquiryType) => (
             <option key={enquiryType} value={enquiryType}>
@@ -214,7 +319,12 @@ export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
         </select>
       </FormField>
 
-      <FormField id="message" label="Message" required>
+      <FormField
+        id="message"
+        label="Message"
+        required
+        error={fieldErrors.message}
+      >
         <textarea
           id="message"
           name="message"
@@ -225,8 +335,10 @@ export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
           disabled={isPending}
           value={values.message}
           onChange={(event) => updateValue("message", event.target.value)}
+          aria-invalid={fieldErrors.message !== undefined}
+          aria-describedby={fieldErrors.message ? "message-error" : undefined}
           placeholder="Enter message"
-          className={`${fieldClassName} min-h-32 resize-y`}
+          className={`${getFieldClassName(fieldErrors.message)} min-h-32 resize-y`}
         />
       </FormField>
 
