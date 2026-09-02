@@ -1,6 +1,6 @@
 // Public Server Action for the Contact Us form. It treats every field as
-// untrusted, quietly absorbs honeypot submissions, applies a small in-memory
-// rate limit, and returns only the state needed by the form UI.
+// untrusted, applies a small in-memory rate limit, and returns only the state
+// needed by the form UI.
 
 "use server";
 
@@ -42,6 +42,23 @@ type RateLimitEntry = {
 
 type ValidatedContactSubmission = Omit<ContactMessageEmailInput, "submittedAt">;
 
+export type ContactFormFieldName =
+  "fullName" | "email" | "phone" | "enquiryType" | "message";
+
+export type ContactFormFieldErrors = Partial<
+  Record<ContactFormFieldName, string>
+>;
+
+type ContactSubmissionValidation =
+  | {
+      valid: true;
+      submission: ValidatedContactSubmission;
+    }
+  | {
+      valid: false;
+      fieldErrors: ContactFormFieldErrors;
+    };
+
 export type ContactFormActionState =
   | {
       status: "idle";
@@ -51,7 +68,12 @@ export type ContactFormActionState =
     }
   | {
       status: "error";
-      code: "invalid-form" | "rate-limited" | "unable-to-send";
+      code: "invalid-form";
+      fieldErrors: ContactFormFieldErrors;
+    }
+  | {
+      status: "error";
+      code: "rate-limited" | "unable-to-send";
     };
 
 // This is intentionally process-local. It gives a small self-hosted site a
@@ -133,7 +155,7 @@ function isValidMessage(value: string | null): value is string {
 
 function validateContactSubmission(
   formData: FormData,
-): ValidatedContactSubmission | null {
+): ContactSubmissionValidation {
   const senderName = getSingleLineField(formData, "fullName");
   const senderEmail =
     getSingleLineField(formData, "email")?.toLowerCase() ?? null;
@@ -142,33 +164,56 @@ function validateContactSubmission(
     getSingleLineField(formData, "enquiryType"),
   );
   const message = getMessageField(formData);
+  const fieldErrors: ContactFormFieldErrors = {};
+  const nameIsValid = isValidName(senderName);
+  const emailIsValid = isValidEmail(senderEmail);
+  const phoneIsValid = phoneNumber !== undefined;
+  const enquiryTypeIsValid = enquiryType !== null;
+  const messageIsValid = isValidMessage(message);
+
+  if (!nameIsValid) {
+    fieldErrors.fullName =
+      "Enter your full name using between 2 and 100 characters.";
+  }
+
+  if (!emailIsValid) {
+    fieldErrors.email = "Enter a valid email address.";
+  }
+
+  if (!phoneIsValid) {
+    fieldErrors.phone =
+      "Enter a valid phone number with 7 to 15 digits, or leave this field blank.";
+  }
+
+  if (!enquiryTypeIsValid) {
+    fieldErrors.enquiryType = "Choose a valid enquiry type.";
+  }
+
+  if (!messageIsValid) {
+    fieldErrors.message =
+      "Enter a message using between 10 and 5,000 characters.";
+  }
 
   if (
-    !isValidName(senderName) ||
-    !isValidEmail(senderEmail) ||
-    phoneNumber === undefined ||
-    enquiryType === null ||
-    !isValidMessage(message)
+    !nameIsValid ||
+    !emailIsValid ||
+    !phoneIsValid ||
+    !enquiryTypeIsValid ||
+    !messageIsValid
   ) {
-    return null;
+    return { valid: false, fieldErrors };
   }
 
   return {
-    senderName,
-    senderEmail,
-    phoneNumber,
-    enquiryType,
-    message,
+    valid: true,
+    submission: {
+      senderName,
+      senderEmail,
+      phoneNumber,
+      enquiryType,
+      message,
+    },
   };
-}
-
-function isHoneypotFilled(formData: FormData): boolean {
-  const website = formData.get("website");
-
-  return (
-    (typeof website === "string" && website.trim() !== "") ||
-    (website !== null && typeof website !== "string")
-  );
 }
 
 function normalizeAddressCandidate(value: string): string | null {
@@ -296,17 +341,17 @@ export async function submitContactMessage(
   _previousState: ContactFormActionState,
   formData: FormData,
 ): Promise<ContactFormActionState> {
-  // A bot receives a believable success response, so the honeypot does not
-  // reveal itself and no Resend request is consumed.
-  if (isHoneypotFilled(formData)) {
-    return { status: "success" };
+  const validation = validateContactSubmission(formData);
+
+  if (!validation.valid) {
+    return {
+      status: "error",
+      code: "invalid-form",
+      fieldErrors: validation.fieldErrors,
+    };
   }
 
-  const submission = validateContactSubmission(formData);
-
-  if (!submission) {
-    return { status: "error", code: "invalid-form" };
-  }
+  const { submission } = validation;
 
   if (!(await consumeContactSubmissionAllowance(submission.senderEmail))) {
     return { status: "error", code: "rate-limited" };
