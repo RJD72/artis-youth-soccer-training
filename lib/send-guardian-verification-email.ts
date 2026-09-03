@@ -99,7 +99,7 @@ function createGuardianVerificationUrl(token: string): string {
   }
 
   const verificationUrl = new URL(
-    "/register/verify-guardian",
+    "/register/verify-guardian/complete",
     getApplicationOrigin(),
   );
   verificationUrl.searchParams.set("token", token);
