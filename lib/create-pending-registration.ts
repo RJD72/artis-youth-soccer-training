@@ -4,11 +4,21 @@
 
 import "server-only";
 
-import { and, count, eq, gt, inArray, isNotNull, or } from "drizzle-orm";
+import {
+  and,
+  count,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+} from "drizzle-orm";
 
 import { db } from "@/db";
 import {
   guardians,
+  guardianVerificationTokens,
   legalAcceptances,
   legalDocuments,
   payments,
@@ -25,12 +35,15 @@ import {
 import { encryptRegistrationText } from "@/lib/registration-encryption";
 import type { ValidatedRegistrationSubmission } from "@/lib/registration-form-validation";
 import { createManualPaymentReference } from "@/lib/registration-payment-reference";
+import { getGuardianVerificationTokenHash } from "@/lib/guardian-verification-token";
 
 const requiredLegalDocumentTypes = [
   "terms_conditions",
   "participation_waiver",
   "gym_facility_rules",
 ] as const;
+
+type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export type PendingRegistrationRejectionCode =
   | "invalid-selection"
@@ -102,6 +115,54 @@ function guardianDetailsMatch(
   );
 }
 
+async function lockGuardianVerificationToken(
+  transaction: DatabaseTransaction,
+  guardianId: number,
+  tokenHash: string | null,
+  now: Date,
+): Promise<number | null> {
+  if (tokenHash === null) {
+    return null;
+  }
+
+  const [verification] = await transaction
+    .select({ id: guardianVerificationTokens.id })
+    .from(guardianVerificationTokens)
+    .where(
+      and(
+        eq(guardianVerificationTokens.tokenHash, tokenHash),
+        eq(guardianVerificationTokens.guardianId, guardianId),
+        isNull(guardianVerificationTokens.consumedAt),
+        gt(guardianVerificationTokens.expiresAt, now),
+      ),
+    )
+    .limit(1)
+    .for("update");
+
+  return verification?.id ?? null;
+}
+
+async function consumeGuardianVerificationToken(
+  transaction: DatabaseTransaction,
+  tokenId: number,
+  now: Date,
+): Promise<void> {
+  const [updateResult] = await transaction
+    .update(guardianVerificationTokens)
+    .set({ consumedAt: now })
+    .where(
+      and(
+        eq(guardianVerificationTokens.id, tokenId),
+        isNull(guardianVerificationTokens.consumedAt),
+        gt(guardianVerificationTokens.expiresAt, now),
+      ),
+    );
+
+  if (updateResult.affectedRows !== 1) {
+    throw new Error("The guardian verification token could not be consumed.");
+  }
+}
+
 function hasEveryRequiredLegalDocument(
   rows: Array<{
     id: number;
@@ -122,10 +183,14 @@ function hasEveryRequiredLegalDocument(
 export async function createPendingRegistration(
   submission: ValidatedRegistrationSubmission,
   reservationExpiresAt: Date,
+  guardianVerificationToken: string | null = null,
 ): Promise<PendingRegistrationCreationOutcome> {
   requireFutureReservationExpiry(reservationExpiresAt);
 
   const now = new Date();
+  const guardianVerificationTokenHash = getGuardianVerificationTokenHash(
+    guardianVerificationToken,
+  );
   const playerFullName = getFullName(
     submission.childFirstName,
     submission.childLastName,
@@ -243,6 +308,8 @@ export async function createPendingRegistration(
         };
       }
 
+      let guardianVerificationTokenId: number | null = null;
+
       const [existingGuardian] = await transaction
         .select({
           id: guardians.id,
@@ -257,7 +324,14 @@ export async function createPendingRegistration(
         .for("update");
 
       if (existingGuardian) {
-        if (!guardianDetailsMatch(existingGuardian, submission)) {
+        guardianVerificationTokenId = await lockGuardianVerificationToken(
+          transaction,
+          existingGuardian.id,
+          guardianVerificationTokenHash,
+          now,
+        );
+
+        if (guardianVerificationTokenId === null) {
           return {
             status: "rejected",
             code: "guardian-verification-required",
@@ -366,7 +440,10 @@ export async function createPendingRegistration(
         throw new Error("The registration guardian could not be saved.");
       }
 
-      if (!guardianDetailsMatch(guardian, submission)) {
+      if (
+        guardianVerificationTokenId === null &&
+        !guardianDetailsMatch(guardian, submission)
+      ) {
         return {
           status: "rejected",
           code: "guardian-verification-required",
@@ -510,6 +587,14 @@ export async function createPendingRegistration(
         if (paymentUpdateResult.affectedRows !== 1) {
           throw new Error("The e-transfer reference could not be saved.");
         }
+      }
+
+      if (guardianVerificationTokenId !== null) {
+        await consumeGuardianVerificationToken(
+          transaction,
+          guardianVerificationTokenId,
+          now,
+        );
       }
 
       return {
