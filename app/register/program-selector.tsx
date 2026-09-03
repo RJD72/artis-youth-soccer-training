@@ -105,7 +105,7 @@ const registrationErrorMessages: Record<RegistrationActionErrorCode, string> = {
   "already-registered":
     "This player already has a current registration for the selected training group.",
   "guardian-verification-required":
-    "An account already exists for this email address. Please contact ARTIS Soccer Academy before continuing.",
+    "Check this email address for a secure verification link. Keep this page open, open the link, then return here and choose your payment method again. Check the junk folder if the email does not arrive.",
   "renewal-required":
     "This player has registered before. Returning-player renewal is not available yet, so please contact ARTIS Soccer Academy for assistance.",
 };
