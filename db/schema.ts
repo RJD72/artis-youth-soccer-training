@@ -193,6 +193,47 @@ export const guardians = mysqlTable("guardians", {
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 });
 
+// When a registration uses an email address that already belongs to a
+// guardian, the family must prove that it controls that inbox before the app
+// reuses the guardian record for another child. Only a SHA-256 hash of the
+// emailed token is stored. Tokens are short-lived and single-use.
+export const guardianVerificationTokens = mysqlTable(
+  "guardian_verification_tokens",
+  {
+    id: int("id", {
+      unsigned: true,
+    })
+      .autoincrement()
+      .primaryKey(),
+
+    guardianId: int("guardian_id", {
+      unsigned: true,
+    })
+      .notNull()
+      .references(() => guardians.id, {
+        onDelete: "restrict",
+      }),
+
+    tokenHash: char("token_hash", {
+      length: 64,
+    }).notNull(),
+
+    expiresAt: timestamp("expires_at").notNull(),
+
+    consumedAt: timestamp("consumed_at"),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("guardian_verification_tokens_hash_unique").on(table.tokenHash),
+
+    index("guardian_verification_tokens_guardian_expiry_index").on(
+      table.guardianId,
+      table.expiresAt,
+    ),
+  ],
+);
+
 // A waitlist entry stores only the information needed to contact a family when
 // a place becomes available. It remains separate from players and
 // registrations because joining the waitlist does not require payment, a
