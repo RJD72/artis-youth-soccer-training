@@ -14,15 +14,17 @@ const COOKIE_PATH = "/register";
 
 function requireValidToken(token: string): string {
   if (getGuardianVerificationTokenHash(token) === null) {
-    throw new TypeError("The guardian verification token is invalid");
+    throw new TypeError("The guardian verification token is invalid.");
   }
+
   return token;
 }
 
 function requireFutureExpiry(expiresAt: Date): Date {
   if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now()) {
-    throw new TypeError("The guardian verification expiry is invalid");
+    throw new TypeError("The guardian verification expiry is invalid.");
   }
+
   return expiresAt;
 }
 
@@ -44,7 +46,9 @@ export async function setGuardianVerificationSession(
   });
 }
 
-export async function getGuardianVerificationSession(): Promise<string | null> {
+export async function getGuardianVerificationSessionToken(): Promise<
+  string | null
+> {
   const value = (await cookies()).get(COOKIE_NAME)?.value;
 
   return value && getGuardianVerificationTokenHash(value) !== null
