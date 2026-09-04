@@ -6,6 +6,7 @@
 
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 
 import { db } from "@/db";
 import { guardianVerificationTokens } from "@/db/schema";
@@ -24,6 +25,7 @@ import {
 import { getGuardianVerificationTokenHash } from "@/lib/guardian-verification-token";
 import { validateRegistrationSubmission } from "@/lib/registration-form-validation";
 import { createRegistrationPaymentReference } from "@/lib/registration-payment-reference";
+import { sendETransferPendingNotificationEmail } from "@/lib/send-e-transfer-pending-notification-email";
 import { sendGuardianVerificationEmail } from "@/lib/send-guardian-verification-email";
 
 const reservationLifetimeMilliseconds = {
@@ -162,6 +164,21 @@ async function safelyClearGuardianVerificationSession(): Promise<void> {
   }
 }
 
+async function notifyAcademyOfPendingETransfer(
+  registrationId: number,
+  paymentId: number,
+): Promise<void> {
+  try {
+    await sendETransferPendingNotificationEmail(registrationId, paymentId);
+  } catch (error) {
+    // The registration and payment records already exist, so an email outage
+    // must not prevent the parent from seeing the payment instructions.
+    const errorType = error instanceof Error ? error.name : "UnknownError";
+
+    console.error("Pending e-transfer notification failed.", { errorType });
+  }
+}
+
 export async function submitRegistration(
   _previousState: RegistrationActionState,
   formData: FormData,
@@ -221,6 +238,15 @@ export async function submitRegistration(
     outcome.paymentMethod,
   );
   const paymentPagePath = getPaymentPagePath(outcome.paymentMethod);
+
+  if (outcome.paymentMethod === "e_transfer") {
+    after(() =>
+      notifyAcademyOfPendingETransfer(
+        outcome.registrationId,
+        outcome.paymentId,
+      ),
+    );
+  }
 
   redirect(buildPaymentPageUrl(paymentPagePath, reference));
 }
