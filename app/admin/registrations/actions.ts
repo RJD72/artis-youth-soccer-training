@@ -25,6 +25,10 @@ import {
   type RegistrationCancellationRejectionCode,
 } from "@/lib/cancel-registration";
 import {
+  rescheduleRegistration,
+  type RegistrationReschedulingRejectionCode,
+} from "@/lib/reschedule-registration";
+import {
   sendETransferPaymentConfirmationEmail,
   type ETransferPaymentConfirmationEmail,
 } from "@/lib/send-e-transfer-payment-confirmation-email";
@@ -65,6 +69,25 @@ export type CancelRegistrationActionState =
       code: CancelRegistrationActionErrorCode;
     };
 
+export type RescheduleRegistrationActionErrorCode =
+  RegistrationReschedulingRejectionCode | "unable-to-reschedule";
+
+export type RescheduleRegistrationActionState =
+  | {
+      status: "idle";
+    }
+  | {
+      status: "success";
+      result: "rescheduled" | "unchanged";
+      registrationStatus: "scheduled" | "active";
+      startsOn: string;
+      endsOn: string;
+    }
+  | {
+      status: "error";
+      code: RescheduleRegistrationActionErrorCode;
+    };
+
 function logConfirmationFailure(error: unknown): void {
   // Database errors can contain query parameters, so log only the broad error
   // type and never the submitted FormData or family/payment information.
@@ -86,6 +109,14 @@ function logCancellationFailure(error: unknown): void {
   const errorType = error instanceof Error ? error.name : "UnknownError";
 
   console.error("Registration cancellation failed.", { errorType });
+}
+
+function logReschedulingFailure(error: unknown): void {
+  // Never log the submitted registration identifier, requested dates or any
+  // family information that could be present in a database error.
+  const errorType = error instanceof Error ? error.name : "UnknownError";
+
+  console.error("Registration rescheduling failed.", { errorType });
 }
 
 function getDatabaseId(value: FormDataEntryValue | null): number | null {
@@ -257,5 +288,39 @@ export async function cancelRegistrationAction(
   return {
     status: "success",
     result: outcome.status,
+  };
+}
+
+export async function rescheduleRegistrationAction(
+  _previousState: RescheduleRegistrationActionState,
+  formData: FormData,
+): Promise<RescheduleRegistrationActionState> {
+  let outcome: Awaited<ReturnType<typeof rescheduleRegistration>>;
+
+  try {
+    outcome = await rescheduleRegistration(
+      formData.get("registrationId"),
+      formData.get("startMonth"),
+    );
+  } catch (error) {
+    logReschedulingFailure(error);
+
+    return { status: "error", code: "unable-to-reschedule" };
+  }
+
+  if (outcome.status === "rejected") {
+    return { status: "error", code: outcome.code };
+  }
+
+  if (outcome.status === "rescheduled") {
+    revalidatePath("/admin/registrations");
+  }
+
+  return {
+    status: "success",
+    result: outcome.status,
+    registrationStatus: outcome.registrationStatus,
+    startsOn: outcome.startsOn,
+    endsOn: outcome.endsOn,
   };
 }
