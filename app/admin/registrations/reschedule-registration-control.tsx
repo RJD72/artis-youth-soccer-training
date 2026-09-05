@@ -107,14 +107,28 @@ export function RescheduleRegistrationControl({
       </button>
 
       {state.status === "success" ? (
-        <output className="mt-2 block rounded-[8px] bg-artis-success/10 px-3 py-2 text-xs font-semibold leading-5 text-artis-success">
-          {state.result === "unchanged" ? (
+        <output
+          className={`mt-2 block rounded-[8px] px-3 py-2 text-xs font-semibold leading-5 ${
+            state.emailStatus === "failed"
+              ? "bg-artis-soft-gold text-artis-navy"
+              : "bg-artis-success/10 text-artis-success"
+          }`}
+        >
+          {state.emailStatus === "failed" ? (
+            <>
+              Dates updated to {formatDate(state.startsOn)} through{" "}
+              {formatDate(state.endsOn)}, but the guardian notification email
+              could not be sent. Contact the family manually, then refresh this
+              page.
+            </>
+          ) : state.result === "unchanged" ? (
             "The selected month is already the registration’s starting month."
           ) : (
             <>
               Dates updated to {formatDate(state.startsOn)} through{" "}
               {formatDate(state.endsOn)}. The registration is now{" "}
-              {state.registrationStatus}.
+              {state.registrationStatus}. The guardian notification email was
+              sent.
             </>
           )}
         </output>
