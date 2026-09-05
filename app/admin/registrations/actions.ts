@@ -21,6 +21,10 @@ import {
   type ETransferConfirmationRejectionCode,
 } from "@/lib/confirm-e-transfer-payment";
 import {
+  cancelRegistration,
+  type RegistrationCancellationRejectionCode,
+} from "@/lib/cancel-registration";
+import {
   sendETransferPaymentConfirmationEmail,
   type ETransferPaymentConfirmationEmail,
 } from "@/lib/send-e-transfer-payment-confirmation-email";
@@ -28,8 +32,7 @@ import {
 type ConfirmedRegistrationStatus = "scheduled" | "active" | "expired";
 
 export type ConfirmETransferActionErrorCode =
-  | ETransferConfirmationRejectionCode
-  | "unable-to-confirm";
+  ETransferConfirmationRejectionCode | "unable-to-confirm";
 
 export type ConfirmETransferActionState =
   | {
@@ -46,6 +49,22 @@ export type ConfirmETransferActionState =
       code: ConfirmETransferActionErrorCode;
     };
 
+export type CancelRegistrationActionErrorCode =
+  RegistrationCancellationRejectionCode | "unable-to-cancel";
+
+export type CancelRegistrationActionState =
+  | {
+      status: "idle";
+    }
+  | {
+      status: "success";
+      result: "cancelled" | "already-cancelled";
+    }
+  | {
+      status: "error";
+      code: CancelRegistrationActionErrorCode;
+    };
+
 function logConfirmationFailure(error: unknown): void {
   // Database errors can contain query parameters, so log only the broad error
   // type and never the submitted FormData or family/payment information.
@@ -59,6 +78,14 @@ function logConfirmationEmailFailure(error: unknown): void {
   const errorType = error instanceof Error ? error.name : "UnknownError";
 
   console.error("E-transfer confirmation email failed.", { errorType });
+}
+
+function logCancellationFailure(error: unknown): void {
+  // Database errors can contain query parameters, so never log the submitted
+  // registration identifier or any family information.
+  const errorType = error instanceof Error ? error.name : "UnknownError";
+
+  console.error("Registration cancellation failed.", { errorType });
 }
 
 function getDatabaseId(value: FormDataEntryValue | null): number | null {
@@ -204,5 +231,31 @@ export async function confirmETransferPaymentAction(
     result: outcome.status,
     registrationStatus: outcome.registrationStatus,
     emailStatus,
+  };
+}
+
+export async function cancelRegistrationAction(
+  _previousState: CancelRegistrationActionState,
+  formData: FormData,
+): Promise<CancelRegistrationActionState> {
+  let outcome: Awaited<ReturnType<typeof cancelRegistration>>;
+
+  try {
+    outcome = await cancelRegistration(formData.get("registrationId"));
+  } catch (error) {
+    logCancellationFailure(error);
+
+    return { status: "error", code: "unable-to-cancel" };
+  }
+
+  if (outcome.status === "rejected") {
+    return { status: "error", code: outcome.code };
+  }
+
+  revalidatePath("/admin/registrations");
+
+  return {
+    status: "success",
+    result: outcome.status,
   };
 }
