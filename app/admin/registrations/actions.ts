@@ -32,8 +32,15 @@ import {
   sendETransferPaymentConfirmationEmail,
   type ETransferPaymentConfirmationEmail,
 } from "@/lib/send-e-transfer-payment-confirmation-email";
+import {
+  sendRegistrationAdminUpdateEmail,
+  type RegistrationAdminUpdateEmailMessage,
+} from "@/lib/send-registration-admin-update-email";
 
 type ConfirmedRegistrationStatus = "scheduled" | "active" | "expired";
+type EmailDeliveryStatus = "sent" | "failed" | "not-sent";
+type RegistrationAdminUpdateType =
+  RegistrationAdminUpdateEmailMessage["updateType"];
 
 export type ConfirmETransferActionErrorCode =
   ETransferConfirmationRejectionCode | "unable-to-confirm";
@@ -63,6 +70,7 @@ export type CancelRegistrationActionState =
   | {
       status: "success";
       result: "cancelled" | "already-cancelled";
+      emailStatus: EmailDeliveryStatus;
     }
   | {
       status: "error";
@@ -82,6 +90,7 @@ export type RescheduleRegistrationActionState =
       registrationStatus: "scheduled" | "active";
       startsOn: string;
       endsOn: string;
+      emailStatus: EmailDeliveryStatus;
     }
   | {
       status: "error";
@@ -117,6 +126,13 @@ function logReschedulingFailure(error: unknown): void {
   const errorType = error instanceof Error ? error.name : "UnknownError";
 
   console.error("Registration rescheduling failed.", { errorType });
+}
+
+function logRegistrationUpdateEmailFailure(error: unknown): void {
+  // Do not log the recipient, player name or registration identifier.
+  const errorType = error instanceof Error ? error.name : "UnknownError";
+
+  console.error("Registration update email failed.", { errorType });
 }
 
 function getDatabaseId(value: FormDataEntryValue | null): number | null {
@@ -222,6 +238,96 @@ async function sendConfirmationEmail(
   }
 }
 
+async function getRegistrationAdminUpdateEmail(
+  registrationId: number,
+  updateType: RegistrationAdminUpdateType,
+): Promise<RegistrationAdminUpdateEmailMessage | null> {
+  const [email] = await db
+    .select({
+      registrationId: registrations.id,
+      registrationStatus: registrations.status,
+      startsOn: registrations.startsOn,
+      endsOn: registrations.endsOn,
+      guardianName: guardians.fullName,
+      guardianEmail: guardians.email,
+      playerName: players.fullName,
+      trainingGroupName: trainingGroups.displayName,
+    })
+    .from(registrations)
+    .innerJoin(players, eq(registrations.playerId, players.id))
+    .innerJoin(guardians, eq(players.guardianId, guardians.id))
+    .innerJoin(
+      trainingGroups,
+      eq(registrations.trainingGroupId, trainingGroups.id),
+    )
+    .where(eq(registrations.id, registrationId))
+    .limit(1);
+
+  if (!email) {
+    return null;
+  }
+
+  const commonDetails = {
+    registrationId: email.registrationId,
+    guardianName: email.guardianName,
+    guardianEmail: email.guardianEmail,
+    playerName: email.playerName,
+    trainingGroupName: email.trainingGroupName,
+  };
+
+  if (updateType === "cancelled") {
+    return email.registrationStatus === "cancelled"
+      ? { ...commonDetails, updateType: "cancelled" }
+      : null;
+  }
+
+  if (
+    (email.registrationStatus !== "scheduled" &&
+      email.registrationStatus !== "active") ||
+    email.startsOn === null ||
+    email.endsOn === null
+  ) {
+    return null;
+  }
+
+  return {
+    ...commonDetails,
+    updateType: "rescheduled",
+    startsOn: email.startsOn,
+    endsOn: email.endsOn,
+  };
+}
+
+async function sendRegistrationUpdateEmail(
+  registrationIdValue: FormDataEntryValue | null,
+  updateType: RegistrationAdminUpdateType,
+): Promise<"sent" | "failed"> {
+  try {
+    const registrationId = getDatabaseId(registrationIdValue);
+
+    if (!registrationId) {
+      return "failed";
+    }
+
+    const email = await getRegistrationAdminUpdateEmail(
+      registrationId,
+      updateType,
+    );
+
+    if (!email) {
+      return "failed";
+    }
+
+    await sendRegistrationAdminUpdateEmail(email);
+
+    return "sent";
+  } catch (error) {
+    logRegistrationUpdateEmailFailure(error);
+
+    return "failed";
+  }
+}
+
 export async function confirmETransferPaymentAction(
   _previousState: ConfirmETransferActionState,
   formData: FormData,
@@ -269,10 +375,11 @@ export async function cancelRegistrationAction(
   _previousState: CancelRegistrationActionState,
   formData: FormData,
 ): Promise<CancelRegistrationActionState> {
+  const registrationIdValue = formData.get("registrationId");
   let outcome: Awaited<ReturnType<typeof cancelRegistration>>;
 
   try {
-    outcome = await cancelRegistration(formData.get("registrationId"));
+    outcome = await cancelRegistration(registrationIdValue);
   } catch (error) {
     logCancellationFailure(error);
 
@@ -283,11 +390,21 @@ export async function cancelRegistrationAction(
     return { status: "error", code: outcome.code };
   }
 
-  revalidatePath("/admin/registrations");
+  const emailStatus =
+    outcome.status === "cancelled"
+      ? await sendRegistrationUpdateEmail(registrationIdValue, "cancelled")
+      : "not-sent";
+
+  // Keep the control mounted when email delivery fails so the next UI update
+  // can show the administrator a warning. The cancellation remains saved.
+  if (emailStatus !== "failed") {
+    revalidatePath("/admin/registrations");
+  }
 
   return {
     status: "success",
     result: outcome.status,
+    emailStatus,
   };
 }
 
@@ -295,11 +412,12 @@ export async function rescheduleRegistrationAction(
   _previousState: RescheduleRegistrationActionState,
   formData: FormData,
 ): Promise<RescheduleRegistrationActionState> {
+  const registrationIdValue = formData.get("registrationId");
   let outcome: Awaited<ReturnType<typeof rescheduleRegistration>>;
 
   try {
     outcome = await rescheduleRegistration(
-      formData.get("registrationId"),
+      registrationIdValue,
       formData.get("startMonth"),
     );
   } catch (error) {
@@ -312,7 +430,12 @@ export async function rescheduleRegistrationAction(
     return { status: "error", code: outcome.code };
   }
 
-  if (outcome.status === "rescheduled") {
+  const emailStatus =
+    outcome.status === "rescheduled"
+      ? await sendRegistrationUpdateEmail(registrationIdValue, "rescheduled")
+      : "not-sent";
+
+  if (outcome.status === "rescheduled" && emailStatus !== "failed") {
     revalidatePath("/admin/registrations");
   }
 
@@ -322,5 +445,6 @@ export async function rescheduleRegistrationAction(
     registrationStatus: outcome.registrationStatus,
     startsOn: outcome.startsOn,
     endsOn: outcome.endsOn,
+    emailStatus,
   };
 }
