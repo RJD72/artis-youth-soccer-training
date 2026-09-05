@@ -6,6 +6,7 @@ import {
   type AdminRegistrationStatusFilter,
 } from "@/lib/admin-registrations";
 
+import { CancelRegistrationControl } from "./cancel-registration-control";
 import { ConfirmETransferControl } from "./confirm-e-transfer-control";
 
 export const metadata: Metadata = {
@@ -176,26 +177,53 @@ function RegistrationActions({
 }: {
   registration: AdminRegistration;
 }) {
-  if (
-    registration.paymentMethod !== "e_transfer" ||
-    registration.paymentStatus !== "pending" ||
-    registration.paymentId === null
-  ) {
+  const canConfirmETransfer =
+    registration.paymentMethod === "e_transfer" &&
+    registration.paymentStatus === "pending" &&
+    registration.paymentId !== null;
+  const canCancelRegistration =
+    registration.status === "scheduled" || registration.status === "active";
+
+  if (!canConfirmETransfer && !canCancelRegistration) {
     return <span className="text-xs text-artis-slate">No active actions</span>;
   }
 
   return (
-    <ConfirmETransferControl
-      registrationId={registration.id}
-      paymentId={registration.paymentId}
-      playerName={registration.playerName}
-      amountLabel={formatCurrency(
-        registration.packagePriceCents,
-        registration.currency,
-      )}
-      paymentReference={registration.manualPaymentReference}
-    />
+    <div className="space-y-2">
+      {canConfirmETransfer ? (
+        <ConfirmETransferControl
+          registrationId={registration.id}
+          paymentId={registration.paymentId!}
+          playerName={registration.playerName}
+          amountLabel={formatCurrency(
+            registration.packagePriceCents,
+            registration.currency,
+          )}
+          paymentReference={registration.manualPaymentReference}
+        />
+      ) : null}
+
+      {registration.status === "scheduled" ||
+      registration.status === "active" ? (
+        <CancelRegistrationControl
+          registrationId={registration.id}
+          playerName={registration.playerName}
+          registrationStatus={registration.status}
+        />
+      ) : null}
+    </div>
   );
+}
+
+function hasRegistrationActions(registration: AdminRegistration): boolean {
+  const canConfirmETransfer =
+    registration.paymentMethod === "e_transfer" &&
+    registration.paymentStatus === "pending" &&
+    registration.paymentId !== null;
+  const canCancelRegistration =
+    registration.status === "scheduled" || registration.status === "active";
+
+  return canConfirmETransfer || canCancelRegistration;
 }
 
 function ReservationTiming({
@@ -442,9 +470,7 @@ function RegistrationCards({
             </div>
           </dl>
 
-          {registration.paymentMethod === "e_transfer" &&
-          registration.paymentStatus === "pending" &&
-          registration.paymentId !== null ? (
+          {hasRegistrationActions(registration) ? (
             <div className="mt-5 border-t border-artis-border pt-5">
               <RegistrationActions registration={registration} />
             </div>
