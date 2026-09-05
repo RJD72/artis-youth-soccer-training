@@ -8,6 +8,7 @@ import {
 
 import { CancelRegistrationControl } from "./cancel-registration-control";
 import { ConfirmETransferControl } from "./confirm-e-transfer-control";
+import { RescheduleRegistrationControl } from "./reschedule-registration-control";
 
 export const metadata: Metadata = {
   title: "Registrations",
@@ -55,6 +56,38 @@ function getFirstSearchParameter(
 
 function formatDateTime(value: Date): string {
   return dateFormatter.format(value);
+}
+
+function formatMonthInputValue(value: Date): string {
+  const year = value.getUTCFullYear();
+  const month = String(value.getUTCMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
+}
+
+function getAllowedStartMonthRange(now: Date = new Date()): {
+  earliestStartMonth: string;
+  latestStartMonth: string;
+} {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Toronto",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(now);
+  const year = Number(parts.find((part) => part.type === "year")?.value);
+  const month = Number(parts.find((part) => part.type === "month")?.value);
+
+  if (!Number.isInteger(year) || !Number.isInteger(month)) {
+    throw new TypeError("The current Toronto month could not be determined.");
+  }
+
+  const currentMonth = new Date(Date.UTC(year, month - 1, 1));
+  const latestMonth = new Date(Date.UTC(year, month - 1 + 24, 1));
+
+  return {
+    earliestStartMonth: formatMonthInputValue(currentMonth),
+    latestStartMonth: formatMonthInputValue(latestMonth),
+  };
 }
 
 function formatDateOnly(value: string | null): string {
@@ -172,6 +205,59 @@ function PaymentSummary({ registration }: { registration: AdminRegistration }) {
   );
 }
 
+function ETransferConfirmationAction({
+  registration,
+}: {
+  registration: AdminRegistration;
+}) {
+  const { paymentId } = registration;
+
+  if (
+    registration.paymentMethod !== "e_transfer" ||
+    registration.paymentStatus !== "pending" ||
+    paymentId === null
+  ) {
+    return null;
+  }
+
+  return (
+    <ConfirmETransferControl
+      registrationId={registration.id}
+      paymentId={paymentId}
+      playerName={registration.playerName}
+      amountLabel={formatCurrency(
+        registration.packagePriceCents,
+        registration.currency,
+      )}
+      paymentReference={registration.manualPaymentReference}
+    />
+  );
+}
+
+function RegistrationReschedulingAction({
+  registration,
+}: {
+  registration: AdminRegistration;
+}) {
+  const { startsOn } = registration;
+
+  if (registration.status !== "scheduled" || startsOn === null) {
+    return null;
+  }
+
+  const { earliestStartMonth, latestStartMonth } = getAllowedStartMonthRange();
+
+  return (
+    <RescheduleRegistrationControl
+      registrationId={registration.id}
+      playerName={registration.playerName}
+      currentStartsOn={startsOn}
+      earliestStartMonth={earliestStartMonth}
+      latestStartMonth={latestStartMonth}
+    />
+  );
+}
+
 function RegistrationActions({
   registration,
 }: {
@@ -190,18 +276,8 @@ function RegistrationActions({
 
   return (
     <div className="space-y-2">
-      {canConfirmETransfer ? (
-        <ConfirmETransferControl
-          registrationId={registration.id}
-          paymentId={registration.paymentId!}
-          playerName={registration.playerName}
-          amountLabel={formatCurrency(
-            registration.packagePriceCents,
-            registration.currency,
-          )}
-          paymentReference={registration.manualPaymentReference}
-        />
-      ) : null}
+      <ETransferConfirmationAction registration={registration} />
+      <RegistrationReschedulingAction registration={registration} />
 
       {registration.status === "scheduled" ||
       registration.status === "active" ? (
