@@ -7,14 +7,21 @@ const footerNavigation = [
   { href: "/#faq", label: "FAQ" },
   { href: "/privacy", label: "Privacy" },
   { href: "/terms", label: "Terms" },
-  { href: "/refund-policy", label: "Refund Policy" },
 ];
 
-function SocialMediaComingSoon() {
+type SocialMediaComingSoonProps = {
+  align?: "start" | "end";
+};
+
+function SocialMediaComingSoon({
+  align = "start",
+}: SocialMediaComingSoonProps) {
   return (
     <div
       aria-label="Facebook and Instagram links coming soon"
-      className="flex flex-wrap items-center gap-x-4 gap-y-2"
+      className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${
+        align === "end" ? "justify-end" : "justify-start"
+      }`}
     >
       <span className="flex items-center gap-2">
         <span
@@ -43,27 +50,28 @@ function SocialMediaComingSoon() {
 
 export function MobileFooterContent() {
   return (
-    <div className="bg-artis-deep-navy px-8 py-8 text-artis-white">
-      <p className="text-[17px] font-bold leading-[25px]">
-        ARTIS SOCCER ACADEMY
-      </p>
+    <div className="bg-artis-deep-navy px-6 py-8 text-artis-white sm:px-8">
+      <div className="mx-auto w-full max-w-[1280px]">
+        <p className="text-[17px] font-bold leading-[25px]">
+          ARTIS SOCCER ACADEMY
+        </p>
 
-      <div className="mt-3.5 space-y-1 text-sm leading-5">
-        <nav aria-label="Footer navigation">
-          <p>
-            <Link href="/#training">Training</Link> ·{" "}
-            <Link href="/about">About</Link> · <Link href="/#faq">FAQ</Link>
-          </p>
-          <p>
-            <Link href="/privacy">Privacy</Link> ·{" "}
-            <Link href="/terms">Terms</Link> ·{" "}
-            <Link href="/refund-policy">Refund Policy</Link>
-          </p>
+        <nav
+          aria-label="Footer navigation"
+          className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium leading-5"
+        >
+          {footerNavigation.map((item) => (
+            <Link key={item.href} href={item.href}>
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
-        <p>Contact information to be confirmed</p>
+        <p className="mt-5 text-sm leading-5 text-artis-white/80">
+          Contact information to be confirmed
+        </p>
 
-        <div className="pt-1">
+        <div className="mt-3 text-sm leading-5">
           <SocialMediaComingSoon />
         </div>
       </div>
@@ -79,31 +87,30 @@ export default function SiteFooter() {
       </div>
 
       <div className="hidden bg-artis-deep-navy px-10 py-12 text-artis-white xl:block">
-        <div className="mx-auto flex w-full max-w-[1280px] items-center gap-10">
-          <div className="w-[500px] shrink-0">
+        <div className="mx-auto grid w-full max-w-[1280px] grid-cols-2 items-start gap-16">
+          <div>
             <p className="text-lg font-bold leading-[26px]">
               ARTIS SOCCER ACADEMY
             </p>
-            <p className="mt-3 text-sm leading-5">
+            <p className="mt-3 text-sm leading-5 text-artis-white/80">
               Contact information to be confirmed
             </p>
           </div>
 
-          <div className="w-[620px] text-sm font-medium leading-5">
+          <div className="ml-auto flex max-w-[620px] flex-col items-end text-right text-sm font-medium leading-5">
             <nav
               aria-label="Footer navigation"
-              className="flex flex-wrap gap-x-3"
+              className="flex flex-wrap justify-end gap-x-4 gap-y-2"
             >
-              {footerNavigation.map((item, index) => (
-                <span key={item.href}>
-                  <Link href={item.href}>{item.label}</Link>
-                  {index < footerNavigation.length - 1 ? " ·" : ""}
-                </span>
+              {footerNavigation.map((item) => (
+                <Link key={item.href} href={item.href}>
+                  {item.label}
+                </Link>
               ))}
             </nav>
 
-            <div className="mt-2">
-              <SocialMediaComingSoon />
+            <div className="mt-3">
+              <SocialMediaComingSoon align="end" />
             </div>
           </div>
         </div>
