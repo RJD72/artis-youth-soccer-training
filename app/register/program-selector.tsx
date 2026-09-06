@@ -4,14 +4,21 @@
 import Link from "next/link";
 import {
   useActionState,
+  useCallback,
   useEffect,
   useRef,
   useState,
+  type ChangeEvent,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
   type SubmitEvent,
 } from "react";
+
+import type {
+  RegistrationFormFieldErrors,
+  RegistrationFormFieldName,
+} from "@/lib/registration-form-validation";
 
 import {
   submitRegistration,
@@ -57,6 +64,7 @@ type ProgramSelectorProps = {
 type TextFieldProps = {
   id: string;
   label: string;
+  error?: string;
   className?: string;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "className">;
 
@@ -64,6 +72,7 @@ type SelectFieldProps = {
   id: string;
   label: string;
   children: ReactNode;
+  error?: string;
   className?: string;
 } & Omit<
   SelectHTMLAttributes<HTMLSelectElement>,
@@ -77,6 +86,7 @@ type CheckboxFieldProps = {
   required?: boolean;
   checked?: boolean;
   onChange?: (checked: boolean) => void;
+  error?: string;
 };
 
 type FormControlSnapshot = {
@@ -130,8 +140,60 @@ const dayOrder: Record<string, number> = {
   sunday: 7,
 };
 
-const inputClassName =
-  "h-[52px] w-full rounded-[10px] border border-artis-border bg-artis-white px-4 text-[15px] text-artis-navy outline-none transition-colors placeholder:text-artis-slate focus:border-artis-navy focus:ring-2 focus:ring-artis-gold/35";
+const inputBaseClassName =
+  "h-[52px] w-full rounded-[10px] border bg-artis-white px-4 text-[15px] text-artis-navy outline-none transition-colors placeholder:text-artis-slate focus:ring-2";
+
+const registrationFieldOrder: RegistrationFormFieldName[] = [
+  "trainingGroupId",
+  "programPackageId",
+  "childFirstName",
+  "childLastName",
+  "dateOfBirth",
+  "currentPlayingLevel",
+  "currentTeamOrClub",
+  "jerseySize",
+  "preferredName",
+  "medicalInformation",
+  "coachInformation",
+  "guardianFirstName",
+  "guardianLastName",
+  "guardianRelationship",
+  "email",
+  "primaryPhone",
+  "secondaryPhone",
+  "preferredContactMethod",
+  "emergencyContactDifferent",
+  "emergencyContactName",
+  "emergencyContactRelationship",
+  "emergencyContactPhone",
+  "authorizedRegistrantConfirmed",
+  "informationAccuracyConfirmed",
+  "termsAccepted",
+  "participationWaiverAccepted",
+  "gymRulesAccepted",
+  "marketingConsent",
+  "photoVideoConsent",
+  "paymentMethod",
+];
+
+function getInputClassName(error?: string): string {
+  const stateClassName = error
+    ? "border-artis-error focus:border-artis-error focus:ring-artis-error/25"
+    : "border-artis-border focus:border-artis-navy focus:ring-artis-gold/35";
+
+  return `${inputBaseClassName} ${stateClassName}`;
+}
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  return message ? (
+    <p
+      id={`${id}-error`}
+      className="mt-1.5 text-[13px] font-semibold leading-5 text-artis-error"
+    >
+      {message}
+    </p>
+  ) : null;
+}
 
 function isRestorableFormControl(
   element: Element,
@@ -199,6 +261,22 @@ function restoreFormControls(
       element.value = snapshot.value;
     }
   }
+}
+
+function findFormControl(
+  form: HTMLFormElement,
+  fieldName: RegistrationFormFieldName,
+): HTMLElement | null {
+  for (const element of Array.from(form.elements)) {
+    if (
+      element instanceof HTMLElement &&
+      element.getAttribute("name") === fieldName
+    ) {
+      return element;
+    }
+  }
+
+  return null;
 }
 
 function formatCurrency(priceCents: number, currency: string): string {
@@ -273,6 +351,7 @@ function formatProgramStart(): string {
 function TextField({
   id,
   label,
+  error,
   className = "",
   ...inputProps
 }: TextFieldProps) {
@@ -281,7 +360,16 @@ function TextField({
       <label htmlFor={id} className="mb-2 block text-[13px] font-semibold">
         {label}
       </label>
-      <input id={id} className={inputClassName} {...inputProps} />
+      <input
+        id={id}
+        className={getInputClassName(error)}
+        {...inputProps}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={
+          error ? `${id}-error` : inputProps["aria-describedby"]
+        }
+      />
+      <FieldError id={id} message={error} />
     </div>
   );
 }
@@ -290,6 +378,7 @@ function SelectField({
   id,
   label,
   children,
+  error,
   className = "",
   ...selectProps
 }: SelectFieldProps) {
@@ -298,9 +387,18 @@ function SelectField({
       <label htmlFor={id} className="mb-2 block text-[13px] font-semibold">
         {label}
       </label>
-      <select id={id} className={inputClassName} {...selectProps}>
+      <select
+        id={id}
+        className={getInputClassName(error)}
+        {...selectProps}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={
+          error ? `${id}-error` : selectProps["aria-describedby"]
+        }
+      >
         {children}
       </select>
+      <FieldError id={id} message={error} />
     </div>
   );
 }
@@ -312,25 +410,39 @@ function CheckboxField({
   required = false,
   checked,
   onChange,
+  error,
 }: CheckboxFieldProps) {
   return (
-    <div className="flex items-start gap-3">
-      <input
-        id={id}
-        name={name}
-        type="checkbox"
-        required={required}
-        checked={checked}
-        onChange={
-          onChange
-            ? (event) => onChange(event.currentTarget.checked)
-            : undefined
-        }
-        className="mt-0.5 size-6 shrink-0 rounded-[5px] border-artis-border accent-artis-navy"
-      />
-      <label htmlFor={id} className="text-sm leading-[21px]">
-        {children}
-      </label>
+    <div
+      className={
+        error
+          ? "rounded-[10px] border border-artis-error bg-artis-error/5 p-3"
+          : ""
+      }
+    >
+      <div className="flex items-start gap-3">
+        <input
+          id={id}
+          name={name}
+          type="checkbox"
+          required={required}
+          checked={checked}
+          onChange={
+            onChange
+              ? (event) => onChange(event.currentTarget.checked)
+              : undefined
+          }
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={`mt-0.5 size-6 shrink-0 rounded-[5px] accent-artis-navy ${
+            error ? "border-artis-error" : "border-artis-border"
+          }`}
+        />
+        <label htmlFor={id} className="text-sm leading-[21px]">
+          {children}
+        </label>
+      </div>
+      <FieldError id={id} message={error} />
     </div>
   );
 }
@@ -451,7 +563,11 @@ function SelectedTrainingSummary({
   );
 }
 
-function PlayerInformationSection() {
+function PlayerInformationSection({
+  fieldErrors,
+}: {
+  fieldErrors: RegistrationFormFieldErrors;
+}) {
   return (
     <section className="rounded-[14px] border border-artis-border bg-artis-white p-6 sm:p-8">
       <FormSectionHeader
@@ -468,6 +584,7 @@ function PlayerInformationSection() {
           autoComplete="given-name"
           maxLength={50}
           required
+          error={fieldErrors.childFirstName}
         />
         <TextField
           id="childLastName"
@@ -477,6 +594,7 @@ function PlayerInformationSection() {
           autoComplete="family-name"
           maxLength={50}
           required
+          error={fieldErrors.childLastName}
         />
         <TextField
           id="dateOfBirth"
@@ -485,6 +603,7 @@ function PlayerInformationSection() {
           label="Date of birth *"
           autoComplete="bday"
           required
+          error={fieldErrors.dateOfBirth}
         />
         <SelectField
           id="currentPlayingLevel"
@@ -492,6 +611,7 @@ function PlayerInformationSection() {
           label="Current age group or playing level *"
           defaultValue=""
           required
+          error={fieldErrors.currentPlayingLevel}
         >
           <option value="" disabled>
             Choose an option
@@ -511,6 +631,7 @@ function PlayerInformationSection() {
           label="Current team or club (optional)"
           placeholder="Enter team or club"
           maxLength={100}
+          error={fieldErrors.currentTeamOrClub}
         />
 
         <div className="border-t border-artis-border pt-[22px] sm:col-span-2">
@@ -528,6 +649,7 @@ function PlayerInformationSection() {
           name="jerseySize"
           label="Jersey size (pending confirmation)"
           defaultValue=""
+          error={fieldErrors.jerseySize}
         >
           <option value="" disabled>
             Choose a size
@@ -543,6 +665,7 @@ function PlayerInformationSection() {
           label="Name on jersey (optional until confirmed)"
           placeholder="Enter name for the jersey"
           maxLength={50}
+          error={fieldErrors.preferredName}
         />
 
         <p className="rounded-[10px] bg-artis-soft-gold p-4 text-sm leading-6 text-artis-slate sm:col-span-2">
@@ -557,6 +680,7 @@ function PlayerInformationSection() {
           placeholder="Enter information only if relevant"
           maxLength={2000}
           className="sm:col-span-2"
+          error={fieldErrors.medicalInformation}
         />
       </div>
 
@@ -572,12 +696,17 @@ function PlayerInformationSection() {
         placeholder="Add relevant information"
         maxLength={2000}
         className="mt-[22px]"
+        error={fieldErrors.coachInformation}
       />
     </section>
   );
 }
 
-function GuardianInformationSection() {
+function GuardianInformationSection({
+  fieldErrors,
+}: {
+  fieldErrors: RegistrationFormFieldErrors;
+}) {
   return (
     <section className="rounded-[14px] border border-artis-border bg-artis-white p-6 sm:p-8">
       <FormSectionHeader
@@ -594,6 +723,7 @@ function GuardianInformationSection() {
           autoComplete="given-name"
           maxLength={50}
           required
+          error={fieldErrors.guardianFirstName}
         />
         <TextField
           id="guardianLastName"
@@ -603,6 +733,7 @@ function GuardianInformationSection() {
           autoComplete="family-name"
           maxLength={50}
           required
+          error={fieldErrors.guardianLastName}
         />
         <SelectField
           id="guardianRelationship"
@@ -610,6 +741,7 @@ function GuardianInformationSection() {
           label="Relationship to player *"
           defaultValue=""
           required
+          error={fieldErrors.guardianRelationship}
         >
           <option value="" disabled>
             Choose relationship
@@ -629,6 +761,7 @@ function GuardianInformationSection() {
           autoComplete="email"
           maxLength={254}
           required
+          error={fieldErrors.email}
         />
         <TextField
           id="primaryPhone"
@@ -639,6 +772,7 @@ function GuardianInformationSection() {
           autoComplete="tel"
           maxLength={30}
           required
+          error={fieldErrors.primaryPhone}
         />
         <TextField
           id="secondaryPhone"
@@ -647,6 +781,7 @@ function GuardianInformationSection() {
           label="Secondary phone number (optional)"
           placeholder="(000) 000-0000"
           maxLength={30}
+          error={fieldErrors.secondaryPhone}
         />
         <SelectField
           id="preferredContactMethod"
@@ -655,6 +790,7 @@ function GuardianInformationSection() {
           defaultValue="email"
           required
           className="sm:col-span-2"
+          error={fieldErrors.preferredContactMethod}
         >
           <option value="email">Email</option>
           <option value="phone">Phone</option>
@@ -668,9 +804,11 @@ function GuardianInformationSection() {
 function EmergencyContactSection({
   usesDifferentContact,
   setUsesDifferentContact,
+  fieldErrors,
 }: {
   usesDifferentContact: boolean;
   setUsesDifferentContact: (value: boolean) => void;
+  fieldErrors: RegistrationFormFieldErrors;
 }) {
   return (
     <section className="rounded-[14px] border border-artis-border bg-artis-white p-6 sm:p-8">
@@ -685,6 +823,7 @@ function EmergencyContactSection({
           name="emergencyContactDifferent"
           checked={usesDifferentContact}
           onChange={setUsesDifferentContact}
+          error={fieldErrors.emergencyContactDifferent}
         >
           Emergency contact is different from the registering parent or guardian
         </CheckboxField>
@@ -699,6 +838,7 @@ function EmergencyContactSection({
           autoComplete="name"
           maxLength={100}
           required={usesDifferentContact}
+          error={fieldErrors.emergencyContactName}
         />
         <SelectField
           id="emergencyContactRelationship"
@@ -706,6 +846,7 @@ function EmergencyContactSection({
           label="Relationship to player"
           defaultValue=""
           required={usesDifferentContact}
+          error={fieldErrors.emergencyContactRelationship}
         >
           <option value="" disabled>
             Choose relationship
@@ -727,13 +868,18 @@ function EmergencyContactSection({
           maxLength={30}
           required={usesDifferentContact}
           className="sm:col-span-2"
+          error={fieldErrors.emergencyContactPhone}
         />
       </div>
     </section>
   );
 }
 
-function ConsentSection() {
+function ConsentSection({
+  fieldErrors,
+}: {
+  fieldErrors: RegistrationFormFieldErrors;
+}) {
   return (
     <section className="rounded-[14px] border border-artis-border bg-artis-white p-6 sm:p-8">
       <FormSectionHeader
@@ -746,6 +892,7 @@ function ConsentSection() {
           id="authorizedRegistrantConfirmed"
           name="authorizedRegistrantConfirmed"
           required
+          error={fieldErrors.authorizedRegistrantConfirmed}
         >
           I confirm that I am the player’s parent or legal guardian, or that I
           am authorized to register this player. *
@@ -754,10 +901,16 @@ function ConsentSection() {
           id="informationAccuracyConfirmed"
           name="informationAccuracyConfirmed"
           required
+          error={fieldErrors.informationAccuracyConfirmed}
         >
           I confirm that the information provided is accurate. *
         </CheckboxField>
-        <CheckboxField id="termsAccepted" name="termsAccepted" required>
+        <CheckboxField
+          id="termsAccepted"
+          name="termsAccepted"
+          required
+          error={fieldErrors.termsAccepted}
+        >
           I agree to the Terms and Conditions. *{" "}
           <Link href="/terms" className="font-semibold underline">
             View Terms and Conditions
@@ -767,25 +920,39 @@ function ConsentSection() {
           id="participationWaiverAccepted"
           name="participationWaiverAccepted"
           required
+          error={fieldErrors.participationWaiverAccepted}
         >
           I acknowledge the Participation Waiver. *{" "}
           <Link href="/waiver" className="font-semibold underline">
             View Participation Waiver
           </Link>
         </CheckboxField>
-        <CheckboxField id="gymRulesAccepted" name="gymRulesAccepted" required>
+        <CheckboxField
+          id="gymRulesAccepted"
+          name="gymRulesAccepted"
+          required
+          error={fieldErrors.gymRulesAccepted}
+        >
           I acknowledge the Gym or Facility Rules. *{" "}
           <Link href="/gym-rules" className="font-semibold underline">
             View Gym Rules
           </Link>
         </CheckboxField>
-        <CheckboxField id="marketingConsent" name="marketingConsent">
+        <CheckboxField
+          id="marketingConsent"
+          name="marketingConsent"
+          error={fieldErrors.marketingConsent}
+        >
           <span className="text-artis-slate">
             I would like to receive program announcements and future training
             information. (Optional)
           </span>
         </CheckboxField>
-        <CheckboxField id="photoVideoConsent" name="photoVideoConsent">
+        <CheckboxField
+          id="photoVideoConsent"
+          name="photoVideoConsent"
+          error={fieldErrors.photoVideoConsent}
+        >
           <span className="text-artis-slate">
             I consent to photographs or videos of the player being used for
             promotional purposes. (Optional)
@@ -813,11 +980,13 @@ function ProgramSelection({
   selectedPackageId,
   setSelectedGroupId,
   setSelectedPackageId,
+  fieldErrors,
 }: ProgramSelectorProps & {
   selectedGroupId: number;
   selectedPackageId: number;
   setSelectedGroupId: (value: number) => void;
   setSelectedPackageId: (value: number) => void;
+  fieldErrors: RegistrationFormFieldErrors;
 }) {
   return (
     <section
@@ -835,7 +1004,17 @@ function ProgramSelection({
       </div>
 
       <div className="space-y-8 p-6 sm:p-8">
-        <fieldset>
+        <fieldset
+          aria-invalid={fieldErrors.trainingGroupId ? true : undefined}
+          aria-describedby={
+            fieldErrors.trainingGroupId ? "trainingGroupId-error" : undefined
+          }
+          className={
+            fieldErrors.trainingGroupId
+              ? "rounded-[10px] outline outline-1 outline-offset-4 outline-artis-error"
+              : ""
+          }
+        >
           <legend className="text-lg font-bold">Age group</legend>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {trainingGroups.map((group) => {
@@ -874,9 +1053,23 @@ function ProgramSelection({
               );
             })}
           </div>
+          <FieldError
+            id="trainingGroupId"
+            message={fieldErrors.trainingGroupId}
+          />
         </fieldset>
 
-        <fieldset>
+        <fieldset
+          aria-invalid={fieldErrors.programPackageId ? true : undefined}
+          aria-describedby={
+            fieldErrors.programPackageId ? "programPackageId-error" : undefined
+          }
+          className={
+            fieldErrors.programPackageId
+              ? "rounded-[10px] outline outline-1 outline-offset-4 outline-artis-error"
+              : ""
+          }
+        >
           <legend className="text-lg font-bold">Program term</legend>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {programPackages.map((programPackage) => {
@@ -924,6 +1117,10 @@ function ProgramSelection({
               );
             })}
           </div>
+          <FieldError
+            id="programPackageId"
+            message={fieldErrors.programPackageId}
+          />
         </fieldset>
 
         <div className="flex flex-col gap-3 rounded-[10px] bg-artis-deep-navy p-5 text-artis-white sm:flex-row sm:items-center sm:justify-between">
@@ -952,10 +1149,26 @@ export default function ProgramSelector({
     programPackages[0]?.id ?? 0,
   );
   const [usesDifferentContact, setUsesDifferentContact] = useState(false);
+  const [dismissedFieldErrors, setDismissedFieldErrors] = useState<
+    Set<RegistrationFormFieldName>
+  >(() => new Set());
   const formRef = useRef<HTMLFormElement>(null);
   const preservedFormControlsRef = useRef<FormControlSnapshot[]>([]);
+  const submitAction = useCallback(
+    async (
+      previousState: RegistrationActionState,
+      formData: FormData,
+    ): Promise<RegistrationActionState> => {
+      const nextState = await submitRegistration(previousState, formData);
+
+      setDismissedFieldErrors(new Set());
+
+      return nextState;
+    },
+    [],
+  );
   const [actionState, formAction, isPending] = useActionState(
-    submitRegistration,
+    submitAction,
     initialActionState,
   );
   const selectedGroup = trainingGroups.find(
@@ -964,6 +1177,25 @@ export default function ProgramSelector({
   const selectedPackage = programPackages.find(
     (programPackage) => programPackage.id === selectedPackageId,
   );
+  const returnedFieldErrors: RegistrationFormFieldErrors =
+    actionState.status === "error" && actionState.code === "invalid-form"
+      ? actionState.fieldErrors
+      : {};
+  const fieldErrors: RegistrationFormFieldErrors = Object.fromEntries(
+    Object.entries(returnedFieldErrors).filter(
+      ([fieldName]) =>
+        !dismissedFieldErrors.has(fieldName as RegistrationFormFieldName),
+    ),
+  );
+  const hasFieldErrors = Object.keys(fieldErrors).length > 0;
+  const statusMessage =
+    actionState.status === "error" &&
+    actionState.code === "invalid-form" &&
+    hasFieldErrors
+      ? "Please correct the highlighted fields below."
+      : actionState.status === "error" && actionState.code !== "invalid-form"
+        ? registrationErrorMessages[actionState.code]
+        : null;
 
   useEffect(() => {
     if (actionState.status !== "error" || !formRef.current) {
@@ -971,6 +1203,25 @@ export default function ProgramSelector({
     }
 
     restoreFormControls(formRef.current, preservedFormControlsRef.current);
+
+    if (actionState.code !== "invalid-form") {
+      return;
+    }
+
+    const firstInvalidField = registrationFieldOrder.find(
+      (fieldName) => actionState.fieldErrors[fieldName] !== undefined,
+    );
+
+    if (!firstInvalidField) {
+      return;
+    }
+
+    const field = findFormControl(formRef.current, firstInvalidField);
+
+    if (field) {
+      field.focus({ preventScroll: true });
+      field.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   }, [actionState]);
 
   function preserveFormControls(event: SubmitEvent<HTMLFormElement>): void {
@@ -978,6 +1229,35 @@ export default function ProgramSelector({
     // Keep an in-memory snapshot so a rejected submission can be restored
     // without placing names, contact details, or medical notes in web storage.
     preservedFormControlsRef.current = captureFormControls(event.currentTarget);
+  }
+
+  function dismissFieldError(event: ChangeEvent<HTMLFormElement>): void {
+    const target = event.target;
+
+    if (!(
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLSelectElement ||
+      target instanceof HTMLTextAreaElement
+    )) {
+      return;
+    }
+
+    const fieldName = target.name as RegistrationFormFieldName;
+
+    if (!returnedFieldErrors[fieldName]) {
+      return;
+    }
+
+    setDismissedFieldErrors((currentFields) => {
+      if (currentFields.has(fieldName)) {
+        return currentFields;
+      }
+
+      const nextFields = new Set(currentFields);
+      nextFields.add(fieldName);
+
+      return nextFields;
+    });
   }
 
   if (!selectedGroup || !selectedPackage) {
@@ -995,6 +1275,9 @@ export default function ProgramSelector({
     <form
       ref={formRef}
       action={formAction}
+      noValidate
+      aria-describedby={statusMessage ? "registration-form-status" : undefined}
+      onChange={dismissFieldError}
       onSubmit={preserveFormControls}
       className="space-y-8"
     >
@@ -1016,26 +1299,28 @@ export default function ProgramSelector({
         selectedPackageId={selectedPackageId}
         setSelectedGroupId={setSelectedGroupId}
         setSelectedPackageId={setSelectedPackageId}
+        fieldErrors={fieldErrors}
       />
 
       <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,760px)_420px] xl:gap-12">
         <div className="order-2 space-y-7 xl:order-1">
-          <PlayerInformationSection />
-          <GuardianInformationSection />
+          <PlayerInformationSection fieldErrors={fieldErrors} />
+          <GuardianInformationSection fieldErrors={fieldErrors} />
           <EmergencyContactSection
             usesDifferentContact={usesDifferentContact}
             setUsesDifferentContact={setUsesDifferentContact}
+            fieldErrors={fieldErrors}
           />
-          <ConsentSection />
+          <ConsentSection fieldErrors={fieldErrors} />
 
           <section className="rounded-[14px] border border-artis-border bg-artis-white p-6 sm:p-8">
-            {actionState.status === "error" ? (
+            {statusMessage ? (
               <output
+                id="registration-form-status"
                 aria-live="polite"
-                className="mb-5 block rounded-md bg-[#fbeded] px-3 py-2.5 text-[13px] leading-5 text-artis-error"
+                className="mb-5 block rounded-[10px] border border-artis-error bg-[#fbeded] px-4 py-3 text-sm font-semibold leading-6 text-artis-error"
               >
-                <span className="font-semibold">Please review:</span>{" "}
-                {registrationErrorMessages[actionState.code]}
+                {statusMessage}
               </output>
             ) : null}
 
@@ -1045,7 +1330,11 @@ export default function ProgramSelector({
                 name="paymentMethod"
                 value="stripe"
                 disabled={isPending}
-                className="min-h-12 rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold text-artis-white disabled:opacity-60 sm:w-[300px]"
+                className={`min-h-12 rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold text-artis-white disabled:opacity-60 sm:w-[300px] ${
+                  fieldErrors.paymentMethod
+                    ? "ring-2 ring-artis-error ring-offset-2"
+                    : ""
+                }`}
               >
                 {isPending
                   ? "Submitting registration…"
@@ -1056,10 +1345,18 @@ export default function ProgramSelector({
                 name="paymentMethod"
                 value="e_transfer"
                 disabled={isPending}
-                className="min-h-12 rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold text-artis-navy disabled:opacity-60 sm:w-[250px]"
+                className={`min-h-12 rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold text-artis-navy disabled:opacity-60 sm:w-[250px] ${
+                  fieldErrors.paymentMethod
+                    ? "ring-2 ring-artis-error ring-offset-2"
+                    : ""
+                }`}
               >
                 {isPending ? "Submitting registration…" : "Pay by E-transfer"}
               </button>
+              <FieldError
+                id="paymentMethod"
+                message={fieldErrors.paymentMethod}
+              />
               <Link
                 href="/#training"
                 className="text-sm font-semibold leading-5 underline-offset-4 hover:underline"
