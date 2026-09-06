@@ -43,6 +43,42 @@ export type ValidatedRegistrationSubmission = {
   paymentMethod: RegistrationPaymentMethod;
 };
 
+export type RegistrationFormFieldName =
+  | "trainingGroupId"
+  | "programPackageId"
+  | "childFirstName"
+  | "childLastName"
+  | "dateOfBirth"
+  | "preferredName"
+  | "jerseySize"
+  | "currentPlayingLevel"
+  | "currentTeamOrClub"
+  | "medicalInformation"
+  | "coachInformation"
+  | "guardianFirstName"
+  | "guardianLastName"
+  | "guardianRelationship"
+  | "email"
+  | "primaryPhone"
+  | "secondaryPhone"
+  | "preferredContactMethod"
+  | "emergencyContactDifferent"
+  | "emergencyContactName"
+  | "emergencyContactRelationship"
+  | "emergencyContactPhone"
+  | "authorizedRegistrantConfirmed"
+  | "informationAccuracyConfirmed"
+  | "termsAccepted"
+  | "participationWaiverAccepted"
+  | "gymRulesAccepted"
+  | "marketingConsent"
+  | "photoVideoConsent"
+  | "paymentMethod";
+
+export type RegistrationFormFieldErrors = Partial<
+  Record<RegistrationFormFieldName, string>
+>;
+
 export type RegistrationSubmissionValidation =
   | {
       status: "valid";
@@ -50,6 +86,7 @@ export type RegistrationSubmissionValidation =
     }
   | {
       status: "invalid";
+      fieldErrors: RegistrationFormFieldErrors;
     }
   | {
       status: "spam";
@@ -267,6 +304,31 @@ function isHoneypotFilled(formData: FormData): boolean {
   );
 }
 
+function addFieldError(
+  fieldErrors: RegistrationFormFieldErrors,
+  fieldName: RegistrationFormFieldName,
+  message: string,
+): void {
+  if (!fieldErrors[fieldName]) {
+    fieldErrors[fieldName] = message;
+  }
+}
+
+function addParsedValueError(
+  fieldErrors: RegistrationFormFieldErrors,
+  fieldName: RegistrationFormFieldName,
+  result: ParsedValue<unknown>,
+  message: string,
+): void {
+  if (!result.valid) {
+    addFieldError(fieldErrors, fieldName, message);
+  }
+}
+
+function hasFieldErrors(fieldErrors: RegistrationFormFieldErrors): boolean {
+  return Object.keys(fieldErrors).length > 0;
+}
+
 export function validateRegistrationSubmission(
   formData: FormData,
 ): RegistrationSubmissionValidation {
@@ -363,41 +425,191 @@ export function validateRegistrationSubmission(
     "e_transfer",
   ] as const);
 
-  const results = [
-    trainingGroupId,
-    programPackageId,
-    childFirstName,
-    childLastName,
-    dateOfBirth,
-    preferredName,
-    jerseySize,
-    currentPlayingLevel,
-    currentTeamOrClub,
-    medicalInformation,
-    coachInformation,
-    guardianFirstName,
-    guardianLastName,
-    guardianRelationship,
-    email,
-    primaryPhone,
-    secondaryPhone,
-    preferredContactMethod,
-    usesDifferentEmergencyContact,
-    emergencyContactName,
-    emergencyContactRelationship,
-    emergencyContactPhone,
-    authorizedRegistrantConfirmed,
-    informationAccuracyConfirmed,
-    termsAccepted,
-    participationWaiverAccepted,
-    gymRulesAccepted,
-    marketingConsent,
-    photoVideoConsent,
-    paymentMethod,
-  ];
+  const fieldErrors: RegistrationFormFieldErrors = {};
 
-  if (results.some((result) => !result.valid)) {
-    return { status: "invalid" };
+  addParsedValueError(
+    fieldErrors,
+    "trainingGroupId",
+    trainingGroupId,
+    "Choose a training group.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "programPackageId",
+    programPackageId,
+    "Choose a program term.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "childFirstName",
+    childFirstName,
+    "Enter the player’s first name using no more than 50 characters.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "childLastName",
+    childLastName,
+    "Enter the player’s last name using no more than 50 characters.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "dateOfBirth",
+    dateOfBirth,
+    "Enter the player’s date of birth.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "preferredName",
+    preferredName,
+    "Use no more than 50 characters for the preferred name.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "jerseySize",
+    jerseySize,
+    "Choose a valid jersey size or leave this field blank.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "currentPlayingLevel",
+    currentPlayingLevel,
+    "Choose the player’s current playing level.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "currentTeamOrClub",
+    currentTeamOrClub,
+    "Use no more than 100 characters for the team or club.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "medicalInformation",
+    medicalInformation,
+    "Use no more than 2,000 characters for medical information.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "coachInformation",
+    coachInformation,
+    "Use no more than 2,000 characters for coach information.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "guardianFirstName",
+    guardianFirstName,
+    "Enter the guardian’s first name using no more than 50 characters.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "guardianLastName",
+    guardianLastName,
+    "Enter the guardian’s last name using no more than 50 characters.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "guardianRelationship",
+    guardianRelationship,
+    "Choose the guardian’s relationship to the player.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "email",
+    email,
+    "Enter the guardian’s email address.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "primaryPhone",
+    primaryPhone,
+    "Enter the guardian’s primary phone number.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "secondaryPhone",
+    secondaryPhone,
+    "Enter a valid secondary phone number or leave this field blank.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "preferredContactMethod",
+    preferredContactMethod,
+    "Choose a preferred contact method.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "emergencyContactDifferent",
+    usesDifferentEmergencyContact,
+    "Choose whether the emergency contact is different from the guardian.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "emergencyContactName",
+    emergencyContactName,
+    "Use no more than 100 characters for the emergency contact’s name.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "emergencyContactRelationship",
+    emergencyContactRelationship,
+    "Use no more than 50 characters for the emergency contact’s relationship.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "emergencyContactPhone",
+    emergencyContactPhone,
+    "Enter a valid emergency phone number.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "authorizedRegistrantConfirmed",
+    authorizedRegistrantConfirmed,
+    "Confirm that you are authorized to register this player.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "informationAccuracyConfirmed",
+    informationAccuracyConfirmed,
+    "Confirm that the registration information is accurate.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "termsAccepted",
+    termsAccepted,
+    "Accept the Terms and Conditions to continue.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "participationWaiverAccepted",
+    participationWaiverAccepted,
+    "Acknowledge the Participation Waiver to continue.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "gymRulesAccepted",
+    gymRulesAccepted,
+    "Acknowledge the facility rules to continue.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "marketingConsent",
+    marketingConsent,
+    "Choose a valid marketing preference.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "photoVideoConsent",
+    photoVideoConsent,
+    "Choose a valid photo and video preference.",
+  );
+  addParsedValueError(
+    fieldErrors,
+    "paymentMethod",
+    paymentMethod,
+    "Choose a payment method.",
+  );
+
+  if (hasFieldErrors(fieldErrors)) {
+    return { status: "invalid", fieldErrors };
   }
 
   // TypeScript cannot infer that checking the collection above narrowed every
@@ -434,27 +646,99 @@ export function validateRegistrationSubmission(
     !photoVideoConsent.valid ||
     !paymentMethod.valid
   ) {
-    return { status: "invalid" };
+    return { status: "invalid", fieldErrors };
   }
 
   const normalizedEmail = email.value.toLowerCase();
   const childFullName = `${childFirstName.value} ${childLastName.value}`;
   const guardianFullName = `${guardianFirstName.value} ${guardianLastName.value}`;
 
-  if (
-    childFullName.length > 100 ||
-    guardianFullName.length > 100 ||
-    !isValidPastDate(dateOfBirth.value) ||
-    !isValidEmail(normalizedEmail) ||
-    !isValidPhone(primaryPhone.value) ||
-    (secondaryPhone.value !== null && !isValidPhone(secondaryPhone.value)) ||
-    !authorizedRegistrantConfirmed.value ||
-    !informationAccuracyConfirmed.value ||
-    !termsAccepted.value ||
-    !participationWaiverAccepted.value ||
-    !gymRulesAccepted.value
-  ) {
-    return { status: "invalid" };
+  if (childFullName.length > 100) {
+    addFieldError(
+      fieldErrors,
+      "childLastName",
+      "The player’s combined first and last name must not exceed 100 characters.",
+    );
+  }
+
+  if (guardianFullName.length > 100) {
+    addFieldError(
+      fieldErrors,
+      "guardianLastName",
+      "The guardian’s combined first and last name must not exceed 100 characters.",
+    );
+  }
+
+  if (!isValidPastDate(dateOfBirth.value)) {
+    addFieldError(
+      fieldErrors,
+      "dateOfBirth",
+      "Enter a valid birth date earlier than today.",
+    );
+  }
+
+  if (!isValidEmail(normalizedEmail)) {
+    addFieldError(
+      fieldErrors,
+      "email",
+      "Enter a valid email address, such as name@example.com.",
+    );
+  }
+
+  if (!isValidPhone(primaryPhone.value)) {
+    addFieldError(
+      fieldErrors,
+      "primaryPhone",
+      "Enter a valid phone number containing 7 to 15 digits.",
+    );
+  }
+
+  if (secondaryPhone.value !== null && !isValidPhone(secondaryPhone.value)) {
+    addFieldError(
+      fieldErrors,
+      "secondaryPhone",
+      "Enter a valid phone number containing 7 to 15 digits, or leave this field blank.",
+    );
+  }
+
+  if (!authorizedRegistrantConfirmed.value) {
+    addFieldError(
+      fieldErrors,
+      "authorizedRegistrantConfirmed",
+      "Confirm that you are authorized to register this player.",
+    );
+  }
+
+  if (!informationAccuracyConfirmed.value) {
+    addFieldError(
+      fieldErrors,
+      "informationAccuracyConfirmed",
+      "Confirm that the registration information is accurate.",
+    );
+  }
+
+  if (!termsAccepted.value) {
+    addFieldError(
+      fieldErrors,
+      "termsAccepted",
+      "Accept the Terms and Conditions to continue.",
+    );
+  }
+
+  if (!participationWaiverAccepted.value) {
+    addFieldError(
+      fieldErrors,
+      "participationWaiverAccepted",
+      "Acknowledge the Participation Waiver to continue.",
+    );
+  }
+
+  if (!gymRulesAccepted.value) {
+    addFieldError(
+      fieldErrors,
+      "gymRulesAccepted",
+      "Acknowledge the facility rules to continue.",
+    );
   }
 
   let finalEmergencyContactName = guardianFullName;
@@ -462,13 +746,46 @@ export function validateRegistrationSubmission(
   let finalEmergencyContactPhone = primaryPhone.value;
 
   if (usesDifferentEmergencyContact.value) {
+    if (emergencyContactName.value === null) {
+      addFieldError(
+        fieldErrors,
+        "emergencyContactName",
+        "Enter the emergency contact’s full name.",
+      );
+    }
+
+    if (emergencyContactRelationship.value === null) {
+      addFieldError(
+        fieldErrors,
+        "emergencyContactRelationship",
+        "Choose the emergency contact’s relationship to the player.",
+      );
+    }
+
     if (
-      emergencyContactName.value === null ||
-      emergencyContactRelationship.value === null ||
       emergencyContactPhone.value === null ||
       !isValidPhone(emergencyContactPhone.value)
     ) {
-      return { status: "invalid" };
+      addFieldError(
+        fieldErrors,
+        "emergencyContactPhone",
+        "Enter a valid emergency phone number containing 7 to 15 digits.",
+      );
+    }
+  }
+
+  if (hasFieldErrors(fieldErrors)) {
+    return { status: "invalid", fieldErrors };
+  }
+
+  if (usesDifferentEmergencyContact.value) {
+    // The error checks above guarantee these conditional values are present.
+    if (
+      emergencyContactName.value === null ||
+      emergencyContactRelationship.value === null ||
+      emergencyContactPhone.value === null
+    ) {
+      return { status: "invalid", fieldErrors };
     }
 
     finalEmergencyContactName = emergencyContactName.value;
