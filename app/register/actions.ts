@@ -23,7 +23,10 @@ import {
   getGuardianVerificationSessionToken,
 } from "@/lib/guardian-verification-session";
 import { getGuardianVerificationTokenHash } from "@/lib/guardian-verification-token";
-import { validateRegistrationSubmission } from "@/lib/registration-form-validation";
+import {
+  type RegistrationFormFieldErrors,
+  validateRegistrationSubmission,
+} from "@/lib/registration-form-validation";
 import { createRegistrationPaymentReference } from "@/lib/registration-payment-reference";
 import { sendETransferPendingNotificationEmail } from "@/lib/send-e-transfer-pending-notification-email";
 import { sendGuardianVerificationEmail } from "@/lib/send-guardian-verification-email";
@@ -46,7 +49,12 @@ export type RegistrationActionState =
     }
   | {
       status: "error";
-      code: RegistrationActionErrorCode;
+      code: "invalid-form";
+      fieldErrors: RegistrationFormFieldErrors;
+    }
+  | {
+      status: "error";
+      code: Exclude<RegistrationActionErrorCode, "invalid-form">;
     };
 
 type CreatedGuardianVerificationRequest = Extract<
@@ -192,7 +200,11 @@ export async function submitRegistration(
   }
 
   if (validation.status === "invalid") {
-    return { status: "error", code: "invalid-form" };
+    return {
+      status: "error",
+      code: "invalid-form",
+      fieldErrors: validation.fieldErrors,
+    };
   }
 
   let outcome: Awaited<ReturnType<typeof createPendingRegistration>>;
