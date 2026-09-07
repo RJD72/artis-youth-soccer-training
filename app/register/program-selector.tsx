@@ -58,6 +58,7 @@ type ProgramPackageOption = {
 
 type ProgramSelectorProps = {
   trainingGroups: TrainingGroupOption[];
+  trainingGroupAvailability?: TrainingGroupOption[];
   programPackages: ProgramPackageOption[];
 };
 
@@ -975,6 +976,7 @@ function ConsentSection({
 
 function ProgramSelection({
   trainingGroups,
+  trainingGroupAvailability = trainingGroups,
   programPackages,
   selectedGroupId,
   selectedPackageId,
@@ -1017,16 +1019,20 @@ function ProgramSelection({
         >
           <legend className="text-lg font-bold">Age group</legend>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {trainingGroups.map((group) => {
+            {trainingGroupAvailability.map((group) => {
               const selected = group.id === selectedGroupId;
+              const isFull = group.availableSpots === 0;
 
               return (
                 <label
                   key={group.id}
-                  className={`flex cursor-pointer items-center gap-4 rounded-[10px] border p-4 transition-colors focus-within:ring-2 focus-within:ring-artis-gold ${
-                    selected
-                      ? "border-artis-navy bg-artis-soft-gold"
-                      : "border-artis-border hover:border-artis-navy"
+                  aria-disabled={isFull}
+                  className={`flex items-center gap-4 rounded-[10px] border p-4 transition-colors ${
+                    isFull
+                      ? "cursor-not-allowed border-artis-border bg-artis-off-white"
+                      : selected
+                        ? "border-artis-navy bg-artis-soft-gold"
+                        : "cursor-pointer border-artis-border hover:border-artis-navy focus-within:ring-2 focus-within:ring-artis-gold"
                   }`}
                 >
                   <span className="min-w-0 flex-1">
@@ -1036,9 +1042,16 @@ function ProgramSelection({
                     <span className="mt-1 block text-sm leading-5 text-artis-slate">
                       {formatScheduleOverview(group.weeklySchedule)}
                     </span>
-                    <span className="mt-1 block text-xs font-semibold text-artis-slate">
-                      {group.availableSpots} of {group.capacity} spots available
-                    </span>
+                    {isFull ? (
+                      <span className="mt-2 block w-fit rounded-full bg-artis-red px-2.5 py-1 text-xs font-semibold text-artis-white">
+                        Group Full
+                      </span>
+                    ) : (
+                      <span className="mt-1 block text-xs font-semibold text-artis-slate">
+                        {group.availableSpots} of {group.capacity} spots
+                        available
+                      </span>
+                    )}
                   </span>
                   <input
                     type="radio"
@@ -1046,8 +1059,9 @@ function ProgramSelection({
                     value={group.id}
                     checked={selected}
                     onChange={() => setSelectedGroupId(group.id)}
+                    disabled={isFull}
                     required
-                    className="size-5 accent-artis-navy"
+                    className="size-5 accent-artis-navy disabled:cursor-not-allowed disabled:opacity-40"
                   />
                 </label>
               );
@@ -1140,6 +1154,7 @@ function ProgramSelection({
 
 export default function ProgramSelector({
   trainingGroups,
+  trainingGroupAvailability = trainingGroups,
   programPackages,
 }: ProgramSelectorProps) {
   const [selectedGroupId, setSelectedGroupId] = useState(
@@ -1294,6 +1309,7 @@ export default function ProgramSelector({
 
       <ProgramSelection
         trainingGroups={trainingGroups}
+        trainingGroupAvailability={trainingGroupAvailability}
         programPackages={programPackages}
         selectedGroupId={selectedGroupId}
         selectedPackageId={selectedPackageId}
