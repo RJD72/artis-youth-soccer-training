@@ -936,8 +936,13 @@ function ConsentSection({
           error={fieldErrors.gymRulesAccepted}
         >
           I acknowledge the Gym or Facility Rules. *{" "}
-          <Link href="/gym-rules" className="font-semibold underline">
-            View Gym Rules
+          <Link
+            href="/gym-rules"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold underline"
+          >
+            View Gym Rules <span className="sr-only">(opens in a new tab)</span>
           </Link>
         </CheckboxField>
         <CheckboxField
@@ -967,7 +972,7 @@ function ConsentSection({
           Participation waiver / informed consent
         </h3>
         <p className="mt-2.5 text-sm leading-5 text-artis-slate">
-          Final waiver, gym-rules and policy wording pending client and legal
+          Final participation waiver and policy wording pending client and legal
           review.
         </p>
       </div>
