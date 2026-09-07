@@ -22,6 +22,12 @@ function getSigningSecret(): string {
       "BETTER_AUTH_SECRET is required to sign waitlist confirmations.",
     );
   }
+
+  if (Buffer.byteLength(secret, "utf8") < 32) {
+    throw new TypeError(
+      "BETTER_AUTH_SECRET must contain at least 32 bytes of unpredictable data.",
+    );
+  }
   return secret;
 }
 
