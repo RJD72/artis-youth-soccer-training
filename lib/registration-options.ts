@@ -94,18 +94,23 @@ export async function getRegistrationOptions() {
       .orderBy(programPackages.displayOrder),
   ]);
 
-  const trainingGroupOptions = groupRows
-    .map(({ occupiedSpots, ...group }) => ({
+  const trainingGroupAvailability = groupRows.map(
+    ({ occupiedSpots, ...group }) => ({
       ...group,
       availableSpots: Math.max(group.capacity - occupiedSpots, 0),
       weeklySchedule: scheduleRows.filter(
         (session) => session.trainingGroupId === group.id,
       ),
-    }))
-    .filter((group) => group.availableSpots > 0);
+    }),
+  );
+
+  const trainingGroupOptions = trainingGroupAvailability.filter(
+    (group) => group.availableSpots > 0,
+  );
 
   return {
     trainingGroups: trainingGroupOptions,
+    trainingGroupAvailability,
     programPackages: packageRows,
   };
 }

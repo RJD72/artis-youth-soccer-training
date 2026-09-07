@@ -1,5 +1,8 @@
 // ARTIS HOMEPAGE — FIGMA-ALIGNED POLISHED CONTENT — AUGUST 22, 2026
 import Link from "next/link";
+import { connection } from "next/server";
+
+import { getRegistrationOptions } from "@/lib/registration-options";
 
 import SiteFooter from "./components/site-footer";
 import SiteHeader from "./components/site-header";
@@ -25,6 +28,7 @@ const principles = [
 
 const programs = [
   {
+    slug: "ages-8-10",
     age: "AGES 8–10",
     title: "Ages 8–10 Soccer Development Program",
     description:
@@ -32,6 +36,7 @@ const programs = [
     focus: "Ball control · dribbling · passing · shooting · movement",
   },
   {
+    slug: "ages-11-13",
     age: "AGES 11–13",
     title: "Ages 11–13 Soccer Development Program",
     description: "Progressive skill, confidence and game understanding.",
@@ -134,10 +139,17 @@ function ImagePlaceholder({ label, className = "" }: ImagePlaceholderProps) {
 const primaryButton =
   "inline-flex min-h-12 items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-center text-[15px] font-semibold leading-5 text-artis-white";
 
+const disabledPrimaryButton =
+  "inline-flex min-h-12 cursor-not-allowed items-center justify-center rounded-[10px] border border-artis-border bg-artis-off-white px-6 py-3.5 text-center text-[15px] font-semibold leading-5 text-artis-slate";
+
 const registrationButton =
   "inline-flex min-h-13 items-center justify-center rounded-[10px] bg-artis-red px-6 py-4 text-center text-[15px] font-semibold leading-5 text-artis-white xl:px-8";
 
-export default function Home() {
+export default async function Home() {
+  await connection();
+
+  const { trainingGroupAvailability } = await getRegistrationOptions();
+
   return (
     <div className="min-h-screen bg-artis-off-white text-artis-navy">
       <SiteHeader />
@@ -221,31 +233,57 @@ export default function Home() {
             </p>
 
             <div className="mt-5 grid max-w-[864px] gap-6 md:grid-cols-2 xl:mt-8">
-              {programs.map((program) => (
-                <article
-                  key={program.age}
-                  className="flex min-h-[389px] flex-col items-start rounded-2xl border border-artis-border bg-artis-white p-7"
-                >
-                  <p className="rounded-full bg-artis-soft-gold px-2.5 py-1.5 text-xs font-semibold">
-                    {program.age}
-                  </p>
-                  <h3 className="mt-[18px] text-2xl font-bold leading-[35px]">
-                    {program.title}
-                  </h3>
-                  <p className="mt-[18px] text-base leading-[23px] text-artis-slate">
-                    {program.description}
-                  </p>
-                  <p className="mt-[18px] text-sm font-medium leading-5">
-                    {program.focus}
-                  </p>
-                  <p className="mt-[18px] text-[13px] leading-[19px] text-artis-slate">
-                    Tuesday + Thursday training · Saturday game
-                  </p>
-                  <Link href="/register" className={`${primaryButton} mt-auto`}>
-                    View Training Details
-                  </Link>
-                </article>
-              ))}
+              {programs.map((program) => {
+                const trainingGroup = trainingGroupAvailability.find(
+                  (group) => group.slug === program.slug,
+                );
+                const isFull = trainingGroup?.availableSpots === 0;
+
+                return (
+                  <article
+                    key={program.age}
+                    className="flex min-h-[389px] flex-col items-start rounded-2xl border border-artis-border bg-artis-white p-7"
+                  >
+                    <div className="flex w-full flex-wrap items-center gap-2">
+                      <p className="rounded-full bg-artis-soft-gold px-2.5 py-1.5 text-xs font-semibold">
+                        {program.age}
+                      </p>
+                      {isFull ? (
+                        <p className="rounded-full bg-artis-red px-2.5 py-1.5 text-xs font-semibold text-artis-white">
+                          Group Full
+                        </p>
+                      ) : null}
+                    </div>
+                    <h3 className="mt-[18px] text-2xl font-bold leading-[35px]">
+                      {program.title}
+                    </h3>
+                    <p className="mt-[18px] text-base leading-[23px] text-artis-slate">
+                      {program.description}
+                    </p>
+                    <p className="mt-[18px] text-sm font-medium leading-5">
+                      {program.focus}
+                    </p>
+                    <p className="mt-[18px] text-[13px] leading-[19px] text-artis-slate">
+                      Tuesday + Thursday training · Saturday game
+                    </p>
+                    {isFull ? (
+                      <span
+                        aria-disabled="true"
+                        className={`${disabledPrimaryButton} mt-auto`}
+                      >
+                        View Training Details
+                      </span>
+                    ) : (
+                      <Link
+                        href="/register"
+                        className={`${primaryButton} mt-auto`}
+                      >
+                        View Training Details
+                      </Link>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>
