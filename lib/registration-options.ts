@@ -1,7 +1,8 @@
-// This file provides the public-safe options needed to start a registration.
-// It returns only groups currently accepting registrations that still have
-// capacity, their active weekly sessions, and active program packages. It never
-// returns personal information.
+// This file provides the public-safe options needed to display training-group
+// availability and start a registration. It returns every group for public
+// availability messaging, a separate list containing only selectable groups,
+// active weekly sessions, and active program packages. It never returns
+// personal information.
 
 import "server-only";
 
@@ -30,6 +31,7 @@ export async function getRegistrationOptions() {
         minimumAge: trainingGroups.minimumAge,
         maximumAge: trainingGroups.maximumAge,
         capacity: trainingGroups.capacity,
+        registrationOpen: trainingGroups.registrationOpen,
         occupiedSpots: count(registrations.id),
       })
       .from(trainingGroups)
@@ -46,7 +48,6 @@ export async function getRegistrationOptions() {
           ),
         ),
       )
-      .where(eq(trainingGroups.registrationOpen, true))
       .groupBy(
         trainingGroups.id,
         trainingGroups.slug,
@@ -54,6 +55,7 @@ export async function getRegistrationOptions() {
         trainingGroups.minimumAge,
         trainingGroups.maximumAge,
         trainingGroups.capacity,
+        trainingGroups.registrationOpen,
       )
       .orderBy(trainingGroups.minimumAge),
 
@@ -71,12 +73,7 @@ export async function getRegistrationOptions() {
         trainingGroups,
         eq(weeklySchedules.trainingGroupId, trainingGroups.id),
       )
-      .where(
-        and(
-          eq(trainingGroups.registrationOpen, true),
-          eq(weeklySchedules.isActive, true),
-        ),
-      )
+      .where(eq(weeklySchedules.isActive, true))
       .orderBy(weeklySchedules.dayOfWeek, weeklySchedules.startTime),
 
     db
@@ -105,7 +102,7 @@ export async function getRegistrationOptions() {
   );
 
   const trainingGroupOptions = trainingGroupAvailability.filter(
-    (group) => group.availableSpots > 0,
+    (group) => group.registrationOpen && group.availableSpots > 0,
   );
 
   return {
