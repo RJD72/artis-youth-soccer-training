@@ -131,7 +131,7 @@ function getBlockedPanelContent(result: BlockedRenewal): StatusPanelContent {
         eyebrow: "Packages unavailable",
         title: "Renewal packages are not currently available.",
         description:
-          "The player’s information is verified, but there are no active program terms available to purchase right now. Please check again later.",
+          "No renewal package is currently available for this player’s age, group, and training dates. Please contact ARTIS if you need help.",
         primaryHref: "/register/renew",
         primaryLabel: "Request a New Link Later",
         secondaryHref: "/contact",

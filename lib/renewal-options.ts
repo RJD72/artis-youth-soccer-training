@@ -4,16 +4,18 @@
 
 import "server-only";
 
-import { and, desc, eq, gt, gte, inArray, isNotNull } from "drizzle-orm";
+import { and, countDistinct, desc, eq, gt, gte, inArray, isNotNull, lte, ne, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
   payments,
+  players,
   programPackages,
   registrations,
   trainingGroups,
 } from "@/db/schema";
-import { calculateRegistrationPeriod } from "@/lib/registration-calculations";
+import { calculateAgeOnDate, calculateRegistrationPeriod } from "@/lib/registration-calculations";
+import { synchronizeRegistrationStatuses } from "@/lib/synchronize-registration-statuses";
 import { verifyRenewalVerificationToken } from "@/lib/verify-renewal-verification-token";
 
 type RenewalProgramPackage = {
@@ -82,8 +84,13 @@ function getNextCalendarDate(value: string): string {
   }
 
   const date = new Date(
-    Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + 1),
+    Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])),
   );
+
+  if (date.toISOString().slice(0, 10) !== value) {
+    throw new Error("A stored registration date is invalid.");
+  }
+  date.setUTCDate(date.getUTCDate() + 1);
 
   return date.toISOString().slice(0, 10);
 }
@@ -152,21 +159,27 @@ async function findLatestRegistration(playerId: number) {
       trainingGroupId: trainingGroups.id,
       trainingGroupSlug: trainingGroups.slug,
       trainingGroupName: trainingGroups.displayName,
+      minimumAge: trainingGroups.minimumAge,
+      maximumAge: trainingGroups.maximumAge,
+      capacity: trainingGroups.capacity,
+      dateOfBirth: players.dateOfBirth,
     })
     .from(registrations)
     .innerJoin(
       trainingGroups,
       eq(registrations.trainingGroupId, trainingGroups.id),
     )
+    .innerJoin(players, eq(registrations.playerId, players.id))
+    .innerJoin(payments, eq(payments.registrationId, registrations.id))
     .where(
       and(
         eq(registrations.playerId, playerId),
         inArray(registrations.status, [
-          "pending_payment",
           "scheduled",
           "active",
           "expired",
         ]),
+        eq(payments.status, "succeeded"),
       ),
     )
     .orderBy(desc(registrations.endsOn), desc(registrations.createdAt))
@@ -220,6 +233,8 @@ export async function getRenewalOptions(
     return { status: "invalid-token" };
   }
 
+  await synchronizeRegistrationStatuses(now);
+
   const today = getTorontoCalendarDate(now);
   const [
     reservationExpiresAt,
@@ -261,7 +276,37 @@ export async function getRenewalOptions(
     };
   }
 
-  if (packages.length === 0) {
+  const renewsOn = getRenewalStartDate(paidThrough, now);
+  const playerAge = calculateAgeOnDate(latestRegistration.dateOfBirth, renewsOn);
+  const ageEligible = playerAge >= latestRegistration.minimumAge &&
+    playerAge <= latestRegistration.maximumAge;
+  // These are previews, not reservations. The final transaction repeats every
+  // check under row locks; unavailable periods should not be offered here.
+  const eligiblePackages = ageEligible
+    ? (await Promise.all(packages.map(async (programPackage) => {
+        const [year, month] = renewsOn.split("-").map(Number);
+        const endsOn = new Date(Date.UTC(year, month - 1 + programPackage.durationMonths, 0))
+          .toISOString().slice(0, 10);
+        const [occupancy] = await db
+          .select({ occupiedSpots: countDistinct(registrations.playerId) })
+          .from(registrations)
+          .where(and(
+            eq(registrations.trainingGroupId, latestRegistration.trainingGroupId),
+            ne(registrations.playerId, verification.playerId),
+            isNotNull(registrations.startsOn),
+            isNotNull(registrations.endsOn),
+            lte(registrations.startsOn, endsOn),
+            gte(registrations.endsOn, renewsOn),
+            or(
+              inArray(registrations.status, ["scheduled", "active"]),
+              and(eq(registrations.status, "pending_payment"), gt(registrations.reservationExpiresAt, now)),
+            ),
+          ));
+        return (occupancy?.occupiedSpots ?? 0) < latestRegistration.capacity ? programPackage : null;
+      }))).filter((programPackage): programPackage is RenewalProgramPackage => programPackage !== null)
+    : [];
+
+  if (eligiblePackages.length === 0) {
     return {
       status: "blocked",
       reason: "packages-unavailable",
@@ -276,12 +321,12 @@ export async function getRenewalOptions(
     playerName: verification.playerName,
     tokenExpiresAt: verification.expiresAt,
     paidThrough,
-    renewsOn: getRenewalStartDate(paidThrough, now),
+    renewsOn,
     trainingGroup: {
       id: latestRegistration.trainingGroupId,
       slug: latestRegistration.trainingGroupSlug,
       displayName: latestRegistration.trainingGroupName,
     },
-    programPackages: packages,
+    programPackages: eligiblePackages,
   };
 }

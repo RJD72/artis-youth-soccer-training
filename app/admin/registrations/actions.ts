@@ -6,6 +6,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 
 import { db } from "@/db";
 import {
@@ -342,6 +343,7 @@ export async function confirmETransferPaymentAction(
       paymentIdValue,
     );
   } catch (error) {
+    unstable_rethrow(error);
     logConfirmationFailure(error);
 
     return { status: "error", code: "unable-to-confirm" };
@@ -381,6 +383,7 @@ export async function cancelRegistrationAction(
   try {
     outcome = await cancelRegistration(registrationIdValue);
   } catch (error) {
+    unstable_rethrow(error);
     logCancellationFailure(error);
 
     return { status: "error", code: "unable-to-cancel" };
@@ -421,6 +424,7 @@ export async function rescheduleRegistrationAction(
       formData.get("startMonth"),
     );
   } catch (error) {
+    unstable_rethrow(error);
     logReschedulingFailure(error);
 
     return { status: "error", code: "unable-to-reschedule" };

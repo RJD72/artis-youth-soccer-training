@@ -7,6 +7,7 @@ const createJestConfig = nextJest({
 
 const config: Config = {
   clearMocks: true,
+  setupFilesAfterEnv: ["<rootDir>/test/external-service-guard.ts"],
   collectCoverageFrom: [
     "lib/**/*.{ts,tsx}",
     "app/**/actions.ts",

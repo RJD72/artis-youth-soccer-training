@@ -5,10 +5,10 @@
 import "server-only";
 
 import type Stripe from "stripe";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, countDistinct, eq, gt, gte, inArray, isNotNull, lte, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { payments, registrations, stripeWebhookEvents } from "@/db/schema";
+import { payments, registrations, stripeWebhookEvents, trainingGroups } from "@/db/schema";
 
 const checkoutSuccessEventTypes = new Set([
   "checkout.session.completed",
@@ -25,6 +25,9 @@ type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type LockedStripeRegistration = {
   paymentId: number;
   registrationId: number;
+  playerId: number;
+  trainingGroupId: number;
+  reservationExpiresAt: Date | null;
   paymentStatus:
     | "pending"
     | "succeeded"
@@ -169,6 +172,9 @@ async function lockStripeRegistration(
     .select({
       paymentId: payments.id,
       registrationId: registrations.id,
+      playerId: registrations.playerId,
+      trainingGroupId: registrations.trainingGroupId,
+      reservationExpiresAt: registrations.reservationExpiresAt,
       paymentStatus: payments.status,
       registrationStatus: registrations.status,
       totalCents: payments.totalCents,
@@ -330,6 +336,51 @@ async function processSuccessfulCheckout(
     return "ignored";
   }
 
+  // A delayed webhook can arrive after its reservation released the place.
+  // Lock the group before reclaiming capacity. Failure leaves the event
+  // retryable without confirming an over-capacity registration.
+  if (
+    registration.endsOn >= today &&
+    (!registration.reservationExpiresAt ||
+      registration.reservationExpiresAt.getTime() <= now.getTime())
+  ) {
+    const [group] = await transaction
+      .select({ capacity: trainingGroups.capacity })
+      .from(trainingGroups)
+      .where(eq(trainingGroups.id, registration.trainingGroupId))
+      .limit(1)
+      .for("update");
+
+    if (!group) {
+      throw new Error("The paid registration capacity could not be verified.");
+    }
+
+    const [occupancy] = await transaction
+      .select({ occupiedSpots: countDistinct(registrations.playerId) })
+      .from(registrations)
+      .where(
+        and(
+          eq(registrations.trainingGroupId, registration.trainingGroupId),
+          ne(registrations.playerId, registration.playerId),
+          isNotNull(registrations.startsOn),
+          isNotNull(registrations.endsOn),
+          lte(registrations.startsOn, registration.endsOn),
+          gte(registrations.endsOn, registration.startsOn),
+          or(
+            inArray(registrations.status, ["scheduled", "active"]),
+            and(
+              eq(registrations.status, "pending_payment"),
+              gt(registrations.reservationExpiresAt, now),
+            ),
+          ),
+        ),
+      );
+
+    if ((occupancy?.occupiedSpots ?? 0) >= group.capacity) {
+      throw new Error("The paid registration exceeds training group capacity.");
+    }
+  }
+
   await updateSuccessfulPayment(
     transaction,
     registration,
@@ -424,7 +475,7 @@ async function processUnsuccessfulCheckout(
     identifiers,
   );
 
-  if (!registration) {
+  if (!registration || !sessionMatchesPayment(session, identifiers, registration)) {
     return "ignored";
   }
 

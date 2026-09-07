@@ -1,0 +1,32 @@
+import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { payments } from "@/db/schema";
+import { createRegistrationPaymentReference } from "@/lib/registration-payment-reference";
+import { databaseHarness, NOW, sqlQuery } from "./database-harness";
+const h = databaseHarness();
+const create = jest.fn<(...args: unknown[]) => Promise<unknown>>(); const retrieve = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+let prepare: typeof import("@/lib/create-stripe-checkout-session").prepareStripeCheckout;
+const expiry = new Date(NOW.getTime() + 3600000);
+const payment = { paymentId: 2, registrationId: 1, stripeCheckoutSessionId: null, subtotalCents: 10000, taxCents: 1300, totalCents: 11300, currency: "CAD", reservationExpiresAt: expiry, guardianName: "Test Guardian", guardianEmail: "guardian@example.com", playerName: "Test Player", trainingGroupName: "Development", packageName: "Three months" };
+const session = { id: "cs_test_fixture", client_secret: "synthetic-client-secret", ui_mode: "elements", status: "open", payment_status: "unpaid", expires_at: expiry.getTime() / 1000 };
+beforeAll(async () => { jest.doMock("@/db", () => ({ db: h.db })); jest.doMock("@/lib/stripe", () => ({ getStripeClient: () => ({ checkout: { sessions: { create, retrieve } } }) })); ({ prepareStripeCheckout: prepare } = await import("@/lib/create-stripe-checkout-session")); });
+beforeEach(() => { h.reset(); create.mockReset().mockResolvedValue(session); retrieve.mockReset().mockResolvedValue(session); jest.useFakeTimers().setSystemTime(NOW); jest.replaceProperty(process, "env", { ...process.env, BETTER_AUTH_SECRET: "test-only-signing-secret-".repeat(3), NEXT_PUBLIC_SITE_URL: "https://academy.example" }); });
+afterEach(() => { jest.restoreAllMocks(); jest.useRealTimers(); });
+const reference = () => createRegistrationPaymentReference(1, 2, "stripe");
+describe("Stripe checkout preparation", () => {
+  it.each(["payment", "registration", "expires", "signature"] as const)("rejects tampered signed %s", async key => { const ref = reference(); expect(await prepare({ ...ref, [key]: "999" })).toEqual({ status: "unavailable" }); expect(h.db.select).not.toHaveBeenCalled(); expect(create).not.toHaveBeenCalled(); });
+  it("rejects signed e-transfer references", async () => { expect(await prepare(createRegistrationPaymentReference(1, 2, "e_transfer"))).toEqual({ status: "unavailable" }); expect(h.db.select).not.toHaveBeenCalled(); });
+  it("rejects expired signed references", async () => { const ref = reference(); jest.setSystemTime(new Date(NOW.getTime() + 1800001)); expect(await prepare(ref)).toEqual({ status: "unavailable" }); expect(create).not.toHaveBeenCalled(); });
+  it("filters missing, paid, expired, wrong-method and mismatched rows in the database", async () => { h.read(payments); expect(await prepare(reference())).toEqual({ status: "unavailable" }); expect(sqlQuery(h.queries(payments)[0]).params).toEqual(expect.arrayContaining([2, 1, "stripe", "pending", "pending_payment"])); expect(sqlQuery(h.queries(payments)[0]).sql).toContain("reservation_expires_at"); expect(create).not.toHaveBeenCalled(); });
+  it("uses only server amounts and matching metadata with a stable idempotency key", async () => {
+    h.read(payments, payment); const ref = { ...reference(), totalCents: 1, currency: "USD" };
+    expect(await prepare(ref)).toMatchObject({ status: "ready", clientSecret: session.client_secret, details: { totalCents: 11300, currency: "CAD" } });
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ mode: "payment", ui_mode: "elements", client_reference_id: "1", payment_method_types: ["card"], metadata: { registrationId: "1", paymentId: "2" }, payment_intent_data: { metadata: { registrationId: "1", paymentId: "2" } }, return_url: "https://academy.example/register/payment/stripe/return?session_id={CHECKOUT_SESSION_ID}", line_items: [expect.objectContaining({ quantity: 1, price_data: expect.objectContaining({ currency: "cad", unit_amount: 11300 }) })] }), { idempotencyKey: "artis-checkout-payment-2-v1" });
+    expect(h.writes(payments)[0].values).toEqual({ stripeCheckoutSessionId: session.id });
+  });
+  it("reuses an open unexpired session without creating or saving another", async () => { h.read(payments, { ...payment, stripeCheckoutSessionId: session.id }); expect(await prepare(reference())).toMatchObject({ status: "ready" }); expect(retrieve).toHaveBeenCalledWith(session.id); expect(create).not.toHaveBeenCalled(); expect(h.writes()).toEqual([]); });
+  it.each([{ currency: "invalid" }, { totalCents: 0 }, { reservationExpiresAt: new Date(NOW.getTime() + 1829000) }, { reservationExpiresAt: null }])("rejects unusable stored checkout values %p", async change => { h.read(payments, { ...payment, ...change }); expect(await prepare(reference())).toEqual({ status: "unavailable" }); expect(create).not.toHaveBeenCalled(); });
+  it.each(["create", "retrieve"])("propagates Stripe %s failures without saving", async operation => { h.read(payments, { ...payment, stripeCheckoutSessionId: operation === "retrieve" ? session.id : null }); (operation === "create" ? create : retrieve).mockRejectedValue(new Error("Synthetic Stripe outage")); await expect(prepare(reference())).rejects.toThrow("Synthetic Stripe outage"); expect(h.writes()).toEqual([]); });
+  it("rejects unusable provider sessions", async () => { h.read(payments, payment); create.mockResolvedValue({ ...session, client_secret: null }); await expect(prepare(reference())).rejects.toThrow("usable Checkout Session"); expect(h.writes()).toEqual([]); });
+  it("detects a concurrent payment update", async () => { h.read(payments, payment); h.results.push({ affectedRows: 0 }); await expect(prepare(reference())).rejects.toThrow("could not be saved"); });
+  it("rejects insecure remote return URLs", async () => { process.env.NEXT_PUBLIC_SITE_URL = "http://academy.example"; h.read(payments, payment); await expect(prepare(reference())).rejects.toThrow("HTTPS"); expect(create).not.toHaveBeenCalled(); });
+});
