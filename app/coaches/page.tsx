@@ -65,7 +65,7 @@ export default function CoachesPage() {
 
       <main className="bg-artis-white">
         <section className="mx-auto w-full max-w-[1280px] px-6 pt-10 pb-12 xl:px-0 xl:py-18">
-          <h1 className="text-[40px] font-bold leading-12 tracking-[-1px] xl:text-[64px] xl:leading-18 xl:tracking-[-2px]">
+          <h1 className="text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
             Meet the Coaches
           </h1>
 
