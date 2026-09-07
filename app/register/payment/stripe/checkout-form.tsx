@@ -167,22 +167,15 @@ function SecurePaymentForm() {
             className="font-semibold text-artis-navy underline"
           >
             terms
-          </Link>
-          ,{" "}
+          </Link>{" "}
+          and acknowledge the{" "}
           <Link
             href="/privacy"
             className="font-semibold text-artis-navy underline"
           >
-            privacy
-          </Link>{" "}
-          and{" "}
-          <Link
-            href="/cancellation-refund-policy"
-            className="font-semibold text-artis-navy underline"
-          >
-            cancellation / refund policies
+            privacy notice
           </Link>
-          .
+          {"."}
         </span>
       </label>
 
@@ -209,12 +202,6 @@ function SecurePaymentForm() {
       </p>
 
       <div className="mt-5 flex flex-col items-center gap-3 text-center text-sm leading-5">
-        <Link
-          href="/cancellation-refund-policy"
-          className="font-semibold text-artis-navy underline"
-        >
-          Cancellation / refund policy
-        </Link>
         <Link
           href="/register"
           className="font-semibold text-artis-slate underline"
