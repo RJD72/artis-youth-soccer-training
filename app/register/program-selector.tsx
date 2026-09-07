@@ -61,6 +61,7 @@ type ProgramSelectorProps = {
   trainingGroups: TrainingGroupOption[];
   trainingGroupAvailability?: TrainingGroupOption[];
   programPackages: ProgramPackageOption[];
+  initialTrainingGroupId?: number;
 };
 
 type TextFieldProps = {
@@ -942,7 +943,8 @@ function ConsentSection({
             rel="noopener noreferrer"
             className="font-semibold underline"
           >
-            View Gym Rules <span className="sr-only">(opens in a new tab)</span>
+            View Gym Rules
+            <span className="sr-only"> (opens in a new tab)</span>
           </Link>
         </CheckboxField>
         <CheckboxField
@@ -1178,9 +1180,16 @@ export default function ProgramSelector({
   trainingGroups,
   trainingGroupAvailability = trainingGroups,
   programPackages,
+  initialTrainingGroupId,
 }: ProgramSelectorProps) {
+  const initialSelectedGroupId =
+    initialTrainingGroupId !== undefined &&
+    trainingGroups.some((group) => group.id === initialTrainingGroupId)
+      ? initialTrainingGroupId
+      : (trainingGroups[0]?.id ?? 0);
+
   const [selectedGroupId, setSelectedGroupId] = useState(
-    trainingGroups[0]?.id ?? 0,
+    initialSelectedGroupId,
   );
   const [selectedPackageId, setSelectedPackageId] = useState(
     programPackages[0]?.id ?? 0,

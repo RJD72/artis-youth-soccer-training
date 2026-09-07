@@ -15,11 +15,23 @@ export const metadata: Metadata = {
     "Register a player for an ARTIS Soccer Academy training program.",
 };
 
-export default async function RegisterPage() {
+type RegisterPageProps = {
+  searchParams: Promise<{
+    group?: string | string[];
+  }>;
+};
+
+export default async function RegisterPage({
+  searchParams,
+}: RegisterPageProps) {
   // Registration availability can change in the admin dashboard. Waiting for a
   // request ensures each visitor receives the current database information.
   await connection();
 
+  const { group: requestedGroupValue } = await searchParams;
+  const requestedGroupSlug = Array.isArray(requestedGroupValue)
+    ? requestedGroupValue[0]
+    : requestedGroupValue;
   const { trainingGroups, trainingGroupAvailability, programPackages } =
     await getRegistrationOptions();
   const registrationAvailable =
@@ -28,6 +40,9 @@ export default async function RegisterPage() {
     trainingGroupAvailability.length > 0 &&
     trainingGroups.length === 0 &&
     programPackages.length > 0;
+  const initialTrainingGroupId = trainingGroups.find(
+    (group) => group.slug === requestedGroupSlug,
+  )?.id;
 
   return (
     <div className="min-h-screen bg-artis-off-white text-artis-navy">
@@ -59,6 +74,7 @@ export default async function RegisterPage() {
                 trainingGroups={trainingGroups}
                 trainingGroupAvailability={trainingGroupAvailability}
                 programPackages={programPackages}
+                initialTrainingGroupId={initialTrainingGroupId}
               />
             ) : allOpenGroupsFull ? (
               <div className="rounded-2xl border border-artis-border bg-artis-white p-6 sm:p-8">

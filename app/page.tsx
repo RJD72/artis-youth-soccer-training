@@ -276,7 +276,7 @@ export default async function Home() {
                       </Link>
                     ) : (
                       <Link
-                        href="/register"
+                        href={`/register?group=${program.slug}`}
                         className={`${primaryButton} mt-auto`}
                       >
                         View Training Details
