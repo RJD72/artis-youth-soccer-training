@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
-import SiteFooter from "../../components/site-footer";
-import SiteHeader from "../../components/site-header";
 import { getGuardianVerificationSessionToken } from "@/lib/guardian-verification-session";
 import { verifyGuardianVerificationToken } from "@/lib/verify-guardian-verification-token";
 
@@ -148,8 +146,6 @@ export default async function GuardianVerificationPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-artis-off-white text-artis-navy">
-      {/* <SiteHeader /> */}
-
       <main className="flex-1">
         <section
           aria-label="Verify family email"
@@ -162,8 +158,6 @@ export default async function GuardianVerificationPage({
           )}
         </section>
       </main>
-
-      {/* <SiteFooter /> */}
     </div>
   );
 }
