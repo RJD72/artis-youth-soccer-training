@@ -41,12 +41,12 @@ afterEach(() => {
 });
 
 describe("registration options and capacity summaries", () => {
-  it("returns available groups separately while preserving full groups for display", async () => {
+  it("returns selectable groups separately while preserving full and manually closed groups for display", async () => {
     h.read(
       trainingGroups,
-      { id: 1, capacity: 10, occupiedSpots: 8 },
-      { id: 2, capacity: 5, occupiedSpots: 5 },
-      { id: 3, capacity: 5, occupiedSpots: 8 },
+      { id: 1, capacity: 10, registrationOpen: true, occupiedSpots: 8 },
+      { id: 2, capacity: 5, registrationOpen: true, occupiedSpots: 5 },
+      { id: 3, capacity: 5, registrationOpen: false, occupiedSpots: 1 },
     );
 
     h.read(
@@ -61,6 +61,7 @@ describe("registration options and capacity summaries", () => {
         {
           id: 1,
           capacity: 10,
+          registrationOpen: true,
           availableSpots: 2,
           weeklySchedule: [{ id: 7, trainingGroupId: 1 }],
         },
@@ -69,19 +70,22 @@ describe("registration options and capacity summaries", () => {
         {
           id: 1,
           capacity: 10,
+          registrationOpen: true,
           availableSpots: 2,
           weeklySchedule: [{ id: 7, trainingGroupId: 1 }],
         },
         {
           id: 2,
           capacity: 5,
+          registrationOpen: true,
           availableSpots: 0,
           weeklySchedule: [{ id: 8, trainingGroupId: 2 }],
         },
         {
           id: 3,
           capacity: 5,
-          availableSpots: 0,
+          registrationOpen: false,
+          availableSpots: 4,
           weeklySchedule: [],
         },
       ],
@@ -93,7 +97,7 @@ describe("registration options and capacity summaries", () => {
       h.db.select.mock.invocationCallOrder[0],
     );
 
-    expect(sqlQuery(h.queries(trainingGroups)[0]).params).toEqual([true]);
+    expect(h.queries(trainingGroups)[0].where).toBeUndefined();
 
     const join = sqlQuery({
       kind: "join",
@@ -109,10 +113,7 @@ describe("registration options and capacity summaries", () => {
     expect(h.queries(programPackages)[0].order).toEqual([
       programPackages.displayOrder,
     ]);
-    expect(sqlQuery(h.queries(weeklySchedules)[0]).params).toEqual([
-      true,
-      true,
-    ]);
+    expect(sqlQuery(h.queries(weeklySchedules)[0]).params).toEqual([true]);
   });
 
   it("reports full/closed groups for admin with remaining places clamped to zero", async () => {
