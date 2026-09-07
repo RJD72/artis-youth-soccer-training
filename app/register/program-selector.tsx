@@ -42,6 +42,7 @@ type TrainingGroupOption = {
   minimumAge: number;
   maximumAge: number;
   capacity: number;
+  registrationOpen: boolean;
   availableSpots: number;
   weeklySchedule: WeeklySessionOption[];
 };
@@ -1021,18 +1022,42 @@ function ProgramSelection({
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {trainingGroupAvailability.map((group) => {
               const selected = group.id === selectedGroupId;
-              const isFull = group.availableSpots === 0;
+              const isFull =
+                !group.registrationOpen || group.availableSpots === 0;
+
+              if (isFull) {
+                return (
+                  <div
+                    key={group.id}
+                    className="flex flex-col items-stretch gap-4 rounded-[10px] border border-artis-border bg-artis-off-white p-4 sm:flex-row sm:items-center"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-lg font-bold">{group.displayName}</p>
+                      <p className="mt-1 text-sm leading-5 text-artis-slate">
+                        {formatScheduleOverview(group.weeklySchedule)}
+                      </p>
+                      <p className="mt-2 w-fit rounded-full bg-artis-red px-2.5 py-1 text-xs font-semibold text-artis-white">
+                        Group Full
+                      </p>
+                    </div>
+                    <Link
+                      href={`/register/waitlist?group=${encodeURIComponent(group.slug)}`}
+                      aria-label={`Join the waitlist for ${group.displayName}`}
+                      className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-[10px] bg-artis-navy px-4 py-3 text-center text-sm font-semibold text-artis-white"
+                    >
+                      Join the Waitlist
+                    </Link>
+                  </div>
+                );
+              }
 
               return (
                 <label
                   key={group.id}
-                  aria-disabled={isFull}
-                  className={`flex items-center gap-4 rounded-[10px] border p-4 transition-colors ${
-                    isFull
-                      ? "cursor-not-allowed border-artis-border bg-artis-off-white"
-                      : selected
-                        ? "border-artis-navy bg-artis-soft-gold"
-                        : "cursor-pointer border-artis-border hover:border-artis-navy focus-within:ring-2 focus-within:ring-artis-gold"
+                  className={`flex cursor-pointer items-center gap-4 rounded-[10px] border p-4 transition-colors focus-within:ring-2 focus-within:ring-artis-gold ${
+                    selected
+                      ? "border-artis-navy bg-artis-soft-gold"
+                      : "border-artis-border hover:border-artis-navy"
                   }`}
                 >
                   <span className="min-w-0 flex-1">
@@ -1042,16 +1067,9 @@ function ProgramSelection({
                     <span className="mt-1 block text-sm leading-5 text-artis-slate">
                       {formatScheduleOverview(group.weeklySchedule)}
                     </span>
-                    {isFull ? (
-                      <span className="mt-2 block w-fit rounded-full bg-artis-red px-2.5 py-1 text-xs font-semibold text-artis-white">
-                        Group Full
-                      </span>
-                    ) : (
-                      <span className="mt-1 block text-xs font-semibold text-artis-slate">
-                        {group.availableSpots} of {group.capacity} spots
-                        available
-                      </span>
-                    )}
+                    <span className="mt-1 block text-xs font-semibold text-artis-slate">
+                      {group.availableSpots} of {group.capacity} spots available
+                    </span>
                   </span>
                   <input
                     type="radio"
@@ -1059,9 +1077,8 @@ function ProgramSelection({
                     value={group.id}
                     checked={selected}
                     onChange={() => setSelectedGroupId(group.id)}
-                    disabled={isFull}
                     required
-                    className="size-5 accent-artis-navy disabled:cursor-not-allowed disabled:opacity-40"
+                    className="size-5 accent-artis-navy"
                   />
                 </label>
               );

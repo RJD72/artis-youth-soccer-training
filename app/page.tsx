@@ -139,9 +139,6 @@ function ImagePlaceholder({ label, className = "" }: ImagePlaceholderProps) {
 const primaryButton =
   "inline-flex min-h-12 items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-center text-[15px] font-semibold leading-5 text-artis-white";
 
-const disabledPrimaryButton =
-  "inline-flex min-h-12 cursor-not-allowed items-center justify-center rounded-[10px] border border-artis-border bg-artis-off-white px-6 py-3.5 text-center text-[15px] font-semibold leading-5 text-artis-slate";
-
 const registrationButton =
   "inline-flex min-h-13 items-center justify-center rounded-[10px] bg-artis-red px-6 py-4 text-center text-[15px] font-semibold leading-5 text-artis-white xl:px-8";
 
@@ -237,7 +234,10 @@ export default async function Home() {
                 const trainingGroup = trainingGroupAvailability.find(
                   (group) => group.slug === program.slug,
                 );
-                const isFull = trainingGroup?.availableSpots === 0;
+                const isFull =
+                  !trainingGroup ||
+                  !trainingGroup.registrationOpen ||
+                  trainingGroup.availableSpots === 0;
 
                 return (
                   <article
@@ -267,12 +267,13 @@ export default async function Home() {
                       Tuesday + Thursday training · Saturday game
                     </p>
                     {isFull ? (
-                      <span
-                        aria-disabled="true"
-                        className={`${disabledPrimaryButton} mt-auto`}
+                      <Link
+                        href={`/register/waitlist?group=${program.slug}`}
+                        aria-label={`Join the waitlist for ${program.title}`}
+                        className={`${primaryButton} mt-auto`}
                       >
-                        View Training Details
-                      </span>
+                        Join the Waitlist
+                      </Link>
                     ) : (
                       <Link
                         href="/register"
