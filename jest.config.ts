@@ -7,6 +7,14 @@ const createJestConfig = nextJest({
 
 const config: Config = {
   clearMocks: true,
+  collectCoverageFrom: [
+    "lib/**/*.{ts,tsx}",
+    "app/**/actions.ts",
+    "app/api/**/*.{ts,tsx}",
+    "emails/**/*.{ts,tsx}",
+    "!**/*.d.ts",
+  ],
+  coverageDirectory: "coverage",
   coverageProvider: "v8",
   testEnvironment: "node",
   moduleNameMapper: {
