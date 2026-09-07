@@ -20,9 +20,14 @@ export default async function RegisterPage() {
   // request ensures each visitor receives the current database information.
   await connection();
 
-  const { trainingGroups, programPackages } = await getRegistrationOptions();
+  const { trainingGroups, trainingGroupAvailability, programPackages } =
+    await getRegistrationOptions();
   const registrationAvailable =
     trainingGroups.length > 0 && programPackages.length > 0;
+  const allOpenGroupsFull =
+    trainingGroupAvailability.length > 0 &&
+    trainingGroups.length === 0 &&
+    programPackages.length > 0;
 
   return (
     <div className="min-h-screen bg-artis-off-white text-artis-navy">
@@ -52,8 +57,47 @@ export default async function RegisterPage() {
             {registrationAvailable ? (
               <ProgramSelector
                 trainingGroups={trainingGroups}
+                trainingGroupAvailability={trainingGroupAvailability}
                 programPackages={programPackages}
               />
+            ) : allOpenGroupsFull ? (
+              <div className="rounded-2xl border border-artis-border bg-artis-white p-6 sm:p-8">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
+                  Program availability
+                </p>
+                <h2 className="mt-3 text-2xl font-bold">
+                  Training groups are currently full
+                </h2>
+                <p className="mt-3 max-w-2xl leading-7 text-artis-slate">
+                  These groups have reached capacity. You can join the waitlist
+                  without making a payment, and ARTIS Soccer Academy will
+                  contact you if a place becomes available.
+                </p>
+
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  {trainingGroupAvailability.map((group) => (
+                    <article
+                      key={group.id}
+                      className="rounded-[10px] border border-artis-border bg-artis-off-white p-5"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h3 className="text-lg font-bold">
+                          {group.displayName}
+                        </h3>
+                        <p className="rounded-full bg-artis-red px-2.5 py-1 text-xs font-semibold text-artis-white">
+                          Group Full
+                        </p>
+                      </div>
+                      <Link
+                        href={`/register/waitlist?group=${encodeURIComponent(group.slug)}`}
+                        className="mt-5 inline-flex min-h-12 items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-center text-[15px] font-semibold leading-5 text-artis-white"
+                      >
+                        Join the Waitlist
+                      </Link>
+                    </article>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className="rounded-2xl border border-artis-border bg-artis-white p-6 sm:p-8">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold">
