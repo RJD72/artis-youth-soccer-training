@@ -212,7 +212,7 @@ async function seedDatabase() {
           set: {
             sessionType: session.sessionType,
             endTime: session.endTime,
-            isActive: true,
+            isActive: session.isActive,
           },
         });
     }
