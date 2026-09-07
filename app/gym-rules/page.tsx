@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 
-import SiteFooter from "../components/site-footer";
-import SiteHeader from "../components/site-header";
-
 export const metadata: Metadata = {
   title: "Gym and Facility Rules",
   description:
@@ -59,67 +56,64 @@ const ruleSections = [
 
 export default function GymRulesPage() {
   return (
-    <div className="min-h-screen bg-artis-off-white text-artis-navy">
-      <SiteHeader />
+    <main className="min-h-screen bg-artis-off-white text-artis-navy">
+      <section className="bg-artis-deep-navy text-artis-white">
+        <div className="mx-auto w-full max-w-[1000px] px-6 py-10 sm:px-8 xl:px-0 xl:py-14">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold xl:text-[13px]">
+            ARTIS Soccer Academy
+          </p>
+          <h1 className="mt-3 text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
+            Gym and Facility Rules
+          </h1>
+          <p className="mt-4 max-w-[850px] text-base leading-7 text-artis-white/85 xl:text-lg xl:leading-8">
+            Please review these school-use requirements before acknowledging the
+            gym or facility rules on the registration form.
+          </p>
+        </div>
+      </section>
 
-      <main>
-        <section className="bg-artis-deep-navy text-artis-white">
-          <div className="mx-auto w-full max-w-[1280px] px-6 py-10 sm:px-8 xl:px-0 xl:py-18">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold xl:text-[13px]">
-              Registration requirement
+      <section className="bg-artis-white">
+        <div className="mx-auto w-full max-w-[1000px] px-6 py-10 sm:px-8 xl:px-0 xl:py-14">
+          <aside className="rounded-2xl border border-artis-gold bg-artis-soft-gold p-5 sm:p-6">
+            <h2 className="text-xl font-bold">Before attending training</h2>
+            <p className="mt-2 max-w-[820px] leading-7 text-artis-slate">
+              These rules were provided for community use of the school
+              facility. Players, families and other attendees should follow them
+              whenever they are present at the facility.
             </p>
-            <h1 className="mt-3 text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
-              Gym and Facility Rules
-            </h1>
-            <p className="mt-4 max-w-[850px] text-base leading-7 text-artis-white/85 xl:text-lg xl:leading-8">
-              Please review these school-use requirements before acknowledging
-              the gym or facility rules on the registration form.
+          </aside>
+
+          <div className="mt-8 space-y-5">
+            {ruleSections.map((section) => (
+              <article
+                key={section.title}
+                className="rounded-2xl border border-artis-border bg-artis-off-white p-5 sm:p-6"
+              >
+                <h2 className="text-xl font-bold leading-7">{section.title}</h2>
+                <ul className="mt-4 space-y-3 pl-5 text-[15px] leading-7 text-artis-slate marker:text-artis-gold">
+                  {section.rules.map((rule) => (
+                    <li key={rule} className="list-disc pl-1">
+                      {rule}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-8 border-l-4 border-artis-gold bg-artis-off-white px-5 py-4">
+            <p className="font-semibold leading-7">
+              Thank you for helping keep the school safe, secure and ready for
+              everyone who uses it.
             </p>
           </div>
-        </section>
 
-        <section className="bg-artis-white">
-          <div className="mx-auto w-full max-w-[1000px] px-6 py-10 sm:px-8 xl:px-0 xl:py-16">
-            <aside className="rounded-2xl border border-artis-gold bg-artis-soft-gold p-5 sm:p-6">
-              <h2 className="text-xl font-bold">Before attending training</h2>
-              <p className="mt-2 max-w-[820px] leading-7 text-artis-slate">
-                These rules were provided for community use of the school
-                facility. Players, families and other attendees should follow
-                them whenever they are present at the facility.
-              </p>
-            </aside>
-
-            <div className="mt-8 space-y-5">
-              {ruleSections.map((section) => (
-                <article
-                  key={section.title}
-                  className="rounded-2xl border border-artis-border bg-artis-off-white p-5 sm:p-6"
-                >
-                  <h2 className="text-xl font-bold leading-7">
-                    {section.title}
-                  </h2>
-                  <ul className="mt-4 space-y-3 pl-5 text-[15px] leading-7 text-artis-slate marker:text-artis-gold">
-                    {section.rules.map((rule) => (
-                      <li key={rule} className="list-disc pl-1">
-                        {rule}
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-8 border-l-4 border-artis-gold bg-artis-off-white px-5 py-4">
-              <p className="font-semibold leading-7">
-                Thank you for helping keep the school safe, secure and ready for
-                everyone who uses it.
-              </p>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <SiteFooter />
-    </div>
+          <p className="mt-8 text-center text-sm font-semibold leading-6 text-artis-slate">
+            When you have finished reviewing these rules, close this tab and
+            return to the registration form.
+          </p>
+        </div>
+      </section>
+    </main>
   );
 }
