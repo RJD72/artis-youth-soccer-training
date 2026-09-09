@@ -279,7 +279,7 @@ export default async function Home() {
                         href={`/register?group=${program.slug}`}
                         className={`${primaryButton} mt-auto`}
                       >
-                        View Training Details
+                        Register for Training
                       </Link>
                     )}
                   </article>

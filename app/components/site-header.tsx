@@ -1,20 +1,36 @@
-// SHARED ARTIS SITE HEADER — AUGUST 22, 2026
+// SHARED ARTIS SITE HEADER — SEPTEMBER 7, 2026
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import type { KeyboardEvent, MouseEvent } from "react";
+import { usePathname } from "next/navigation";
+import {
+  useEffect,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 
-const primaryNavigation = [
+type NavigationItem = {
+  href: string;
+  label: string;
+  sectionId?: string;
+};
+
+const primaryNavigation: NavigationItem[] = [
   { href: "/", label: "Home" },
-  { href: "/#training", label: "Training" },
-  { href: "/#schedule", label: "Schedule" },
-  { href: "/#faq", label: "FAQ" },
+  { href: "/#training", label: "Training", sectionId: "training" },
+  { href: "/#faq", label: "FAQ", sectionId: "faq" },
+  { href: "/#schedule", label: "Schedule", sectionId: "schedule" },
   { href: "/about", label: "About Us" },
   { href: "/coaches", label: "Coaches" },
   { href: "/sponsors", label: "Sponsors" },
   { href: "/contact", label: "Contact Us" },
 ];
+
+const homeSectionIds = primaryNavigation.flatMap((item) =>
+  item.sectionId ? [item.sectionId] : [],
+);
 
 function closeMobileMenu(event: MouseEvent<HTMLAnchorElement>): void {
   event.currentTarget.closest("details")?.removeAttribute("open");
@@ -31,7 +47,86 @@ function closeMobileMenuOnEscape(
   event.currentTarget.querySelector("summary")?.focus();
 }
 
+function isNavigationItemActive(
+  item: NavigationItem,
+  pathname: string,
+  activeSection: string | null,
+): boolean {
+  if (item.sectionId) {
+    return pathname === "/" && activeSection === item.sectionId;
+  }
+
+  if (item.href === "/") {
+    return pathname === "/" && activeSection === null;
+  }
+
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
 export default function SiteHeader() {
+  const pathname = usePathname() ?? "/";
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pathname !== "/") {
+      return;
+    }
+
+    let animationFrameId: number | null = null;
+
+    function updateActiveSection(): void {
+      animationFrameId = null;
+
+      const header = document.querySelector("header");
+      const headerHeight = header?.getBoundingClientRect().height ?? 0;
+      const markerPosition = headerHeight + 24;
+
+      const sections = homeSectionIds
+        .map((sectionId) => document.getElementById(sectionId))
+        .filter((section): section is HTMLElement => section !== null)
+        .map((section) => ({
+          id: section.id,
+          top: section.getBoundingClientRect().top,
+        }))
+        .filter((section) => section.top <= markerPosition)
+        .sort((a, b) => b.top - a.top);
+
+      const nextActiveSection = sections[0]?.id ?? null;
+
+      setActiveSection((currentActiveSection) =>
+        currentActiveSection === nextActiveSection
+          ? currentActiveSection
+          : nextActiveSection,
+      );
+    }
+
+    function scheduleActiveSectionUpdate(): void {
+      if (animationFrameId !== null) {
+        return;
+      }
+
+      animationFrameId = window.requestAnimationFrame(updateActiveSection);
+    }
+
+    scheduleActiveSectionUpdate();
+
+    window.addEventListener("scroll", scheduleActiveSectionUpdate, {
+      passive: true,
+    });
+    window.addEventListener("resize", scheduleActiveSectionUpdate);
+    window.addEventListener("hashchange", scheduleActiveSectionUpdate);
+
+    return () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+
+      window.removeEventListener("scroll", scheduleActiveSectionUpdate);
+      window.removeEventListener("resize", scheduleActiveSectionUpdate);
+      window.removeEventListener("hashchange", scheduleActiveSectionUpdate);
+    };
+  }, [pathname]);
+
   return (
     <header className="sticky top-0 z-50 bg-artis-white">
       <div className="mx-auto flex h-21 w-full max-w-7xl items-center px-5 xl:h-28 xl:gap-10 xl:px-0">
@@ -54,15 +149,30 @@ export default function SiteHeader() {
           aria-label="Primary navigation"
           className="hidden items-center gap-6 whitespace-nowrap text-[15px] font-semibold leading-5.5 xl:flex"
         >
-          {primaryNavigation.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-sm transition-colors hover:text-artis-gold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-artis-gold"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {primaryNavigation.map((item) => {
+            const isActive = isNavigationItemActive(
+              item,
+              pathname,
+              activeSection,
+            );
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={
+                  isActive ? (item.sectionId ? "location" : "page") : undefined
+                }
+                className={`rounded-sm transition-colors hover:text-artis-gold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-artis-gold ${
+                  isActive
+                    ? "underline decoration-artis-gold decoration-[3px] underline-offset-8"
+                    : ""
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <Link
@@ -80,21 +190,42 @@ export default function SiteHeader() {
             <span className="group-open:hidden">MENU</span>
             <span className="hidden group-open:inline">CLOSE</span>
           </summary>
+
           <div className="absolute inset-x-0 top-full z-50 shadow-[0_18px_30px_rgba(6,21,34,0.16)]">
             <nav
               aria-label="Mobile navigation"
               className="bg-artis-white px-6 pt-6 pb-10"
             >
-              {primaryNavigation.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={closeMobileMenu}
-                  className="flex min-h-15 items-center rounded-md text-xl font-semibold leading-7.5 transition-colors hover:text-artis-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-artis-gold"
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {primaryNavigation.map((item) => {
+                const isActive = isNavigationItemActive(
+                  item,
+                  pathname,
+                  activeSection,
+                );
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeMobileMenu}
+                    aria-current={
+                      isActive
+                        ? item.sectionId
+                          ? "location"
+                          : "page"
+                        : undefined
+                    }
+                    className={`flex min-h-15 items-center rounded-md text-xl font-semibold leading-7.5 transition-colors hover:text-artis-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-artis-gold ${
+                      isActive
+                        ? "underline decoration-artis-gold decoration-[3px] underline-offset-8"
+                        : ""
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+
               <Link
                 href="/register"
                 onClick={closeMobileMenu}
