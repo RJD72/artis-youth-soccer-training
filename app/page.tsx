@@ -140,7 +140,7 @@ const primaryButton =
   "inline-flex min-h-12 items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-center text-[15px] font-semibold leading-5 text-artis-white";
 
 const registrationButton =
-  "inline-flex min-h-13 items-center justify-center rounded-[10px] bg-artis-red px-6 py-4 text-center text-[15px] font-semibold leading-5 text-artis-white xl:px-8";
+  "inline-flex min-h-13 items-center justify-center rounded-[10px] bg-artis-gold px-6 py-4 text-center text-[15px] font-semibold leading-5 text-artis-navy xl:px-8";
 
 export default async function Home() {
   await connection();
@@ -155,7 +155,7 @@ export default async function Home() {
         <section className="bg-artis-deep-navy text-artis-white">
           <div className="mx-auto grid w-full max-w-[1280px] gap-10 px-8 py-8 xl:grid-cols-[620px_520px] xl:items-center xl:gap-16 xl:px-0 xl:py-24">
             <div>
-              <p className="text-xs font-semibold uppercase leading-[17px] text-artis-gold xl:text-[13px] xl:leading-[19px]">
+              <p className="text-sm font-semibold uppercase leading-5 text-artis-gold xl:text-[17px] xl:leading-6">
                 Year-round player development
               </p>
               <h1 className="mt-5 text-[38px] font-bold leading-[55px] xl:mt-6 xl:text-[58px] xl:leading-[84px]">
@@ -194,7 +194,7 @@ export default async function Home() {
 
         <section className="bg-artis-white">
           <div className="mx-auto w-full max-w-[1280px] px-8 py-8 xl:px-0 xl:py-20">
-            <p className="hidden text-[13px] font-semibold uppercase leading-[19px] text-artis-gold xl:block">
+            <p className="hidden text-[17px] font-semibold uppercase leading-6 text-artis-gold xl:block">
               Why parents choose a clearer training experience
             </p>
             <h2 className="text-[30px] font-bold leading-[44px] xl:mt-8 xl:max-w-[900px] xl:text-[40px] xl:leading-[58px]">

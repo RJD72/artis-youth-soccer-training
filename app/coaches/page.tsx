@@ -1,5 +1,6 @@
-// ARTIS COACHES PAGE — FIGMA-ALIGNED — AUGUST 22, 2026
+// ARTIS COACHES PAGE
 import type { Metadata } from "next";
+import Image from "next/image";
 
 import SiteFooter from "../components/site-footer";
 import SiteHeader from "../components/site-header";
@@ -10,11 +11,7 @@ export const metadata: Metadata = {
     "Meet the coaches supporting player development at ARTIS Soccer Academy.",
 };
 
-const coachPlaceholders = [
-  "Coach profile 1",
-  "Coach profile 2",
-  "Coach profile 3",
-];
+const coachPlaceholders = ["Coach profile 2", "Coach profile 3"];
 
 function CoachPhotoPlaceholder() {
   return (
@@ -37,19 +34,57 @@ function CoachPhotoPlaceholder() {
   );
 }
 
-function CoachCard({ label }: { label: string }) {
+function HeadCoachCard() {
+  return (
+    <article className="flex w-full flex-col gap-4 rounded-2xl border border-artis-border bg-artis-white p-6 xl:w-[360px]">
+      <div className="relative h-64 w-full overflow-hidden rounded-2xl xl:h-72">
+        <Image
+          src="/images/coaches/head-coach.png"
+          alt="Mario Blazevic, Head Coach at ARTIS Soccer Academy"
+          fill
+          sizes="(min-width: 1280px) 360px, 100vw"
+          className="object-cover"
+          priority
+        />
+      </div>
+
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-wide text-artis-gold">
+          Head Coach
+        </p>
+
+        <h2 className="mt-1 text-[26px] font-bold leading-[34px] text-artis-navy">
+          Mario Blazevic
+        </h2>
+      </div>
+
+      <p className="text-base leading-[26px] text-artis-slate">
+        Former professional soccer player with experience competing in
+        Europe&apos;s First Division. Having progressed through every stage of
+        player development, from youth soccer to the professional level, he
+        brings firsthand experience, technical knowledge, discipline, and
+        passion to developing the next generation of players.
+      </p>
+    </article>
+  );
+}
+
+function CoachPlaceholderCard({ label }: { label: string }) {
   return (
     <article
       aria-label={label}
       className="flex w-full flex-col gap-4 rounded-2xl border border-artis-border bg-artis-white p-6 xl:w-[360px]"
     >
       <CoachPhotoPlaceholder />
+
       <h2 className="text-[22px] font-semibold leading-[30px]">
         Coach profile coming soon
       </h2>
+
       <p className="text-sm font-semibold leading-5">
         Role and credentials to be confirmed
       </p>
+
       <p className="text-base leading-[26px] text-artis-slate">
         The coach biography will be added after the information has been
         supplied and approved by ARTIS Soccer Academy.
@@ -70,14 +105,16 @@ export default function CoachesPage() {
           </h1>
 
           <p className="mt-6 max-w-[900px] text-base leading-[26px] text-artis-slate xl:mt-7 xl:text-lg xl:leading-[30px]">
-            Coach names, roles, credentials and biographies will be added when
-            the final information is supplied by ARTIS Soccer Academy.
+            Meet the coaches bringing experience, technical knowledge and a
+            passion for player development to ARTIS Soccer Academy.
           </p>
 
           <div className="mt-6 grid gap-5 xl:mt-7 xl:grid-cols-3 xl:justify-between xl:gap-0">
-            {coachPlaceholders.map((label) => (
-              <CoachCard key={label} label={label} />
-            ))}
+            <HeadCoachCard />
+
+            {/* {coachPlaceholders.map((label) => (
+              <CoachPlaceholderCard key={label} label={label} />
+            ))} */}
           </div>
         </section>
       </main>

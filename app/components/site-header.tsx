@@ -20,11 +20,11 @@ type NavigationItem = {
 const primaryNavigation: NavigationItem[] = [
   { href: "/", label: "Home" },
   { href: "/#training", label: "Training", sectionId: "training" },
-  { href: "/#faq", label: "FAQ", sectionId: "faq" },
   { href: "/#schedule", label: "Schedule", sectionId: "schedule" },
   { href: "/about", label: "About Us" },
   { href: "/coaches", label: "Coaches" },
   { href: "/sponsors", label: "Sponsors" },
+  { href: "/#faq", label: "FAQ", sectionId: "faq" },
   { href: "/contact", label: "Contact Us" },
 ];
 
@@ -138,9 +138,9 @@ export default function SiteHeader() {
           <Image
             src="/logo.png"
             alt=""
-            width={64}
-            height={64}
-            className="size-13 object-contain xl:size-16"
+            width={80}
+            height={80}
+            className="size-16 object-contain xl:size-20"
             priority
           />
         </Link>
@@ -191,7 +191,7 @@ export default function SiteHeader() {
             <span className="hidden group-open:inline">CLOSE</span>
           </summary>
 
-          <div className="absolute inset-x-0 top-full z-50 shadow-[0_18px_30px_rgba(6,21,34,0.16)]">
+          <div className="absolute inset-x-0 top-full z-50 max-h-[calc(100dvh-5.25rem)] overflow-y-auto shadow-[0_18px_30px_rgba(6,21,34,0.16)]">
             <nav
               aria-label="Mobile navigation"
               className="bg-artis-white px-6 pt-6 pb-10"
