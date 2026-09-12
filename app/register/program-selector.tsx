@@ -651,7 +651,7 @@ function PlayerInformationSection({
         <SelectField
           id="jerseySize"
           name="jerseySize"
-          label="Jersey size (pending confirmation)"
+          label="Jersey size"
           defaultValue=""
           error={fieldErrors.jerseySize}
         >
@@ -666,7 +666,7 @@ function PlayerInformationSection({
         <TextField
           id="preferredName"
           name="preferredName"
-          label="Name on jersey (optional until confirmed)"
+          label="Name on jersey"
           placeholder="Enter name for the jersey"
           maxLength={50}
           error={fieldErrors.preferredName}

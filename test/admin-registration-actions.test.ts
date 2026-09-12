@@ -1,26 +1,302 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from "@jest/globals";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from "@jest/globals";
 import { getRedirectError } from "next/dist/client/components/redirect";
 import { RedirectType } from "next/navigation";
 import { registrations } from "@/db/schema";
 import { databaseHarness, NOW } from "./database-harness";
-const h = databaseHarness(); const revalidate = jest.fn();
-const confirm = jest.fn<(...args: unknown[]) => Promise<unknown>>(); const cancel = jest.fn<(...args: unknown[]) => Promise<unknown>>(); const reschedule = jest.fn<(...args: unknown[]) => Promise<unknown>>();
-const confirmationEmail = jest.fn<(...args: unknown[]) => Promise<void>>(); const updateEmail = jest.fn<(...args: unknown[]) => Promise<void>>();
+const h = databaseHarness();
+const revalidate = jest.fn();
+const confirm = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const cancel = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const cancelPendingETransfer =
+  jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const reschedule = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const confirmationEmail = jest.fn<(...args: unknown[]) => Promise<void>>();
+const updateEmail = jest.fn<(...args: unknown[]) => Promise<void>>();
 let actions: typeof import("@/app/admin/registrations/actions");
-const email = { registrationId: 1, registrationStatus: "scheduled", startsOn: "2026-10-01", endsOn: "2026-12-31", guardianName: "Test Guardian", guardianEmail: "guardian@example.com", playerName: "Test Player", trainingGroupName: "Development", programPackageName: "Three months", amountCents: 11300, currency: "CAD", paymentReference: "ARTIS-2", paidAt: NOW };
-beforeAll(async () => { jest.doMock("@/db", () => ({ db: h.db })); jest.doMock("next/cache", () => ({ revalidatePath: revalidate })); jest.doMock("@/lib/confirm-e-transfer-payment", () => ({ confirmETransferPayment: confirm })); jest.doMock("@/lib/cancel-registration", () => ({ cancelRegistration: cancel })); jest.doMock("@/lib/reschedule-registration", () => ({ rescheduleRegistration: reschedule })); jest.doMock("@/lib/send-e-transfer-payment-confirmation-email", () => ({ sendETransferPaymentConfirmationEmail: confirmationEmail })); jest.doMock("@/lib/send-registration-admin-update-email", () => ({ sendRegistrationAdminUpdateEmail: updateEmail })); actions = await import("@/app/admin/registrations/actions"); });
-beforeEach(() => { h.reset(); confirmationEmail.mockReset().mockResolvedValue(); updateEmail.mockReset().mockResolvedValue(); jest.spyOn(console, "error").mockImplementation(() => {}); }); afterEach(() => { jest.restoreAllMocks(); });
-describe.each(["confirm", "cancel", "reschedule"] as const)("admin %s action", kind => {
-  const service = kind === "confirm" ? confirm : kind === "cancel" ? cancel : reschedule;
-  const sentEmail = kind === "confirm" ? confirmationEmail : updateEmail;
-  const success = kind === "confirm" ? { status: "confirmed", registrationStatus: "scheduled" } : kind === "cancel" ? { status: "cancelled", previousStatus: "scheduled" } : { status: "rescheduled", registrationStatus: "scheduled", startsOn: "2026-10-01", endsOn: "2026-12-31" };
-  const call = () => { const form = new FormData(); form.set("registrationId", "1"); form.set("paymentId", "2"); form.set("startMonth", "2026-10-01"); return kind === "confirm" ? actions.confirmETransferPaymentAction({ status: "idle" }, form) : kind === "cancel" ? actions.cancelRegistrationAction({ status: "idle" }, form) : actions.rescheduleRegistrationAction({ status: "idle" }, form); };
-  beforeEach(() => { service.mockReset().mockResolvedValue(success); });
-  it("preserves authentication redirect control flow", async () => { const redirect = getRedirectError("/admin/login", RedirectType.replace); service.mockRejectedValue(redirect); await expect(call()).rejects.toBe(redirect); expect(h.db.select).not.toHaveBeenCalled(); expect(sentEmail).not.toHaveBeenCalled(); });
-  it("passes submitted references to the protected service before reading email data", async () => { h.read(registrations, { ...email, registrationStatus: kind === "cancel" ? "cancelled" : "scheduled" }); expect(await call()).toMatchObject({ status: "success", result: success.status, emailStatus: "sent" }); expect(service.mock.invocationCallOrder[0]).toBeLessThan(h.db.select.mock.invocationCallOrder[0]); expect(sentEmail).toHaveBeenCalledTimes(1); expect(revalidate).toHaveBeenCalledWith("/admin/registrations"); });
-  it("retains confirmed database outcome if follow-up email fails", async () => { h.read(registrations, { ...email, registrationStatus: kind === "cancel" ? "cancelled" : "scheduled" }); sentEmail.mockRejectedValue(new Error("guardian@example.com synthetic-private-error")); expect(await call()).toMatchObject({ status: "success", result: success.status, emailStatus: "failed" }); expect(service).toHaveBeenCalledTimes(1); expect(revalidate).not.toHaveBeenCalled(); expect(JSON.stringify(jest.mocked(console.error).mock.calls)).not.toContain("guardian@example.com"); });
-  it("returns email failure without undoing saved state when email data is unavailable", async () => { h.read(registrations); expect(await call()).toMatchObject({ status: "success", emailStatus: "failed" }); expect(sentEmail).not.toHaveBeenCalled(); expect(revalidate).not.toHaveBeenCalled(); });
-  it("does not resend email for idempotent or unchanged outcomes", async () => { service.mockResolvedValue({ ...success, status: kind === "confirm" ? "already-confirmed" : kind === "cancel" ? "already-cancelled" : "unchanged" }); expect(await call()).toMatchObject({ status: "success", emailStatus: "not-sent" }); expect(h.db.select).not.toHaveBeenCalled(); expect(sentEmail).not.toHaveBeenCalled(); });
-  it.each(kind === "confirm" ? ["invalid-identifiers", "payment-not-found", "payment-already-resolved", "registration-not-confirmable", "registration-period-invalid", "registration-period-ended", "training-group-unavailable", "training-group-full"] : kind === "cancel" ? ["invalid-registration-id", "registration-not-found", "registration-not-cancellable"] : ["invalid-registration-id", "invalid-start-month", "start-month-too-early", "start-month-too-late", "registration-not-found", "registration-not-reschedulable", "training-group-unavailable", "program-package-unavailable", "age-mismatch", "player-period-conflict", "training-group-full"])("maps rejection %s", async code => { service.mockResolvedValue({ status: "rejected", code }); expect(await call()).toEqual({ status: "error", code }); expect(h.db.select).not.toHaveBeenCalled(); expect(sentEmail).not.toHaveBeenCalled(); });
-  it("maps ordinary failures safely without private details", async () => { service.mockRejectedValue(new Error("synthetic-private-error")); expect(await call()).toEqual({ status: "error", code: `unable-to-${kind}` }); expect(JSON.stringify(jest.mocked(console.error).mock.calls)).not.toContain("synthetic-private-error"); });
+const email = {
+  registrationId: 1,
+  registrationStatus: "scheduled",
+  startsOn: "2026-10-01",
+  endsOn: "2026-12-31",
+  guardianName: "Test Guardian",
+  guardianEmail: "guardian@example.com",
+  playerName: "Test Player",
+  trainingGroupName: "Development",
+  programPackageName: "Three months",
+  amountCents: 11300,
+  currency: "CAD",
+  paymentReference: "ARTIS-2",
+  paidAt: NOW,
+};
+beforeAll(async () => {
+  jest.doMock("@/db", () => ({ db: h.db }));
+  jest.doMock("next/cache", () => ({ revalidatePath: revalidate }));
+  jest.doMock("@/lib/confirm-e-transfer-payment", () => ({
+    confirmETransferPayment: confirm,
+  }));
+  jest.doMock("@/lib/cancel-registration", () => ({
+    cancelRegistration: cancel,
+    cancelPendingETransferRegistration: cancelPendingETransfer,
+  }));
+  jest.doMock("@/lib/reschedule-registration", () => ({
+    rescheduleRegistration: reschedule,
+  }));
+  jest.doMock("@/lib/send-e-transfer-payment-confirmation-email", () => ({
+    sendETransferPaymentConfirmationEmail: confirmationEmail,
+  }));
+  jest.doMock("@/lib/send-registration-admin-update-email", () => ({
+    sendRegistrationAdminUpdateEmail: updateEmail,
+  }));
+  actions = await import("@/app/admin/registrations/actions");
+});
+beforeEach(() => {
+  h.reset();
+  confirmationEmail.mockReset().mockResolvedValue();
+  updateEmail.mockReset().mockResolvedValue();
+  jest.spyOn(console, "error").mockImplementation(() => {});
+});
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+describe.each(["confirm", "cancel", "reschedule"] as const)(
+  "admin %s action",
+  (kind) => {
+    const service =
+      kind === "confirm" ? confirm : kind === "cancel" ? cancel : reschedule;
+    const sentEmail = kind === "confirm" ? confirmationEmail : updateEmail;
+    const success =
+      kind === "confirm"
+        ? { status: "confirmed", registrationStatus: "scheduled" }
+        : kind === "cancel"
+          ? { status: "cancelled", previousStatus: "scheduled" }
+          : {
+              status: "rescheduled",
+              registrationStatus: "scheduled",
+              startsOn: "2026-10-01",
+              endsOn: "2026-12-31",
+            };
+    const call = () => {
+      const form = new FormData();
+
+      form.set("registrationId", "1");
+
+      if (kind === "confirm") {
+        form.set("paymentId", "2");
+      }
+
+      if (kind === "reschedule") {
+        form.set("startMonth", "2026-10-01");
+      }
+
+      return kind === "confirm"
+        ? actions.confirmETransferPaymentAction({ status: "idle" }, form)
+        : kind === "cancel"
+          ? actions.cancelRegistrationAction({ status: "idle" }, form)
+          : actions.rescheduleRegistrationAction({ status: "idle" }, form);
+    };
+    beforeEach(() => {
+      service.mockReset().mockResolvedValue(success);
+    });
+    it("preserves authentication redirect control flow", async () => {
+      const redirect = getRedirectError("/admin/login", RedirectType.replace);
+      service.mockRejectedValue(redirect);
+      await expect(call()).rejects.toBe(redirect);
+      expect(h.db.select).not.toHaveBeenCalled();
+      expect(sentEmail).not.toHaveBeenCalled();
+    });
+    it("passes submitted references to the protected service before reading email data", async () => {
+      h.read(registrations, {
+        ...email,
+        registrationStatus: kind === "cancel" ? "cancelled" : "scheduled",
+      });
+      expect(await call()).toMatchObject({
+        status: "success",
+        result: success.status,
+        emailStatus: "sent",
+      });
+      expect(service.mock.invocationCallOrder[0]).toBeLessThan(
+        h.db.select.mock.invocationCallOrder[0],
+      );
+      expect(sentEmail).toHaveBeenCalledTimes(1);
+      if (kind === "cancel") {
+        expect(revalidate).not.toHaveBeenCalled();
+      } else {
+        expect(revalidate).toHaveBeenCalledWith("/admin/registrations");
+      }
+    });
+    it("retains confirmed database outcome if follow-up email fails", async () => {
+      h.read(registrations, {
+        ...email,
+        registrationStatus: kind === "cancel" ? "cancelled" : "scheduled",
+      });
+      sentEmail.mockRejectedValue(
+        new Error("guardian@example.com synthetic-private-error"),
+      );
+      expect(await call()).toMatchObject({
+        status: "success",
+        result: success.status,
+        emailStatus: "failed",
+      });
+      expect(service).toHaveBeenCalledTimes(1);
+      expect(revalidate).not.toHaveBeenCalled();
+      expect(
+        JSON.stringify(jest.mocked(console.error).mock.calls),
+      ).not.toContain("guardian@example.com");
+    });
+    it("returns email failure without undoing saved state when email data is unavailable", async () => {
+      h.read(registrations);
+      expect(await call()).toMatchObject({
+        status: "success",
+        emailStatus: "failed",
+      });
+      expect(sentEmail).not.toHaveBeenCalled();
+      expect(revalidate).not.toHaveBeenCalled();
+    });
+    it("does not resend email for idempotent or unchanged outcomes", async () => {
+      service.mockResolvedValue({
+        ...success,
+        status:
+          kind === "confirm"
+            ? "already-confirmed"
+            : kind === "cancel"
+              ? "already-cancelled"
+              : "unchanged",
+      });
+      expect(await call()).toMatchObject({
+        status: "success",
+        emailStatus: "not-sent",
+      });
+      expect(h.db.select).not.toHaveBeenCalled();
+      expect(sentEmail).not.toHaveBeenCalled();
+    });
+    it.each(
+      kind === "confirm"
+        ? [
+            "invalid-identifiers",
+            "payment-not-found",
+            "payment-already-resolved",
+            "registration-not-confirmable",
+            "registration-period-invalid",
+            "registration-period-ended",
+            "training-group-unavailable",
+            "training-group-full",
+          ]
+        : kind === "cancel"
+          ? [
+              "invalid-registration-id",
+              "registration-not-found",
+              "registration-not-cancellable",
+            ]
+          : [
+              "invalid-registration-id",
+              "invalid-start-month",
+              "start-month-too-early",
+              "start-month-too-late",
+              "registration-not-found",
+              "registration-not-reschedulable",
+              "training-group-unavailable",
+              "program-package-unavailable",
+              "age-mismatch",
+              "player-period-conflict",
+              "training-group-full",
+            ],
+    )("maps rejection %s", async (code) => {
+      service.mockResolvedValue({ status: "rejected", code });
+      expect(await call()).toEqual({ status: "error", code });
+      expect(h.db.select).not.toHaveBeenCalled();
+      expect(sentEmail).not.toHaveBeenCalled();
+    });
+    it("maps ordinary failures safely without private details", async () => {
+      service.mockRejectedValue(new Error("synthetic-private-error"));
+      expect(await call()).toEqual({
+        status: "error",
+        code: `unable-to-${kind}`,
+      });
+      expect(
+        JSON.stringify(jest.mocked(console.error).mock.calls),
+      ).not.toContain("synthetic-private-error");
+    });
+  },
+);
+
+describe("admin pending e-transfer cancellation action", () => {
+  const call = () => {
+    const form = new FormData();
+
+    form.set("registrationId", "1");
+    form.set("paymentId", "2");
+
+    return actions.cancelRegistrationAction({ status: "idle" }, form);
+  };
+
+  beforeEach(() => {
+    cancelPendingETransfer.mockReset().mockResolvedValue({
+      status: "cancelled",
+      previousStatus: "pending_payment",
+    });
+  });
+
+  it("uses the pending e-transfer cancellation service when a payment ID is submitted", async () => {
+    h.read(registrations, {
+      ...email,
+      registrationStatus: "cancelled",
+    });
+
+    await expect(call()).resolves.toMatchObject({
+      status: "success",
+      result: "cancelled",
+      emailStatus: "sent",
+    });
+
+    expect(cancelPendingETransfer).toHaveBeenCalledWith("1", "2");
+    expect(cancel).not.toHaveBeenCalled();
+    expect(updateEmail).toHaveBeenCalledTimes(1);
+    expect(revalidate).not.toHaveBeenCalled();
+  });
+
+  it("maps a rejected pending e-transfer cancellation", async () => {
+    cancelPendingETransfer.mockResolvedValue({
+      status: "rejected",
+      code: "registration-not-cancellable",
+    });
+
+    await expect(call()).resolves.toEqual({
+      status: "error",
+      code: "registration-not-cancellable",
+    });
+
+    expect(updateEmail).not.toHaveBeenCalled();
+  });
+
+  it("does not resend a cancellation email for an already-cancelled e-transfer", async () => {
+    cancelPendingETransfer.mockResolvedValue({
+      status: "already-cancelled",
+    });
+
+    await expect(call()).resolves.toEqual({
+      status: "success",
+      result: "already-cancelled",
+      emailStatus: "not-sent",
+    });
+
+    expect(updateEmail).not.toHaveBeenCalled();
+  });
+
+  it("preserves authentication redirect control flow", async () => {
+    const redirect = getRedirectError("/admin/login", RedirectType.replace);
+
+    cancelPendingETransfer.mockRejectedValue(redirect);
+
+    await expect(call()).rejects.toBe(redirect);
+
+    expect(updateEmail).not.toHaveBeenCalled();
+  });
 });

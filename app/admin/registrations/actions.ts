@@ -22,6 +22,7 @@ import {
   type ETransferConfirmationRejectionCode,
 } from "@/lib/confirm-e-transfer-payment";
 import {
+  cancelPendingETransferRegistration,
   cancelRegistration,
   type RegistrationCancellationRejectionCode,
 } from "@/lib/cancel-registration";
@@ -378,10 +379,20 @@ export async function cancelRegistrationAction(
   formData: FormData,
 ): Promise<CancelRegistrationActionState> {
   const registrationIdValue = formData.get("registrationId");
-  let outcome: Awaited<ReturnType<typeof cancelRegistration>>;
+  const paymentIdValue = formData.get("paymentId");
+
+  let outcome:
+    | Awaited<ReturnType<typeof cancelRegistration>>
+    | Awaited<ReturnType<typeof cancelPendingETransferRegistration>>;
 
   try {
-    outcome = await cancelRegistration(registrationIdValue);
+    outcome =
+      paymentIdValue === null
+        ? await cancelRegistration(registrationIdValue)
+        : await cancelPendingETransferRegistration(
+            registrationIdValue,
+            paymentIdValue,
+          );
   } catch (error) {
     unstable_rethrow(error);
     logCancellationFailure(error);
@@ -400,9 +411,9 @@ export async function cancelRegistrationAction(
 
   // Keep the control mounted when email delivery fails so the next UI update
   // can show the administrator a warning. The cancellation remains saved.
-  if (emailStatus !== "failed") {
-    revalidatePath("/admin/registrations");
-  }
+  // if (emailStatus !== "failed") {
+  //   revalidatePath("/admin/registrations");
+  // }
 
   return {
     status: "success",

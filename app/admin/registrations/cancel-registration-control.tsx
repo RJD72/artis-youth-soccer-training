@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   cancelRegistrationAction,
@@ -11,7 +12,8 @@ import {
 type CancelRegistrationControlProps = {
   registrationId: number;
   playerName: string;
-  registrationStatus: "scheduled" | "active";
+  registrationStatus: "pending_payment" | "scheduled" | "active";
+  paymentId?: number;
 };
 
 const initialActionState: CancelRegistrationActionState = { status: "idle" };
@@ -33,6 +35,10 @@ const cancellationErrorMessages: Record<
 function getCancellationEffect(
   registrationStatus: CancelRegistrationControlProps["registrationStatus"],
 ): string {
+  if (registrationStatus === "pending_payment") {
+    return "The pending e-transfer registration will be cancelled and its reserved place will become available.";
+  }
+
   return registrationStatus === "active"
     ? "The player will be removed from the active roster and their place will become available."
     : "The player will lose their scheduled place and that place will become available.";
@@ -42,7 +48,10 @@ export function CancelRegistrationControl({
   registrationId,
   playerName,
   registrationStatus,
+  paymentId,
 }: CancelRegistrationControlProps) {
+  const router = useRouter();
+
   const cancellationDialog = useRef<HTMLDialogElement>(null);
   const [state, formAction, isPending] = useActionState(
     cancelRegistrationAction,
@@ -53,8 +62,12 @@ export function CancelRegistrationControl({
   useEffect(() => {
     if (state.status === "success") {
       cancellationDialog.current?.close();
+
+      if (state.emailStatus !== "failed") {
+        router.refresh();
+      }
     }
-  }, [state]);
+  }, [state, router]);
 
   function openCancellationDialog() {
     if (!registrationWasCancelled) {
@@ -135,9 +148,11 @@ export function CancelRegistrationControl({
             className="mt-3 space-y-3 text-sm leading-6 text-artis-slate"
           >
             <p>{getCancellationEffect(registrationStatus)}</p>
+
             <p>
-              The registration and its payment record will remain in the admin
-              history. This action does not change the recorded payment.
+              {registrationStatus === "pending_payment"
+                ? "The registration and payment record will remain in the admin history, but the pending e-transfer will be marked as cancelled."
+                : "The registration and its payment record will remain in the admin history. This action does not change the recorded payment."}
             </p>
           </div>
 
@@ -166,6 +181,11 @@ export function CancelRegistrationControl({
                 name="registrationId"
                 value={registrationId}
               />
+
+              {paymentId !== undefined ? (
+                <input type="hidden" name="paymentId" value={paymentId} />
+              ) : null}
+
               <button
                 type="submit"
                 disabled={isPending}

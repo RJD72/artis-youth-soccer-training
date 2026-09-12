@@ -18,6 +18,8 @@ import {
   within,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/jest-globals";
+
+const routerRefresh = jest.fn();
 const registrationAction =
   jest.fn<typeof import("@/app/register/actions").submitRegistration>();
 const contactAction =
@@ -99,15 +101,26 @@ beforeAll(async () => {
   jest.doMock("@/app/register/renew/actions", () => ({
     requestRenewalVerification: renewalAction,
   }));
+
   jest.doMock("@/app/admin/registrations/actions", () => ({
     cancelRegistrationAction: cancelAction,
     rescheduleRegistrationAction: rescheduleAction,
   }));
+
+  jest.doMock("next/navigation", () => ({
+    ...jest.requireActual<typeof import("next/navigation")>("next/navigation"),
+    useRouter: () => ({
+      refresh: routerRefresh,
+    }),
+    usePathname: () => "/",
+  }));
+
   ({ default: Program } = await import("@/app/register/program-selector"));
   ({ default: Contact } = await import("@/app/contact/contact-form"));
   ({ default: Renewal } =
     await import("@/app/register/renew/renewal-request-form"));
   ({ default: Header } = await import("@/app/components/site-header"));
+
   ({ CancelRegistrationControl: Cancel } =
     await import("@/app/admin/registrations/cancel-registration-control"));
   ({ RescheduleRegistrationControl: Reschedule } =
@@ -131,6 +144,7 @@ beforeAll(async () => {
     },
   });
 });
+
 beforeEach(() => {
   jest.clearAllMocks();
   registrationAction.mockReset();
@@ -138,6 +152,7 @@ beforeEach(() => {
   renewalAction.mockReset();
   cancelAction.mockReset();
   rescheduleAction.mockReset();
+  routerRefresh.mockReset();
 });
 afterEach(() => {
   cleanup();

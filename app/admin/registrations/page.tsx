@@ -267,8 +267,17 @@ function RegistrationActions({
     registration.paymentMethod === "e_transfer" &&
     registration.paymentStatus === "pending" &&
     registration.paymentId !== null;
+
+  const canCancelPendingETransfer =
+    registration.status === "pending_payment" &&
+    registration.paymentMethod === "e_transfer" &&
+    registration.paymentStatus === "pending" &&
+    registration.paymentId !== null;
+
   const canCancelRegistration =
-    registration.status === "scheduled" || registration.status === "active";
+    canCancelPendingETransfer ||
+    registration.status === "scheduled" ||
+    registration.status === "active";
 
   if (!canConfirmETransfer && !canCancelRegistration) {
     return <span className="text-xs text-artis-slate">No active actions</span>;
@@ -279,8 +288,15 @@ function RegistrationActions({
       <ETransferConfirmationAction registration={registration} />
       <RegistrationReschedulingAction registration={registration} />
 
-      {registration.status === "scheduled" ||
-      registration.status === "active" ? (
+      {canCancelPendingETransfer ? (
+        <CancelRegistrationControl
+          registrationId={registration.id}
+          playerName={registration.playerName}
+          registrationStatus="pending_payment"
+          paymentId={registration.paymentId ?? undefined}
+        />
+      ) : registration.status === "scheduled" ||
+        registration.status === "active" ? (
         <CancelRegistrationControl
           registrationId={registration.id}
           playerName={registration.playerName}
@@ -296,8 +312,17 @@ function hasRegistrationActions(registration: AdminRegistration): boolean {
     registration.paymentMethod === "e_transfer" &&
     registration.paymentStatus === "pending" &&
     registration.paymentId !== null;
+
+  const canCancelPendingETransfer =
+    registration.status === "pending_payment" &&
+    registration.paymentMethod === "e_transfer" &&
+    registration.paymentStatus === "pending" &&
+    registration.paymentId !== null;
+
   const canCancelRegistration =
-    registration.status === "scheduled" || registration.status === "active";
+    canCancelPendingETransfer ||
+    registration.status === "scheduled" ||
+    registration.status === "active";
 
   return canConfirmETransfer || canCancelRegistration;
 }
