@@ -25,9 +25,7 @@ type ValidatedRenewalActionSubmission = {
 };
 
 export type RenewalCheckoutActionErrorCode =
-  | "invalid-form"
-  | "unable-to-submit"
-  | PendingRenewalRejectionCode;
+  "invalid-form" | "unable-to-submit" | PendingRenewalRejectionCode;
 
 export type RenewalCheckoutActionState =
   | {
@@ -110,6 +108,10 @@ function validateRenewalSubmission(
     "participationWaiverAccepted",
   );
   const gymRulesAccepted = getCheckboxValue(formData, "gymRulesAccepted");
+  const cancellationPolicyAccepted = getCheckboxValue(
+    formData,
+    "cancellationPolicyAccepted",
+  );
   const marketingConsent = getCheckboxValue(formData, "marketingConsent");
   const photoVideoConsent = getCheckboxValue(formData, "photoVideoConsent");
 
@@ -123,6 +125,7 @@ function validateRenewalSubmission(
     termsAccepted !== true ||
     participationWaiverAccepted !== true ||
     gymRulesAccepted !== true ||
+    cancellationPolicyAccepted !== true ||
     marketingConsent === null ||
     photoVideoConsent === null
   ) {
@@ -139,6 +142,7 @@ function validateRenewalSubmission(
       termsAccepted: true,
       participationWaiverAccepted: true,
       gymRulesAccepted: true,
+      cancellationPolicyAccepted: true,
       marketingConsent,
       photoVideoConsent,
     },

@@ -37,6 +37,7 @@ type ConsentState = {
   termsAccepted: boolean;
   participationWaiverAccepted: boolean;
   gymRulesAccepted: boolean;
+  cancellationPolicyAccepted: boolean;
   marketingConsent: boolean;
   photoVideoConsent: boolean;
 };
@@ -57,6 +58,7 @@ const initialConsentState: ConsentState = {
   termsAccepted: false,
   participationWaiverAccepted: false,
   gymRulesAccepted: false,
+  cancellationPolicyAccepted: false,
   marketingConsent: false,
   photoVideoConsent: false,
 };
@@ -456,8 +458,14 @@ export default function RenewalCheckoutForm({
               onChange={updateConsent}
             >
               I agree to the Terms and Conditions. *{" "}
-              <Link href="/terms" className="font-semibold underline">
+              <Link
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold underline"
+              >
                 View Terms and Conditions
+                <span className="sr-only"> (opens in a new tab)</span>
               </Link>
             </CheckboxField>
             <CheckboxField
@@ -469,8 +477,14 @@ export default function RenewalCheckoutForm({
               onChange={updateConsent}
             >
               I acknowledge the Participation Waiver. *{" "}
-              <Link href="/waiver" className="font-semibold underline">
+              <Link
+                href="/waiver"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold underline"
+              >
                 View Participation Waiver
+                <span className="sr-only"> (opens in a new tab)</span>
               </Link>
             </CheckboxField>
             <CheckboxField
@@ -482,8 +496,33 @@ export default function RenewalCheckoutForm({
               onChange={updateConsent}
             >
               I acknowledge the Gym or Facility Rules. *{" "}
-              <Link href="/gym-rules" className="font-semibold underline">
+              <Link
+                href="/gym-rules"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold underline"
+              >
                 View Gym Rules
+                <span className="sr-only"> (opens in a new tab)</span>
+              </Link>
+            </CheckboxField>
+            <CheckboxField
+              id="renewal-cancellation-policy"
+              name="cancellationPolicyAccepted"
+              checked={consents.cancellationPolicyAccepted}
+              required
+              disabled={isPending}
+              onChange={updateConsent}
+            >
+              I agree to the Cancellation Policy. *{" "}
+              <Link
+                href="/cancellation-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold underline"
+              >
+                View Cancellation Policy
+                <span className="sr-only"> (opens in a new tab)</span>
               </Link>
             </CheckboxField>
             <CheckboxField

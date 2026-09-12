@@ -38,6 +38,7 @@ export type ValidatedRegistrationSubmission = {
   termsAccepted: true;
   participationWaiverAccepted: true;
   gymRulesAccepted: true;
+  cancellationPolicyAccepted: true;
   marketingConsent: boolean;
   photoVideoConsent: boolean;
   paymentMethod: RegistrationPaymentMethod;
@@ -71,6 +72,7 @@ export type RegistrationFormFieldName =
   | "termsAccepted"
   | "participationWaiverAccepted"
   | "gymRulesAccepted"
+  | "cancellationPolicyAccepted"
   | "marketingConsent"
   | "photoVideoConsent"
   | "paymentMethod";
@@ -418,6 +420,10 @@ export function validateRegistrationSubmission(
     "participationWaiverAccepted",
   );
   const gymRulesAccepted = readCheckbox(formData, "gymRulesAccepted");
+  const cancellationPolicyAccepted = readCheckbox(
+    formData,
+    "cancellationPolicyAccepted",
+  );
   const marketingConsent = readCheckbox(formData, "marketingConsent");
   const photoVideoConsent = readCheckbox(formData, "photoVideoConsent");
   const paymentMethod = readEnum(formData, "paymentMethod", [
@@ -591,6 +597,12 @@ export function validateRegistrationSubmission(
   );
   addParsedValueError(
     fieldErrors,
+    "cancellationPolicyAccepted",
+    cancellationPolicyAccepted,
+    "Accept the Cancellation Policy to continue.",
+  );
+  addParsedValueError(
+    fieldErrors,
     "marketingConsent",
     marketingConsent,
     "Choose a valid marketing preference.",
@@ -642,6 +654,7 @@ export function validateRegistrationSubmission(
     !termsAccepted.valid ||
     !participationWaiverAccepted.valid ||
     !gymRulesAccepted.valid ||
+    !cancellationPolicyAccepted.valid ||
     !marketingConsent.valid ||
     !photoVideoConsent.valid ||
     !paymentMethod.valid
@@ -740,6 +753,13 @@ export function validateRegistrationSubmission(
       "Acknowledge the facility rules to continue.",
     );
   }
+  if (!cancellationPolicyAccepted.value) {
+    addFieldError(
+      fieldErrors,
+      "cancellationPolicyAccepted",
+      "Accept the Cancellation Policy to continue.",
+    );
+  }
 
   let finalEmergencyContactName = guardianFullName;
   let finalEmergencyContactRelationship = guardianRelationship.value;
@@ -823,6 +843,7 @@ export function validateRegistrationSubmission(
       termsAccepted: true,
       participationWaiverAccepted: true,
       gymRulesAccepted: true,
+      cancellationPolicyAccepted: true,
       marketingConsent: marketingConsent.value,
       photoVideoConsent: photoVideoConsent.value,
       paymentMethod: paymentMethod.value,

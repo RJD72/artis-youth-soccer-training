@@ -45,6 +45,7 @@ const requiredLegalDocumentTypes = [
   "terms_conditions",
   "participation_waiver",
   "gym_facility_rules",
+  "cancellation_refund_policy",
 ] as const;
 
 const reservationLifetimeMilliseconds = {
@@ -64,6 +65,7 @@ export type PendingRenewalSubmission = {
   termsAccepted: true;
   participationWaiverAccepted: true;
   gymRulesAccepted: true;
+  cancellationPolicyAccepted: true;
   marketingConsent: boolean;
   photoVideoConsent: boolean;
 };
@@ -177,6 +179,7 @@ function isValidSubmission(value: PendingRenewalSubmission): boolean {
     value.termsAccepted === true &&
     value.participationWaiverAccepted === true &&
     value.gymRulesAccepted === true &&
+    value.cancellationPolicyAccepted === true &&
     typeof value.marketingConsent === "boolean" &&
     typeof value.photoVideoConsent === "boolean"
   );

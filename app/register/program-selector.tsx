@@ -174,6 +174,7 @@ const registrationFieldOrder: RegistrationFormFieldName[] = [
   "termsAccepted",
   "participationWaiverAccepted",
   "gymRulesAccepted",
+  "cancellationPolicyAccepted",
   "marketingConsent",
   "photoVideoConsent",
   "paymentMethod",
@@ -926,7 +927,12 @@ function ConsentSection({
           error={fieldErrors.participationWaiverAccepted}
         >
           I acknowledge the Participation Waiver. *{" "}
-          <Link href="/waiver" className="font-semibold underline">
+          <Link
+            href="/waiver"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold underline"
+          >
             View Participation Waiver
           </Link>
         </CheckboxField>
@@ -944,6 +950,23 @@ function ConsentSection({
             className="font-semibold underline"
           >
             View Gym Rules
+            <span className="sr-only"> (opens in a new tab)</span>
+          </Link>
+        </CheckboxField>
+        <CheckboxField
+          id="cancellationPolicyAccepted"
+          name="cancellationPolicyAccepted"
+          required
+          error={fieldErrors.cancellationPolicyAccepted}
+        >
+          I agree to the Cancellation Policy. *{" "}
+          <Link
+            href="/cancellation-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold underline"
+          >
+            View Cancellation Policy
             <span className="sr-only"> (opens in a new tab)</span>
           </Link>
         </CheckboxField>

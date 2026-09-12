@@ -41,6 +41,7 @@ const requiredLegalDocumentTypes = [
   "terms_conditions",
   "participation_waiver",
   "gym_facility_rules",
+  "cancellation_refund_policy",
 ] as const;
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];

@@ -1,5 +1,6 @@
 // ARTIS HOMEPAGE — FIGMA-ALIGNED POLISHED CONTENT — AUGUST 22, 2026
 import Link from "next/link";
+import Image from "next/image";
 import { connection } from "next/server";
 
 import { getRegistrationOptions } from "@/lib/registration-options";
@@ -185,10 +186,16 @@ export default async function Home() {
               </div>
             </div>
 
-            <ImagePlaceholder
-              label="Soccer training action photograph"
-              className="h-60 xl:h-[430px]"
-            />
+            <div className="relative h-60 overflow-hidden rounded-2xl xl:h-[430px]">
+              <Image
+                src="/images/home/hero-training.png"
+                alt="Youth soccer players taking part in an indoor training session"
+                fill
+                priority
+                sizes="(min-width: 1280px) 520px, 100vw"
+                className="object-cover"
+              />
+            </div>
           </div>
         </section>
 
@@ -322,10 +329,15 @@ export default async function Home() {
 
         <section className="bg-artis-white">
           <div className="mx-auto grid w-full max-w-[1280px] gap-5 px-8 py-8 xl:grid-cols-[520px_600px] xl:items-center xl:gap-16 xl:px-0 xl:py-20">
-            <ImagePlaceholder
-              label="Coach or training photograph"
-              className="h-55 xl:h-[380px]"
-            />
+            <div className="relative h-55 overflow-hidden rounded-2xl xl:h-[380px]">
+              <Image
+                src="/images/home/training-philosophy.png"
+                alt="Soccer coach explaining tactics to youth players during an indoor training session"
+                fill
+                sizes="(min-width: 1280px) 520px, 100vw"
+                className="object-cover"
+              />
+            </div>
             <div>
               <p className="hidden text-[13px] font-semibold uppercase leading-[19px] text-artis-gold xl:block">
                 Training philosophy
@@ -490,9 +502,13 @@ export default async function Home() {
                   should continue using their existing one.
                 </p>
               </div>
-              <ImagePlaceholder
-                label="Personalized academy jersey photograph"
-                className="min-h-45 bg-artis-white/60"
+              <Image
+                src="/images/home/personalized-jersey.jpg"
+                alt="ARTIS Soccer Academy personalized jersey"
+                width={2400}
+                height={1679}
+                sizes="(min-width: 1280px) 520px, 100vw"
+                className="h-auto w-full rounded-2xl object-contain"
               />
             </div>
 

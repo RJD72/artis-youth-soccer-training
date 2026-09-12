@@ -26,6 +26,7 @@ const validFields: Readonly<Record<string, string>> = {
   termsAccepted: "on",
   participationWaiverAccepted: "on",
   gymRulesAccepted: "on",
+  cancellationPolicyAccepted: "on",
   paymentMethod: "stripe",
 };
 
@@ -134,6 +135,7 @@ describe("validateRegistrationSubmission", () => {
         termsAccepted: null,
         participationWaiverAccepted: null,
         gymRulesAccepted: null,
+        cancellationPolicyAccepted: null,
       }),
     );
 
@@ -144,6 +146,9 @@ describe("validateRegistrationSubmission", () => {
     );
     expect(fieldErrors.participationWaiverAccepted).toBeDefined();
     expect(fieldErrors.gymRulesAccepted).toBeDefined();
+    expect(fieldErrors.cancellationPolicyAccepted).toBe(
+      "Accept the Cancellation Policy to continue.",
+    );
   });
 
   it("identifies an invalid email address", () => {
