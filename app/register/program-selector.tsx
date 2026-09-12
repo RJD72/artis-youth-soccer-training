@@ -981,16 +981,6 @@ function ConsentSection({
           </span>
         </CheckboxField>
       </div>
-
-      <div className="mt-[22px] rounded-[10px] border border-artis-border bg-artis-soft-gold p-5">
-        <h3 className="font-semibold leading-[23px]">
-          Participation waiver / informed consent
-        </h3>
-        <p className="mt-2.5 text-sm leading-5 text-artis-slate">
-          Final participation waiver and policy wording pending client and legal
-          review.
-        </p>
-      </div>
     </section>
   );
 }
