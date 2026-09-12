@@ -13,12 +13,13 @@ export const metadata: Metadata = {
 
 function removeDuplicateWaiverHeading(content: string): string {
   const heading = "WAIVER & ACKNOWLEDGEMENT AND RELEASE";
+  const normalizedContent = content.replace(/\r\n?/g, "\n");
 
-  if (content.startsWith(`${heading}\n${heading}`)) {
-    return content.replace(`${heading}\n${heading}`, heading);
+  if (normalizedContent.startsWith(`${heading}\n${heading}`)) {
+    return normalizedContent.replace(`${heading}\n${heading}`, heading);
   }
 
-  return content;
+  return normalizedContent;
 }
 
 async function getParticipationWaiver() {
