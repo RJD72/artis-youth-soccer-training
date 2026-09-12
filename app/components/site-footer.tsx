@@ -67,7 +67,9 @@ export function MobileFooterContent() {
         </nav>
 
         <p className="mt-5 text-sm leading-5 text-artis-white/80">
-          Contact information to be confirmed
+          Central Huron Secondary School
+          <br />
+          165 Princess St E, Clinton, ON N0M 1L0
         </p>
 
         <div className="mt-3 text-sm leading-5">
@@ -92,7 +94,9 @@ export default function SiteFooter() {
               ARTIS SOCCER ACADEMY
             </p>
             <p className="mt-3 text-sm leading-5 text-artis-white/80">
-              Contact information to be confirmed
+              Central Huron Secondary School
+              <br />
+              165 Princess St E, Clinton, ON N0M 1L0
             </p>
           </div>
 
