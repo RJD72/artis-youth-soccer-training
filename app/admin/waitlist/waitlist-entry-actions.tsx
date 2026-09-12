@@ -31,6 +31,7 @@ export function WaitlistEntryActions({
   const confirmationDialog = useRef<HTMLDialogElement>(null);
   const emailDialog = useRef<HTMLDialogElement>(null);
   const offerDialog = useRef<HTMLDialogElement>(null);
+  const convertedDialog = useRef<HTMLDialogElement>(null);
 
   const [emailState, emailAction, emailPending] = useActionState(
     sendWaitlistEntryEmail,
@@ -83,6 +84,14 @@ export function WaitlistEntryActions({
     if (!offerPending) {
       offerDialog.current?.close();
     }
+  }
+
+  function openConvertedDialog() {
+    convertedDialog.current?.showModal();
+  }
+
+  function closeConvertedDialog() {
+    convertedDialog.current?.close();
   }
 
   return (
@@ -149,18 +158,13 @@ export function WaitlistEntryActions({
       </form>
 
       {entryStatus === "contacted" ? (
-        <form action={updateWaitlistEntryStatus}>
-          <input type="hidden" name="waitlistEntryId" value={entryId} />
-
-          <button
-            type="submit"
-            name="status"
-            value="converted"
-            className="min-h-11 w-full rounded-[10px] bg-artis-success px-4 py-2.5 text-sm font-semibold text-artis-white transition hover:bg-artis-success/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-success/25"
-          >
-            Mark as converted
-          </button>
-        </form>
+        <button
+          type="button"
+          onClick={openConvertedDialog}
+          className="min-h-11 w-full rounded-[10px] bg-artis-success px-4 py-2.5 text-sm font-semibold text-artis-white transition hover:bg-artis-success/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-success/25"
+        >
+          Mark as converted
+        </button>
       ) : null}
 
       <button
@@ -334,6 +338,63 @@ export function WaitlistEntryActions({
             </button>
           </div>
         </form>
+      </dialog>
+
+      <dialog
+        ref={convertedDialog}
+        aria-labelledby={`converted-entry-title-${entryId}`}
+        aria-describedby={`converted-entry-description-${entryId}`}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            closeConvertedDialog();
+          }
+        }}
+        className="m-auto w-[calc(100%_-_2rem)] max-w-[480px] overflow-hidden rounded-2xl border border-artis-border bg-artis-white p-0 text-artis-navy shadow-2xl backdrop:bg-artis-deep-navy/70"
+      >
+        <div className="p-6 sm:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-artis-success">
+            Confirm registration
+          </p>
+
+          <h2
+            id={`converted-entry-title-${entryId}`}
+            className="mt-3 text-2xl font-bold tracking-tight"
+          >
+            Mark {childName} as converted?
+          </h2>
+
+          <p
+            id={`converted-entry-description-${entryId}`}
+            className="mt-3 text-sm leading-6 text-artis-slate"
+          >
+            Only mark this waitlist entry as converted after the player has
+            completed registration and payment. This action does not create a
+            registration or payment record.
+          </p>
+
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={closeConvertedDialog}
+              className="min-h-12 rounded-[10px] border border-artis-border bg-artis-white px-4 py-3 text-sm font-semibold text-artis-navy transition hover:border-artis-gold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/25"
+            >
+              Go back
+            </button>
+
+            <form action={updateWaitlistEntryStatus}>
+              <input type="hidden" name="waitlistEntryId" value={entryId} />
+
+              <button
+                type="submit"
+                name="status"
+                value="converted"
+                className="min-h-12 w-full rounded-[10px] bg-artis-success px-4 py-3 text-sm font-semibold text-artis-white transition hover:bg-artis-success/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-success/25"
+              >
+                Confirm converted
+              </button>
+            </form>
+          </div>
+        </div>
       </dialog>
 
       <dialog
