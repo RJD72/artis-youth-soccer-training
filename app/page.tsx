@@ -443,15 +443,16 @@ export default async function Home() {
                 ))}
               </div>
 
-              <ImagePlaceholder
-                label="Saturday game or training photograph"
-                className="h-full min-h-70"
-              />
+              <div className="relative h-full min-h-70 overflow-hidden rounded-2xl">
+                <Image
+                  src="/images/home/saturday-game.jpg"
+                  alt="Youth soccer players taking part in a Saturday game session"
+                  fill
+                  sizes="(min-width: 1280px) 520px, 100vw"
+                  className="object-cover"
+                />
+              </div>
             </div>
-
-            <p className="mt-5 text-sm leading-5 text-artis-slate">
-              School gym schedule is subject to final confirmation.
-            </p>
           </div>
         </section>
 
@@ -539,10 +540,15 @@ export default async function Home() {
               </p>
             </div>
 
-            <ImagePlaceholder
-              label="Central Huron Secondary School gymnasium photograph"
-              className="h-70 xl:h-[360px]"
-            />
+            <div className="relative h-70 overflow-hidden rounded-2xl xl:h-[360px]">
+              <Image
+                src="/images/home/school-gym.jpg"
+                alt="Gymnasium at Central Huron Secondary School where ARTIS Soccer Academy training takes place"
+                fill
+                sizes="(min-width: 1280px) 520px, 100vw"
+                className="object-cover"
+              />
+            </div>
           </div>
         </section>
       </main>

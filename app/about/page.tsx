@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 
 import SiteFooter from "../components/site-footer";
 import SiteHeader from "../components/site-header";
@@ -46,8 +47,14 @@ export default function AboutPage() {
             Confidence. Love the Game.
           </p>
 
-          <div className="mt-6 xl:mt-7">
-            <ImagePlaceholder />
+          <div className="relative mt-6 h-48.75 w-full max-w-225 overflow-hidden rounded-2xl xl:mt-7 xl:h-128.5">
+            <Image
+              src="/images/about/about-us.jpg"
+              alt="ARTIS Soccer Academy"
+              fill
+              sizes="(min-width: 1280px) 900px, 100vw"
+              className="object-cover"
+            />
           </div>
 
           <h2 className="mt-6 max-w-225 text-[22px] font-semibold leading-7.5 xl:mt-7 xl:text-[36px] xl:font-bold xl:leading-11 xl:tracking-[-1px]">
