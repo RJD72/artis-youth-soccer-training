@@ -36,6 +36,23 @@ function closeMobileMenu(event: MouseEvent<HTMLAnchorElement>): void {
   event.currentTarget.closest("details")?.removeAttribute("open");
 }
 
+function scrollHomeToTop(event: MouseEvent<HTMLAnchorElement>): void {
+  if (window.location.pathname !== "/") {
+    return;
+  }
+
+  event.preventDefault();
+
+  if (window.location.hash) {
+    window.history.replaceState(null, "", "/");
+  }
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}
+
 function closeMobileMenuOnEscape(
   event: KeyboardEvent<HTMLDetailsElement>,
 ): void {
@@ -132,6 +149,7 @@ export default function SiteHeader() {
       <div className="mx-auto flex h-21 w-full max-w-7xl items-center px-5 xl:h-28 xl:gap-10 xl:px-0">
         <Link
           href="/"
+          onClick={scrollHomeToTop}
           className="flex shrink-0 items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-artis-gold"
           aria-label="ARTIS Soccer Academy home"
         >
@@ -160,6 +178,7 @@ export default function SiteHeader() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={scrollHomeToTop}
                 aria-current={
                   isActive ? (item.sectionId ? "location" : "page") : undefined
                 }
@@ -207,7 +226,13 @@ export default function SiteHeader() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={closeMobileMenu}
+                    onClick={(event) => {
+                      if (item.href === "/") {
+                        scrollHomeToTop(event);
+                      }
+
+                      closeMobileMenu(event);
+                    }}
                     aria-current={
                       isActive
                         ? item.sectionId
