@@ -178,7 +178,7 @@ export default function SiteHeader() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={scrollHomeToTop}
+                onClick={item.href === "/" ? scrollHomeToTop : undefined}
                 aria-current={
                   isActive ? (item.sectionId ? "location" : "page") : undefined
                 }
