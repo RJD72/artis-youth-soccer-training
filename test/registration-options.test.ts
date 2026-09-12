@@ -8,7 +8,12 @@ import {
   jest,
 } from "@jest/globals";
 
-import { programPackages, trainingGroups, weeklySchedules } from "@/db/schema";
+import {
+  programPackages,
+  trainingGroups,
+  waitlistEntries,
+  weeklySchedules,
+} from "@/db/schema";
 
 import { databaseHarness, NOW, sqlQuery } from "./database-harness";
 
@@ -124,6 +129,8 @@ describe("registration options and capacity summaries", () => {
       registrationOpen: false,
     });
 
+    h.read(waitlistEntries);
+
     expect(await summaries()).toEqual([
       {
         id: 1,
@@ -131,8 +138,10 @@ describe("registration options and capacity summaries", () => {
         occupiedSpots: 3,
         availableSpots: 0,
         registrationOpen: false,
+        waitingFamilies: 0,
       },
     ]);
+
     expect(h.queries(trainingGroups)[0].where).toBeUndefined();
   });
 

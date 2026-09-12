@@ -1,11 +1,12 @@
 // This file contains server-side database queries used by the admin dashboard.
-// Keeping the queries here separates database rules from the page's JSX.
+// It keeps capacity and waitlist calculations separate from the page's JSX.
 
 import "server-only";
+
 import { and, count, eq, gt, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db";
-import { registrations, trainingGroups } from "@/db/schema";
+import { registrations, trainingGroups, waitlistEntries } from "@/db/schema";
 import { synchronizeRegistrationStatuses } from "@/lib/synchronize-registration-statuses";
 
 export async function getTrainingGroupCapacitySummaries() {
@@ -47,8 +48,25 @@ export async function getTrainingGroupCapacitySummaries() {
     )
     .orderBy(trainingGroups.minimumAge);
 
+  const waitingCounts = await db
+    .select({
+      trainingGroupId: waitlistEntries.trainingGroupId,
+      waitingFamilies: count(waitlistEntries.id),
+    })
+    .from(waitlistEntries)
+    .where(eq(waitlistEntries.status, "waiting"))
+    .groupBy(waitlistEntries.trainingGroupId);
+
+  const waitingFamiliesByGroup = new Map(
+    waitingCounts.map((group) => [
+      group.trainingGroupId,
+      group.waitingFamilies,
+    ]),
+  );
+
   return groups.map((group) => ({
     ...group,
     availableSpots: Math.max(group.capacity - group.occupiedSpots, 0),
+    waitingFamilies: waitingFamiliesByGroup.get(group.id) ?? 0,
   }));
 }

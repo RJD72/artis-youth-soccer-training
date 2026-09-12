@@ -149,6 +149,32 @@ export default async function AdminPage() {
                     </div>
                   </dl>
 
+                  {group.availableSpots > 0 && group.waitingFamilies > 0 ? (
+                    <div className="mt-5 rounded-xl border border-artis-gold bg-artis-soft-gold p-4">
+                      <p className="font-semibold text-artis-navy">
+                        {group.availableSpots}{" "}
+                        {group.availableSpots === 1 ? "spot is" : "spots are"}{" "}
+                        available and {group.waitingFamilies}{" "}
+                        {group.waitingFamilies === 1
+                          ? "waitlist entry needs"
+                          : "waitlist entries need"}{" "}
+                        attention.
+                      </p>
+
+                      <p className="mt-1 text-sm leading-6 text-artis-slate">
+                        Review the waitlist and offer an available spot to the
+                        next waiting player.
+                      </p>
+
+                      <Link
+                        href="/admin/waitlist?status=waiting"
+                        className="mt-3 inline-block font-semibold text-artis-navy underline decoration-artis-gold decoration-2 underline-offset-4"
+                      >
+                        Review waiting entries →
+                      </Link>
+                    </div>
+                  ) : null}
+
                   <form
                     action={updateTrainingGroupRegistrationStatus}
                     className="mt-6 border-t border-artis-border pt-5"

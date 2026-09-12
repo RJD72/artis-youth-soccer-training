@@ -210,13 +210,14 @@ export async function joinWaitlist(formData: FormData) {
 
       const occupiedSpots = occupancy?.occupiedSpots ?? 0;
 
-      if (occupiedSpots < trainingGroup.capacity) {
+      if (
+        occupiedSpots < trainingGroup.capacity &&
+        trainingGroup.registrationOpen
+      ) {
         return {
           status: "rejected",
           groupSlug: trainingGroup.slug,
-          code: trainingGroup.registrationOpen
-            ? "space-available"
-            : "waitlist-unavailable",
+          code: "space-available",
         };
       }
 
