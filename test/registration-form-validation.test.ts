@@ -23,7 +23,6 @@ const validFields: Readonly<Record<string, string>> = {
   preferredContactMethod: "email",
   authorizedRegistrantConfirmed: "on",
   informationAccuracyConfirmed: "on",
-  termsAccepted: "on",
   participationWaiverAccepted: "on",
   gymRulesAccepted: "on",
   cancellationPolicyAccepted: "on",
@@ -132,7 +131,6 @@ describe("validateRegistrationSubmission", () => {
       createValidFormData({
         authorizedRegistrantConfirmed: null,
         informationAccuracyConfirmed: null,
-        termsAccepted: null,
         participationWaiverAccepted: null,
         gymRulesAccepted: null,
         cancellationPolicyAccepted: null,
@@ -141,9 +139,7 @@ describe("validateRegistrationSubmission", () => {
 
     expect(fieldErrors.authorizedRegistrantConfirmed).toBeDefined();
     expect(fieldErrors.informationAccuracyConfirmed).toBeDefined();
-    expect(fieldErrors.termsAccepted).toBe(
-      "Accept the Terms and Conditions to continue.",
-    );
+
     expect(fieldErrors.participationWaiverAccepted).toBeDefined();
     expect(fieldErrors.gymRulesAccepted).toBeDefined();
     expect(fieldErrors.cancellationPolicyAccepted).toBe(

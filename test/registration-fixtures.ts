@@ -18,7 +18,6 @@ export const formFields: Record<string, string> = {
   preferredContactMethod: "email",
   authorizedRegistrantConfirmed: "on",
   informationAccuracyConfirmed: "on",
-  termsAccepted: "on",
   participationWaiverAccepted: "on",
   gymRulesAccepted: "on",
   cancellationPolicyAccepted: "on",
@@ -59,7 +58,6 @@ export const guardian = {
   preferredContactMethod: "email",
 };
 export const legal = [
-  "terms_conditions",
   "participation_waiver",
   "gym_facility_rules",
   "cancellation_refund_policy",

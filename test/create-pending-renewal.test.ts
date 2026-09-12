@@ -35,7 +35,6 @@ const submission = {
   paymentMethod: "stripe" as const,
   authorizedRegistrantConfirmed: true as const,
   informationAccuracyConfirmed: true as const,
-  termsAccepted: true as const,
   participationWaiverAccepted: true as const,
   gymRulesAccepted: true as const,
   cancellationPolicyAccepted: true as const,
@@ -85,7 +84,6 @@ describe("pending renewal", () => {
   it.each([
     { programPackageId: 0 },
     { paymentMethod: "cash" },
-    { termsAccepted: false },
     { cancellationPolicyAccepted: false },
     { marketingConsent: "yes" },
   ])("rejects invalid submission %p", async (change) => {

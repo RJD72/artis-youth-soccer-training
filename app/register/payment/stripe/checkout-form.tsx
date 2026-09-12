@@ -153,32 +153,6 @@ function SecurePaymentForm() {
         </div>
       </section>
 
-      <label className="mt-7 flex items-start gap-3 text-sm leading-[22px] text-artis-slate">
-        <input
-          type="checkbox"
-          name="paymentPoliciesAccepted"
-          required
-          className="mt-0.5 size-[18px] shrink-0 accent-artis-navy"
-        />
-        <span>
-          I agree to the{" "}
-          <Link
-            href="/terms"
-            className="font-semibold text-artis-navy underline"
-          >
-            terms
-          </Link>{" "}
-          and acknowledge the{" "}
-          <Link
-            href="/privacy"
-            className="font-semibold text-artis-navy underline"
-          >
-            privacy notice
-          </Link>
-          {"."}
-        </span>
-      </label>
-
       <output
         aria-live="polite"
         className={`mt-5 block rounded-[10px] border border-artis-error/30 bg-artis-error/10 px-4 py-3 text-sm leading-5 text-artis-error ${

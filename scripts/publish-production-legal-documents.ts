@@ -96,6 +96,49 @@ Artis Soccer Academy may consider exceptional circumstances on a case-by-case ba
 
 By registering for an Artis Soccer Academy program, you acknowledge and agree to this cancellation policy.`,
   },
+  {
+    documentType: "gym_facility_rules",
+    version: "2026-09-12-v1",
+    title: "Gym and Facility Rules",
+    content: `Gym and Facility Rules
+
+These rules were provided for community use of the school facility. Players, families and other attendees should follow them whenever they are present at the facility.
+
+Footwear and cleanliness
+
+- Non-marking indoor shoes must be worn in the gym at all times.
+- The facility must be left clean, tidy and in the same condition in which it was provided. Custodial charges may be invoiced if additional cleaning is required.
+
+Building access and security
+
+- Schools may cancel approved permits or individual bookings when the facility is required for a school function.
+- Community-use groups must never prop open exterior doors. School buildings remain locked for the security of the building and its occupants.
+- When a permit holder has a keycard, someone must wait at the entrance until every member of the group has entered.
+- When a permit holder does not have a keycard, the evening custodian will admit the first member of the group. Someone from the group must then wait at the entrance until everyone has entered.
+
+School property and displays
+
+- Artwork, posters and other materials must not be removed from the walls during permitted use.
+- School facilities are public school spaces. Displays, materials and other school property must not be removed, altered or interfered with.
+- Do not place tape on gymnasium floors. Removing tape can damage the floor surface.
+
+Equipment
+
+- Any school equipment approved for use must be returned and stored as neatly as it was found.
+- The community-use group may be responsible for replacing equipment that is missing or damaged.
+
+Food, beverages and allergies
+
+- Food and beverages are not permitted in the gymnasium or carpeted areas.
+- School buildings are food-allergy conscious. Please avoid bringing foods that contain nuts.
+
+Accessibility and school questions
+
+- For accessibility information about an individual school building, please visit that school’s website before attending.
+- For questions relating to the school or its facilities, please contact the school directly.
+
+Thank you for helping keep the school safe, secure and ready for everyone who uses it.`,
+  },
 ] as const;
 
 type ProductionDocument = (typeof productionDocuments)[number];

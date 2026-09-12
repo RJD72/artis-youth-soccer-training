@@ -278,7 +278,6 @@ describe("verified renewal checkout action", () => {
     { token: "bad" },
     { programPackageId: "01" },
     { paymentMethod: "cash" },
-    { termsAccepted: "false" },
     { cancellationPolicyAccepted: "false" },
     { photoVideoConsent: "unexpected" },
   ])("rejects malformed fields %p", async (change) => {

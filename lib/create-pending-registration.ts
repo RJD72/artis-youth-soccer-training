@@ -38,7 +38,6 @@ import { createManualPaymentReference } from "@/lib/registration-payment-referen
 import { getGuardianVerificationTokenHash } from "@/lib/guardian-verification-token";
 
 const requiredLegalDocumentTypes = [
-  "terms_conditions",
   "participation_waiver",
   "gym_facility_rules",
   "cancellation_refund_policy",

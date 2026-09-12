@@ -102,7 +102,6 @@ function validateRenewalSubmission(
     formData,
     "informationAccuracyConfirmed",
   );
-  const termsAccepted = getCheckboxValue(formData, "termsAccepted");
   const participationWaiverAccepted = getCheckboxValue(
     formData,
     "participationWaiverAccepted",
@@ -122,7 +121,6 @@ function validateRenewalSubmission(
     paymentMethod === null ||
     authorizedRegistrantConfirmed !== true ||
     informationAccuracyConfirmed !== true ||
-    termsAccepted !== true ||
     participationWaiverAccepted !== true ||
     gymRulesAccepted !== true ||
     cancellationPolicyAccepted !== true ||
@@ -139,7 +137,6 @@ function validateRenewalSubmission(
       paymentMethod,
       authorizedRegistrantConfirmed: true,
       informationAccuracyConfirmed: true,
-      termsAccepted: true,
       participationWaiverAccepted: true,
       gymRulesAccepted: true,
       cancellationPolicyAccepted: true,

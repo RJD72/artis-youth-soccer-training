@@ -34,7 +34,6 @@ type RenewalCheckoutFormProps = {
 type ConsentState = {
   authorizedRegistrantConfirmed: boolean;
   informationAccuracyConfirmed: boolean;
-  termsAccepted: boolean;
   participationWaiverAccepted: boolean;
   gymRulesAccepted: boolean;
   cancellationPolicyAccepted: boolean;
@@ -55,7 +54,6 @@ const initialActionState: RenewalCheckoutActionState = { status: "idle" };
 const initialConsentState: ConsentState = {
   authorizedRegistrantConfirmed: false,
   informationAccuracyConfirmed: false,
-  termsAccepted: false,
   participationWaiverAccepted: false,
   gymRulesAccepted: false,
   cancellationPolicyAccepted: false,
@@ -449,25 +447,7 @@ export default function RenewalCheckoutForm({
               I confirm that the player and guardian information already on file
               remains accurate. *
             </CheckboxField>
-            <CheckboxField
-              id="renewal-terms"
-              name="termsAccepted"
-              checked={consents.termsAccepted}
-              required
-              disabled={isPending}
-              onChange={updateConsent}
-            >
-              I agree to the Terms and Conditions. *{" "}
-              <Link
-                href="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold underline"
-              >
-                View Terms and Conditions
-                <span className="sr-only"> (opens in a new tab)</span>
-              </Link>
-            </CheckboxField>
+
             <CheckboxField
               id="renewal-waiver"
               name="participationWaiverAccepted"

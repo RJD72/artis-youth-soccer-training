@@ -171,7 +171,7 @@ const registrationFieldOrder: RegistrationFormFieldName[] = [
   "emergencyContactPhone",
   "authorizedRegistrantConfirmed",
   "informationAccuracyConfirmed",
-  "termsAccepted",
+
   "participationWaiverAccepted",
   "gymRulesAccepted",
   "cancellationPolicyAccepted",
@@ -909,17 +909,7 @@ function ConsentSection({
         >
           I confirm that the information provided is accurate. *
         </CheckboxField>
-        <CheckboxField
-          id="termsAccepted"
-          name="termsAccepted"
-          required
-          error={fieldErrors.termsAccepted}
-        >
-          I agree to the Terms and Conditions. *{" "}
-          <Link href="/terms" className="font-semibold underline">
-            View Terms and Conditions
-          </Link>
-        </CheckboxField>
+
         <CheckboxField
           id="participationWaiverAccepted"
           name="participationWaiverAccepted"

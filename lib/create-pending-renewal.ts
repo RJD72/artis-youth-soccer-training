@@ -42,7 +42,6 @@ import { getRenewalVerificationTokenHash } from "@/lib/renewal-verification-toke
 import { synchronizeRegistrationStatuses } from "@/lib/synchronize-registration-statuses";
 
 const requiredLegalDocumentTypes = [
-  "terms_conditions",
   "participation_waiver",
   "gym_facility_rules",
   "cancellation_refund_policy",
@@ -62,7 +61,6 @@ export type PendingRenewalSubmission = {
   paymentMethod: RenewalPaymentMethod;
   authorizedRegistrantConfirmed: true;
   informationAccuracyConfirmed: true;
-  termsAccepted: true;
   participationWaiverAccepted: true;
   gymRulesAccepted: true;
   cancellationPolicyAccepted: true;
@@ -176,7 +174,6 @@ function isValidSubmission(value: PendingRenewalSubmission): boolean {
       value.paymentMethod === "e_transfer") &&
     value.authorizedRegistrantConfirmed === true &&
     value.informationAccuracyConfirmed === true &&
-    value.termsAccepted === true &&
     value.participationWaiverAccepted === true &&
     value.gymRulesAccepted === true &&
     value.cancellationPolicyAccepted === true &&

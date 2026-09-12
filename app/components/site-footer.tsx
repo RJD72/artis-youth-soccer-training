@@ -6,7 +6,6 @@ const footerNavigation = [
   { href: "/about", label: "About" },
   { href: "/#faq", label: "FAQ" },
   { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
 ];
 
 type SocialMediaComingSoonProps = {

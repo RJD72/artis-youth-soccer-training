@@ -9,9 +9,9 @@ import { db, pool } from "../db";
 import { legalDocuments } from "../db/schema";
 
 const requiredLegalDocumentTypes = [
-  "terms_conditions",
   "participation_waiver",
   "gym_facility_rules",
+  "cancellation_refund_policy",
 ] as const;
 
 type RequiredLegalDocumentType = (typeof requiredLegalDocumentTypes)[number];
@@ -24,12 +24,6 @@ type DevelopmentLegalDocument = {
 
 const developmentDocuments: DevelopmentLegalDocument[] = [
   {
-    documentType: "terms_conditions",
-    title: "Development Placeholder — Terms and Conditions",
-    content:
-      "DEVELOPMENT TEST PLACEHOLDER — NOT APPROVED FOR PRODUCTION. The final ARTIS Soccer Academy Terms and Conditions must replace this text before registration is opened to the public.",
-  },
-  {
     documentType: "participation_waiver",
     title: "Development Placeholder — Participation Waiver",
     content:
@@ -40,6 +34,12 @@ const developmentDocuments: DevelopmentLegalDocument[] = [
     title: "Development Placeholder — Gym and Facility Rules",
     content:
       "DEVELOPMENT TEST PLACEHOLDER — NOT APPROVED FOR PRODUCTION. The client-approved gym and facility rules must replace this text before registration is opened to the public.",
+  },
+  {
+    documentType: "cancellation_refund_policy",
+    title: "Development Placeholder — Cancellation Policy",
+    content:
+      "DEVELOPMENT TEST PLACEHOLDER — NOT APPROVED FOR PRODUCTION. The final ARTIS Soccer Academy Cancellation Policy must replace this text before registration is opened to the public.",
   },
 ];
 

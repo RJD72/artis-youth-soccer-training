@@ -35,7 +35,7 @@ export type ValidatedRegistrationSubmission = {
   emergencyContactPhone: string;
   authorizedRegistrantConfirmed: true;
   informationAccuracyConfirmed: true;
-  termsAccepted: true;
+
   participationWaiverAccepted: true;
   gymRulesAccepted: true;
   cancellationPolicyAccepted: true;
@@ -69,7 +69,6 @@ export type RegistrationFormFieldName =
   | "emergencyContactPhone"
   | "authorizedRegistrantConfirmed"
   | "informationAccuracyConfirmed"
-  | "termsAccepted"
   | "participationWaiverAccepted"
   | "gymRulesAccepted"
   | "cancellationPolicyAccepted"
@@ -414,7 +413,7 @@ export function validateRegistrationSubmission(
     formData,
     "informationAccuracyConfirmed",
   );
-  const termsAccepted = readCheckbox(formData, "termsAccepted");
+
   const participationWaiverAccepted = readCheckbox(
     formData,
     "participationWaiverAccepted",
@@ -577,12 +576,7 @@ export function validateRegistrationSubmission(
     informationAccuracyConfirmed,
     "Confirm that the registration information is accurate.",
   );
-  addParsedValueError(
-    fieldErrors,
-    "termsAccepted",
-    termsAccepted,
-    "Accept the Terms and Conditions to continue.",
-  );
+
   addParsedValueError(
     fieldErrors,
     "participationWaiverAccepted",
@@ -651,7 +645,6 @@ export function validateRegistrationSubmission(
     !emergencyContactPhone.valid ||
     !authorizedRegistrantConfirmed.valid ||
     !informationAccuracyConfirmed.valid ||
-    !termsAccepted.valid ||
     !participationWaiverAccepted.valid ||
     !gymRulesAccepted.valid ||
     !cancellationPolicyAccepted.valid ||
@@ -727,14 +720,6 @@ export function validateRegistrationSubmission(
       fieldErrors,
       "informationAccuracyConfirmed",
       "Confirm that the registration information is accurate.",
-    );
-  }
-
-  if (!termsAccepted.value) {
-    addFieldError(
-      fieldErrors,
-      "termsAccepted",
-      "Accept the Terms and Conditions to continue.",
     );
   }
 
@@ -840,7 +825,6 @@ export function validateRegistrationSubmission(
       emergencyContactPhone: finalEmergencyContactPhone,
       authorizedRegistrantConfirmed: true,
       informationAccuracyConfirmed: true,
-      termsAccepted: true,
       participationWaiverAccepted: true,
       gymRulesAccepted: true,
       cancellationPolicyAccepted: true,
