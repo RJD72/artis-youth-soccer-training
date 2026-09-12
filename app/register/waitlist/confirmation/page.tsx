@@ -113,7 +113,7 @@ export default async function WaitlistConfirmationPage({
               </p>
 
               <p className="w-full text-base leading-[26px] text-artis-slate xl:text-lg xl:leading-[30px]">
-                ARTIS Soccer Academy will contact the parent or guardian if a
+                ARTIS Soccer Academy will contact the parent or guardian when a
                 place becomes available.
               </p>
             </>
