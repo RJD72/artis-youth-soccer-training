@@ -10,12 +10,39 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://artissocceracademy.ca"),
+
   title: {
     default: "ARTIS Soccer Academy",
     template: "%s | ARTIS Soccer Academy",
   },
+
   description:
     "Year-round soccer development for players ages 8–13 in Clinton, Ontario.",
+
+  openGraph: {
+    title: "ARTIS Soccer Academy",
+    description:
+      "Year-round soccer development for players ages 8–13 in Clinton, Ontario.",
+    url: "https://artissocceracademy.ca",
+    siteName: "ARTIS Soccer Academy",
+    images: [
+      {
+        url: "/logo.png",
+        alt: "ARTIS Soccer Academy",
+      },
+    ],
+    locale: "en_CA",
+    type: "website",
+  },
+
+  twitter: {
+    card: "summary",
+    title: "ARTIS Soccer Academy",
+    description:
+      "Year-round soccer development for players ages 8–13 in Clinton, Ontario.",
+    images: ["/logo.png"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

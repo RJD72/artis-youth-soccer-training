@@ -644,7 +644,7 @@ function PlayerInformationSection({
           </p>
           <p className="mt-2 text-sm leading-6 text-artis-slate">
             One personalized ARTIS Soccer Academy jersey is provided per player
-            per year. Size options are pending client confirmation.
+            per year.
           </p>
         </div>
 

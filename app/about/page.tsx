@@ -4,7 +4,7 @@ import Image from "next/image";
 import SiteFooter from "../components/site-footer";
 import SiteHeader from "../components/site-header";
 
-export const metedata: Metadata = {
+export const metadata: Metadata = {
   title: "About Us",
   description:
     "Learn about the development philosophy behind ARTIS Soccer Academy",

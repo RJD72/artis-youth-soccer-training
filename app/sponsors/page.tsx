@@ -28,7 +28,7 @@ function SponsorLogoPlaceholder({ label }: { label: string }) {
         Sponsor logo coming soon
       </p>
       <p className="text-xs font-medium leading-4.5 tracking-[0.2px] text-artis-slate">
-        Client-provided asset
+        Sponsor details coming soon
       </p>
     </div>
   );
@@ -46,8 +46,7 @@ export default function SponsorsPage() {
           </h1>
 
           <p className="mt-6 max-w-225 text-base leading-6.5 text-artis-slate xl:mt-7 xl:text-lg xl:leading-7.5">
-            Sponsor information will be added as client-approved logo assets
-            become available.
+            Sponsor information will be added as partnerships are confirmed.
           </p>
 
           <div className="mt-6 flex flex-col gap-4 xl:mt-7 xl:grid xl:grid-cols-4 xl:gap-6">

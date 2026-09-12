@@ -368,7 +368,7 @@ function SuccessPage({ details }: { details: VerifiedReturnDetails }) {
         Registration Confirmed
       </h1>
       <p className="w-full text-lg font-semibold leading-[26px] text-artis-success">
-        Payment successful. Registration confirmed. A receipt has been emailed.
+        Payment successful. Registration confirmed.
       </p>
       <p className="w-full text-sm font-medium leading-5 text-artis-slate">
         Confirmation number: {details.confirmationNumber}
@@ -415,16 +415,12 @@ function SuccessPage({ details }: { details: VerifiedReturnDetails }) {
             <dd className="inline">Central Huron Secondary School gym</dd>
           </div>
         </dl>
-        <p className="mt-4">
-          Payment successful. Registration confirmed. A receipt has been
-          emailed.
-        </p>
+        <p className="mt-4">Payment successful. Registration confirmed.</p>
       </div>
 
       <p className="w-full text-[15px] leading-[22px] text-artis-slate">
-        A confirmation email will be sent to the parent / guardian address
-        provided. Registration has been received; placement remains subject to
-        academy confirmation.
+        Your registration is confirmed. Please keep your confirmation number for
+        your records.
       </p>
 
       <Link
