@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.6.29",
+    "@next/third-parties": "^16.3.5",
     "@react-email/components": "^1.0.12",
     "@stripe/react-stripe-js": "^6.8.2",
     "@stripe/stripe-js": "^9.14.0",

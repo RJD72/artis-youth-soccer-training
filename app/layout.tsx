@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 import "./globals.css";
 
@@ -51,6 +52,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className={`${manrope.className} min-h-full flex flex-col`}>
         {children}
       </body>
+
+      <GoogleAnalytics gaId="G-84VSH26F67" />
     </html>
   );
 }
