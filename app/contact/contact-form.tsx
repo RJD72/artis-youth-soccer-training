@@ -54,13 +54,13 @@ function FormField({
   required = false,
   error,
   children,
-}: {
+}: Readonly<{
   id: string;
   label: string;
   required?: boolean;
   error?: string;
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <div>
       <label htmlFor={id} className="block text-[13px] font-semibold leading-5">
@@ -100,7 +100,9 @@ function getInitialValues(
   };
 }
 
-export default function ContactForm({ defaultEnquiry }: ContactFormProps) {
+export default function ContactForm({
+  defaultEnquiry,
+}: Readonly<ContactFormProps>) {
   const formRef = useRef<HTMLFormElement>(null);
   const [values, setValues] = useState<ContactFormValues>(() =>
     getInitialValues(defaultEnquiry),

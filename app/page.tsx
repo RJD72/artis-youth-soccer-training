@@ -521,26 +521,33 @@ export default async function Home() {
         </section>
 
         <section className="bg-artis-off-white">
-          <div className="mx-auto grid w-full max-w-[1280px] gap-8 px-8 py-12 xl:grid-cols-[1fr_520px] xl:items-center xl:gap-16 xl:px-0 xl:py-20">
+          <div className="mx-auto grid w-full max-w-7xl gap-8 px-8 py-12 xl:grid-cols-[1fr_520px] xl:items-center xl:gap-16 xl:px-0 xl:py-20">
             <div>
-              <p className="text-xs font-semibold uppercase leading-[17px] text-artis-gold xl:text-[13px] xl:leading-[19px]">
+              <p className="text-xs font-semibold uppercase leading-4.25 text-artis-gold xl:text-[13px] xl:leading-4.75">
                 Training location
               </p>
-              <h2 className="mt-3 text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
+              <h2 className="mt-3 text-[30px] font-bold leading-11 xl:text-[40px] xl:leading-14.5">
                 Central Huron Secondary School
               </h2>
-              <address className="mt-5 not-italic text-lg leading-[30px]">
-                <p>165 Princess Street East</p>
-                <p>Clinton, Ontario</p>
-                <p>N0M 1L0</p>
-              </address>
-              <p className="mt-5 max-w-xl text-base leading-6 text-artis-slate xl:text-lg xl:leading-[26px]">
+              <a
+                href="https://www.google.com/maps/place/165+Princess+St+E,+Clinton,+ON+N0M+1L0/@43.6174354,-81.5357903,828m/data=!3m2!1e3!4b1!4m6!3m5!1s0x8828d7ec3a2245d1:0x7745e06ef4fc3186!8m2!3d43.6174315!4d-81.5332154!16s%2Fg%2F11y2wwzmc1?entry=ttu&g_ep=EgoyMDI2MDkxMy4wIKXMDSoASAFQAw%3D%3D"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                <address className="mt-5 not-italic text-lg leading-7.5">
+                  <p>165 Princess Street East</p>
+                  <p>Clinton, Ontario</p>
+                  <p>N0M 1L0</p>
+                </address>
+              </a>
+              <p className="mt-5 max-w-xl text-base leading-6 text-artis-slate xl:text-lg xl:leading-6.5">
                 Training is held in the school gymnasium, convenient for
                 Clinton, Goderich, Seaforth and surrounding communities.
               </p>
             </div>
 
-            <div className="relative h-70 overflow-hidden rounded-2xl xl:h-[360px]">
+            <div className="relative h-70 overflow-hidden rounded-2xl xl:h-90">
               <Image
                 src="/images/home/school-gym.jpg"
                 alt="Gymnasium at Central Huron Secondary School where ARTIS Soccer Academy training takes place"

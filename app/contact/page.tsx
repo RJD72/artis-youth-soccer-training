@@ -16,7 +16,9 @@ type ContactPageProps = {
   }>;
 };
 
-export default async function ContactPage({ searchParams }: ContactPageProps) {
+export default async function ContactPage({
+  searchParams,
+}: Readonly<ContactPageProps>) {
   const parameters = await searchParams;
   const requestedTopic = Array.isArray(parameters.topic)
     ? parameters.topic[0]
@@ -31,13 +33,13 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
       <SiteHeader />
 
       <main className="bg-artis-white">
-        <section className="mx-auto w-full max-w-[1280px] px-8 py-8 xl:px-0 xl:py-20">
-          <div className="w-full max-w-[900px]">
-            <h1 className="text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
+        <section className="mx-auto w-full max-w-7xl px-8 py-8 xl:px-0 xl:py-20">
+          <div className="w-full max-w-225">
+            <h1 className="text-[30px] font-bold leading-11 xl:text-[40px] xl:leading-14.5">
               Contact Us
             </h1>
 
-            <p className="mt-3 text-base leading-[26px] text-artis-slate xl:mt-4 xl:text-lg xl:leading-[30px]">
+            <p className="mt-3 text-base leading-6.5 text-artis-slate xl:mt-4 xl:text-lg xl:leading-7.5">
               Have a question about training, registration or sponsorship? Send
               ARTIS Soccer Academy a message and the academy will reply as soon
               as possible.

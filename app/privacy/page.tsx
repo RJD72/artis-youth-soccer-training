@@ -71,11 +71,11 @@ function PolicySection({
   number,
   title,
   children,
-}: {
+}: Readonly<{
   number: number;
   title: string;
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <section className="border-t border-artis-border pt-8 first:border-t-0 first:pt-0">
       <h2 className="text-xl font-bold leading-8 text-artis-navy sm:text-2xl">
@@ -101,11 +101,11 @@ export default function PrivacyPolicyPage() {
               ARTIS Soccer Academy
             </p>
 
-            <h1 className="mt-3 text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
+            <h1 className="mt-3 text-[30px] font-bold leading-11 xl:text-[40px] xl:leading-14.5">
               Privacy Policy
             </h1>
 
-            <p className="mt-4 max-w-[850px] text-base leading-7 text-artis-white/85 xl:text-lg xl:leading-8">
+            <p className="mt-4 max-w-212.5 text-base leading-7 text-artis-white/85 xl:text-lg xl:leading-8">
               This policy explains how ARTIS Soccer Academy collects, uses,
               protects, and manages personal information.
             </p>
@@ -117,7 +117,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section className="bg-artis-white">
-          <div className="mx-auto w-full max-w-[1000px] px-6 py-10 sm:px-8 xl:px-0 xl:py-14">
+          <div className="mx-auto w-full max-w-250 px-6 py-10 sm:px-8 xl:px-0 xl:py-14">
             <div className="rounded-2xl border border-artis-border bg-artis-off-white p-6 sm:p-8">
               <p className="text-[15px] leading-7 text-artis-slate sm:text-base">
                 ARTIS Soccer Academy respects the privacy of players, parents,

@@ -14,7 +14,7 @@ type SocialMediaComingSoonProps = {
 
 function SocialMediaComingSoon({
   align = "start",
-}: SocialMediaComingSoonProps) {
+}: Readonly<SocialMediaComingSoonProps>) {
   return (
     <div
       aria-label="Facebook and Instagram links coming soon"
@@ -25,7 +25,7 @@ function SocialMediaComingSoon({
       <span className="flex items-center gap-2">
         <span
           aria-hidden="true"
-          className="flex size-6 items-end justify-center rounded-full bg-artis-white text-base font-bold leading-[22px] text-artis-deep-navy"
+          className="flex size-6 items-end justify-center rounded-full bg-artis-white text-base font-bold leading-5.5 text-artis-deep-navy"
         >
           f
         </span>
@@ -35,7 +35,7 @@ function SocialMediaComingSoon({
       <span className="flex items-center gap-2">
         <span
           aria-hidden="true"
-          className="flex size-6 items-center justify-center rounded-[6px] border-2 border-artis-white text-base leading-none"
+          className="flex size-6 items-center justify-center rounded-md border-2 border-artis-white text-base leading-none"
         >
           ◎
         </span>
@@ -50,8 +50,8 @@ function SocialMediaComingSoon({
 export function MobileFooterContent() {
   return (
     <div className="bg-artis-deep-navy px-6 py-8 text-artis-white sm:px-8">
-      <div className="mx-auto w-full max-w-[1280px]">
-        <p className="text-[17px] font-bold leading-[25px]">
+      <div className="mx-auto w-full max-w-7xl">
+        <p className="text-[17px] font-bold leading-6.25">
           ARTIS SOCCER ACADEMY
         </p>
 
@@ -88,9 +88,9 @@ export default function SiteFooter() {
       </div>
 
       <div className="hidden bg-artis-deep-navy px-10 py-12 text-artis-white xl:block">
-        <div className="mx-auto grid w-full max-w-[1280px] grid-cols-2 items-start gap-16">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-2 items-start gap-16">
           <div>
-            <p className="text-lg font-bold leading-[26px]">
+            <p className="text-lg font-bold leading-6.5">
               ARTIS SOCCER ACADEMY
             </p>
             <p className="mt-3 text-sm leading-5 text-artis-white/80">
@@ -100,7 +100,7 @@ export default function SiteFooter() {
             </p>
           </div>
 
-          <div className="ml-auto flex max-w-[620px] flex-col items-end text-right text-sm font-medium leading-5">
+          <div className="ml-auto flex max-w-155 flex-col items-end text-right text-sm font-medium leading-5">
             <nav
               aria-label="Footer navigation"
               className="flex flex-wrap justify-end gap-x-4 gap-y-2"

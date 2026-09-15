@@ -336,7 +336,7 @@ function PageLogo() {
         alt=""
         width={72}
         height={72}
-        className="size-[60px] object-contain xl:size-[72px]"
+        className="size-15 object-contain xl:size-18"
         priority
       />
     </Link>
@@ -354,20 +354,22 @@ function SupportLink() {
   );
 }
 
-function SuccessPage({ details }: { details: VerifiedReturnDetails }) {
+function SuccessPage({
+  details,
+}: Readonly<{ details: VerifiedReturnDetails }>) {
   return (
-    <section className="flex w-full max-w-[620px] flex-col items-center gap-[18px] rounded-[14px] border border-artis-border bg-artis-white p-10">
+    <section className="flex w-full max-w-155 flex-col items-center gap-4.5 rounded-[14px] border border-artis-border bg-artis-white p-10">
       <div
         aria-hidden="true"
-        className="flex size-[72px] items-center justify-center rounded-full bg-[#eaf6f0] text-[34px] font-bold leading-[49px] text-artis-success"
+        className="flex size-18 items-center justify-center rounded-full bg-[#eaf6f0] text-[34px] font-bold leading-12.25 text-artis-success"
       >
         ✓
       </div>
 
-      <h1 className="w-full text-[30px] font-bold leading-[44px] text-artis-navy xl:text-[38px] xl:leading-[55px]">
+      <h1 className="w-full text-[30px] font-bold leading-11 text-artis-navy xl:text-[38px] xl:leading-13.75">
         Registration Confirmed
       </h1>
-      <p className="w-full text-lg font-semibold leading-[26px] text-artis-success">
+      <p className="w-full text-lg font-semibold leading-6.5 text-artis-success">
         Payment successful. Registration confirmed.
       </p>
       <p className="w-full text-sm font-medium leading-5 text-artis-slate">
@@ -376,9 +378,9 @@ function SuccessPage({ details }: { details: VerifiedReturnDetails }) {
 
       <div
         id="registration-summary"
-        className="w-full scroll-mt-6 rounded-[10px] bg-artis-off-white p-5 text-[15px] leading-[22px] text-artis-navy"
+        className="w-full scroll-mt-6 rounded-[10px] bg-artis-off-white p-5 text-[15px] leading-5.5 text-artis-navy"
       >
-        <h2 className="text-[17px] font-semibold leading-[25px]">
+        <h2 className="text-[17px] font-semibold leading-6.25">
           Registration summary
         </h2>
         <dl className="mt-3 space-y-1">
@@ -418,7 +420,7 @@ function SuccessPage({ details }: { details: VerifiedReturnDetails }) {
         <p className="mt-4">Payment successful. Registration confirmed.</p>
       </div>
 
-      <p className="w-full text-[15px] leading-[22px] text-artis-slate">
+      <p className="w-full text-[15px] leading-5.5 text-artis-slate">
         Your registration is confirmed. Please keep your confirmation number for
         your records.
       </p>
@@ -440,23 +442,25 @@ function SuccessPage({ details }: { details: VerifiedReturnDetails }) {
   );
 }
 
-function DeclinedPage({ details }: { details: VerifiedReturnDetails }) {
+function DeclinedPage({
+  details,
+}: Readonly<{ details: VerifiedReturnDetails }>) {
   return (
-    <section className="flex w-full max-w-[640px] flex-col items-center gap-[18px] rounded-[14px] border border-artis-border bg-artis-white p-10">
+    <section className="flex w-full max-w-160 flex-col items-center gap-4.5 rounded-[14px] border border-artis-border bg-artis-white p-10">
       <div
         aria-hidden="true"
-        className="flex size-[72px] items-center justify-center rounded-full bg-[#fbeded] text-[34px] font-bold leading-[49px] text-artis-error"
+        className="flex size-18 items-center justify-center rounded-full bg-[#fbeded] text-[34px] font-bold leading-12.25 text-artis-error"
       >
         !
       </div>
 
-      <h1 className="w-full text-[29px] font-bold leading-[42px] text-artis-navy xl:text-4xl xl:leading-[52px]">
+      <h1 className="w-full text-[29px] font-bold leading-10.5 text-artis-navy xl:text-4xl xl:leading-13">
         Payment Could Not Be Completed
       </h1>
-      <p className="w-full text-lg font-semibold leading-[26px] text-artis-error">
+      <p className="w-full text-lg font-semibold leading-6.5 text-artis-error">
         Your card was not charged.
       </p>
-      <p className="w-full text-base leading-[23px] text-artis-slate">
+      <p className="w-full text-base leading-5.75 text-artis-slate">
         Please verify the payment information and try again. You can also choose
         a different payment method.
       </p>
@@ -486,17 +490,17 @@ function DeclinedPage({ details }: { details: VerifiedReturnDetails }) {
 
 function UnavailablePage() {
   return (
-    <section className="flex w-full max-w-[640px] flex-col items-center gap-[18px] rounded-[14px] border border-artis-border bg-artis-white p-10">
+    <section className="flex w-full max-w-160 flex-col items-center gap-4.5 rounded-[14px] border border-artis-border bg-artis-white p-10">
       <div
         aria-hidden="true"
-        className="flex size-[72px] items-center justify-center rounded-full bg-[#fbeded] text-[34px] font-bold leading-[49px] text-artis-error"
+        className="flex size-18 items-center justify-center rounded-full bg-[#fbeded] text-[34px] font-bold leading-12.25 text-artis-error"
       >
         !
       </div>
-      <h1 className="w-full text-[29px] font-bold leading-[42px] text-artis-navy xl:text-4xl xl:leading-[52px]">
+      <h1 className="w-full text-[29px] font-bold leading-10.5 text-artis-navy xl:text-4xl xl:leading-13">
         Payment Result Unavailable
       </h1>
-      <p className="w-full text-base leading-[23px] text-artis-slate">
+      <p className="w-full text-base leading-5.75 text-artis-slate">
         This payment link is invalid, or the payment result could not be
         verified. Check your Stripe receipt or contact ARTIS Soccer Academy for
         assistance.
@@ -514,7 +518,7 @@ function UnavailablePage() {
 
 export default async function StripeReturnPage({
   searchParams,
-}: StripeReturnPageProps) {
+}: Readonly<StripeReturnPageProps>) {
   const pageData = await getReturnPageData(searchParams);
 
   return (

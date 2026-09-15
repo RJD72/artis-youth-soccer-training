@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // ARTIS COACHES PAGE
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -36,7 +37,7 @@ function CoachPhotoPlaceholder() {
 
 function HeadCoachCard() {
   return (
-    <article className="flex w-full flex-col gap-4 rounded-2xl border border-artis-border bg-artis-white p-6 xl:w-[360px]">
+    <article className="flex w-full flex-col gap-4 rounded-2xl border border-artis-border bg-artis-white p-6 xl:w-90">
       <div className="relative h-64 w-full overflow-hidden rounded-2xl xl:h-72">
         <Image
           src="/images/coaches/head-coach.png"
@@ -53,12 +54,12 @@ function HeadCoachCard() {
           Head Coach
         </p>
 
-        <h2 className="mt-1 text-[26px] font-bold leading-[34px] text-artis-navy">
-          Mario Blazevic
+        <h2 className="mt-1 text-[26px] font-bold leading-8.5 text-artis-navy">
+          Mario
         </h2>
       </div>
 
-      <p className="text-base leading-[26px] text-artis-slate">
+      <p className="text-base leading-6.5 text-artis-slate">
         Former professional soccer player with experience competing in
         Europe&apos;s First Division. Having progressed through every stage of
         player development, from youth soccer to the professional level, he
@@ -69,15 +70,15 @@ function HeadCoachCard() {
   );
 }
 
-function CoachPlaceholderCard({ label }: { label: string }) {
+function CoachPlaceholderCard({ label }: Readonly<{ label: string }>) {
   return (
     <article
       aria-label={label}
-      className="flex w-full flex-col gap-4 rounded-2xl border border-artis-border bg-artis-white p-6 xl:w-[360px]"
+      className="flex w-full flex-col gap-4 rounded-2xl border border-artis-border bg-artis-white p-6 xl:w-90"
     >
       <CoachPhotoPlaceholder />
 
-      <h2 className="text-[22px] font-semibold leading-[30px]">
+      <h2 className="text-[22px] font-semibold leading-7.5">
         Coach profile coming soon
       </h2>
 
@@ -85,7 +86,7 @@ function CoachPlaceholderCard({ label }: { label: string }) {
         Role and credentials to be confirmed
       </p>
 
-      <p className="text-base leading-[26px] text-artis-slate">
+      <p className="text-base leading-6.5 text-artis-slate">
         The coach biography will be added after the information has been
         supplied and approved by ARTIS Soccer Academy.
       </p>
@@ -99,12 +100,12 @@ export default function CoachesPage() {
       <SiteHeader />
 
       <main className="bg-artis-white">
-        <section className="mx-auto w-full max-w-[1280px] px-6 pt-10 pb-12 xl:px-0 xl:py-18">
-          <h1 className="text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
+        <section className="mx-auto w-full max-w-7xl px-6 pt-10 pb-12 xl:px-0 xl:py-18">
+          <h1 className="text-[30px] font-bold leading-11 xl:text-[40px] xl:leading-14.5">
             Meet the Coaches
           </h1>
 
-          <p className="mt-6 max-w-[900px] text-base leading-[26px] text-artis-slate xl:mt-7 xl:text-lg xl:leading-[30px]">
+          <p className="mt-6 max-w-225 text-base leading-6.5 text-artis-slate xl:mt-7 xl:text-lg xl:leading-7.5">
             Meet the coaches bringing experience, technical knowledge and a
             passion for player development to ARTIS Soccer Academy.
           </p>

@@ -155,7 +155,7 @@ function PaymentDetail({
   label,
   value,
   breakValue = false,
-}: PaymentDetailProps) {
+}: Readonly<PaymentDetailProps>) {
   return (
     <div className="flex w-full flex-col gap-1.5 rounded-xl bg-artis-soft-gold px-4 py-3.5 xl:px-4.5 xl:py-4">
       <dt className="text-[13px] font-semibold leading-normal text-artis-slate xl:text-sm">
@@ -209,7 +209,7 @@ function UnavailableInstructions() {
 
 export default async function ETransferInstructionsPage({
   searchParams,
-}: ETransferPageProps) {
+}: Readonly<ETransferPageProps>) {
   const details = await getETransferDetails(searchParams);
 
   return (

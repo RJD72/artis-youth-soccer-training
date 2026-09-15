@@ -10,27 +10,6 @@ export const metadata: Metadata = {
     "Learn about the development philosophy behind ARTIS Soccer Academy",
 };
 
-function ImagePlaceholder() {
-  return (
-    <div className="flex h-48.75 w-full max-w-225 items-center justify-center rounded-2xl border-2 border-dashed border-artis-border bg-artis-soft-gold p-5 text-center xl:h-128.5 xl:p-6">
-      <div>
-        <p
-          aria-hidden="true"
-          className="text-[26px] font-semibold leading-none text-artis-gold xl:text-[32px]"
-        >
-          ▧
-        </p>
-        <p className="mt-2 text-[13px] font-semibold leading-5 text-artis-navy xl:text-base xl:leading-6">
-          Founders, leadership or coaching activity photograph
-        </p>
-        <p className="mt-1 text-[10px] leading-4 text-artis-slate xl:text-xs">
-          Approved client photograph will be added here
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-artis-off-white text-artis-navy">
@@ -38,7 +17,7 @@ export default function AboutPage() {
 
       <main className="bg-artis-white">
         <section className="mx-auto w-full max-w-7xl px-6 pt-10 pb-12 xl:px-0 xl:py-18">
-          <h1 className="text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
+          <h1 className="text-[30px] font-bold leading-11 xl:text-[40px] xl:leading-14.5">
             About ARTIS Soccer Academy
           </h1>
 

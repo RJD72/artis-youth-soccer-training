@@ -39,16 +39,16 @@ export default async function GymRulesPage() {
   return (
     <main className="min-h-screen bg-artis-off-white text-artis-navy">
       <section className="bg-artis-deep-navy text-artis-white">
-        <div className="mx-auto w-full max-w-[1000px] px-6 py-10 sm:px-8 xl:px-0 xl:py-14">
+        <div className="mx-auto w-full max-w-250 px-6 py-10 sm:px-8 xl:px-0 xl:py-14">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-artis-gold xl:text-[13px]">
             ARTIS Soccer Academy
           </p>
 
-          <h1 className="mt-3 text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
+          <h1 className="mt-3 text-[30px] font-bold leading-11 xl:text-[40px] xl:leading-14.5">
             Gym and Facility Rules
           </h1>
 
-          <p className="mt-4 max-w-[850px] text-base leading-7 text-artis-white/85 xl:text-lg xl:leading-8">
+          <p className="mt-4 max-w-212.5 text-base leading-7 text-artis-white/85 xl:text-lg xl:leading-8">
             Please review these school-use requirements before acknowledging the
             gym or facility rules on the registration form.
           </p>
@@ -56,7 +56,7 @@ export default async function GymRulesPage() {
       </section>
 
       <section className="bg-artis-white">
-        <div className="mx-auto w-full max-w-[1000px] px-6 py-10 sm:px-8 xl:px-0 xl:py-14">
+        <div className="mx-auto w-full max-w-250 px-6 py-10 sm:px-8 xl:px-0 xl:py-14">
           {rules ? (
             <>
               <article className="rounded-2xl border border-artis-border bg-artis-off-white p-6 sm:p-8">
