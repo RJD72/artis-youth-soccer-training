@@ -587,6 +587,10 @@ export const payments = mysqlTable(
 
     paidAt: timestamp("paid_at"),
 
+    stripeRegistrationConfirmationSentAt: timestamp(
+      "stripe_registration_confirmation_sent_at",
+    ),
+
     refundedAt: timestamp("refunded_at"),
 
     createdAt: timestamp("created_at").notNull().defaultNow(),

@@ -1,0 +1,1 @@
+ALTER TABLE `payments` ADD `stripe_registration_confirmation_sent_at` timestamp;

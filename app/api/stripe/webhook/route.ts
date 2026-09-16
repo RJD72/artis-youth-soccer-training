@@ -1,13 +1,35 @@
 import { NextResponse } from "next/server";
 
 import { processStripeWebhookEvent } from "@/lib/process-stripe-webhook-event";
+import { sendConfirmedStripeRegistrationEmail } from "@/lib/send-confirmed-stripe-registration-email";
 import { getStripeClient } from "@/lib/stripe";
+
+import type Stripe from "stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_WEBHOOK_BODY_BYTES = 1024 * 1024;
 const MAX_SIGNATURE_HEADER_LENGTH = 4096;
+
+const stripeRegistrationConfirmationEventTypes = new Set([
+  "checkout.session.completed",
+  "checkout.session.async_payment_succeeded",
+]);
+
+function getSuccessfulCheckoutSessionId(event: Stripe.Event): string | null {
+  if (!stripeRegistrationConfirmationEventTypes.has(event.type)) {
+    return null;
+  }
+
+  const object = event.data.object;
+
+  if (object.object !== "checkout.session" || typeof object.id !== "string") {
+    return null;
+  }
+
+  return object.id;
+}
 
 class WebhookPayloadTooLargeError extends Error {
   constructor() {
@@ -171,10 +193,29 @@ export async function POST(request: Request): Promise<NextResponse> {
     await processStripeWebhookEvent(event);
   } catch (error) {
     logWebhookFailure("processing", error);
+
     return webhookResponse(
       { received: false, error: "Webhook processing failed." },
       500,
     );
+  }
+
+  const checkoutSessionId = getSuccessfulCheckoutSessionId(event);
+
+  if (checkoutSessionId) {
+    try {
+      await sendConfirmedStripeRegistrationEmail(checkoutSessionId);
+    } catch (error) {
+      logWebhookFailure("registration-confirmation-email", error);
+
+      return webhookResponse(
+        {
+          received: false,
+          error: "Webhook follow-up processing failed.",
+        },
+        500,
+      );
+    }
   }
 
   return webhookResponse({ received: true }, 200);
