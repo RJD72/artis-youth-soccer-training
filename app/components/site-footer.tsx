@@ -12,17 +12,26 @@ type SocialMediaComingSoonProps = {
   align?: "start" | "end";
 };
 
-function SocialMediaComingSoon({
+type SocialMediaLinksProps = {
+  align?: "start" | "end";
+};
+
+function SocialMediaLinks({
   align = "start",
-}: Readonly<SocialMediaComingSoonProps>) {
+}: Readonly<SocialMediaLinksProps>) {
   return (
     <div
-      aria-label="Facebook and Instagram links coming soon"
+      aria-label="ARTIS Soccer Academy social media"
       className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${
         align === "end" ? "justify-end" : "justify-start"
       }`}
     >
-      <span className="flex items-center gap-2">
+      <a
+        href="https://www.facebook.com/profile.php?id=61593180009617"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 hover:underline"
+      >
         <span
           aria-hidden="true"
           className="flex size-6 items-end justify-center rounded-full bg-artis-white text-base font-bold leading-5.5 text-artis-deep-navy"
@@ -30,9 +39,14 @@ function SocialMediaComingSoon({
           f
         </span>
         <span>Facebook</span>
-      </span>
+      </a>
 
-      <span className="flex items-center gap-2">
+      <a
+        href="https://www.instagram.com/artissoccer/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 hover:underline"
+      >
         <span
           aria-hidden="true"
           className="flex size-6 items-center justify-center rounded-md border-2 border-artis-white text-base leading-none"
@@ -40,9 +54,7 @@ function SocialMediaComingSoon({
           ◎
         </span>
         <span>Instagram</span>
-      </span>
-
-      <span className="text-artis-white/70">(Coming soon)</span>
+      </a>
     </div>
   );
 }
@@ -73,7 +85,7 @@ export function MobileFooterContent() {
         </p>
 
         <div className="mt-3 text-sm leading-5">
-          <SocialMediaComingSoon />
+          <SocialMediaLinks />
         </div>
       </div>
     </div>
@@ -113,7 +125,7 @@ export default function SiteFooter() {
             </nav>
 
             <div className="mt-3">
-              <SocialMediaComingSoon align="end" />
+              <SocialMediaLinks align="end" />
             </div>
           </div>
         </div>
