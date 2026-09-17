@@ -238,6 +238,8 @@ async function queryAdminRegistrations(
       manualPaymentReference: payments.manualPaymentReference,
       paidAt: payments.paidAt,
       playerName: players.fullName,
+      playerPreferredName: players.preferredName,
+      playerJerseySize: players.jerseySize,
       guardianName: guardians.fullName,
       guardianEmail: guardians.email,
       guardianPhone: guardians.phone,

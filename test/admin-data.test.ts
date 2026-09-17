@@ -19,6 +19,36 @@ let adminRegistrationsPage: typeof import("@/app/admin/registrations/page").defa
 let waitlistQuery: typeof import("@/lib/admin-waitlist").getAdminWaitlist;
 let waitlistAction: typeof import("@/app/admin/waitlist/actions").updateWaitlistEntryStatus;
 let groupAction: typeof import("@/app/admin/actions").updateTrainingGroupRegistrationStatus;
+
+function registrationDisplayRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 1,
+    status: "cancelled",
+    createdAt: NOW,
+    startsOn: null,
+    endsOn: null,
+    reservationExpiresAt: null,
+    waitlistedAt: null,
+    packagePriceCents: 15_000,
+    currency: "cad",
+    paymentId: null,
+    paymentStatus: null,
+    paymentMethod: null,
+    manualPaymentReference: null,
+    paidAt: null,
+    playerName: "Test Player",
+    playerPreferredName: "Johnny",
+    playerJerseySize: "extra_large",
+    guardianName: "Test Guardian",
+    guardianEmail: "guardian@example.com",
+    guardianPhone: "519-555-0100",
+    guardianPreferredContactMethod: "text",
+    trainingGroupName: "Test Group",
+    programPackageName: "Test Package",
+    ...overrides,
+  };
+}
+
 beforeAll(async () => {
   jest.doMock("@/db", () => ({ db: h.db }));
   jest.doMock("@/lib/admin-auth", () => ({ requireAdminSession: admin }));
@@ -125,19 +155,29 @@ describe.each(["registrations", "waitlist"] as const)(
     });
   },
 );
-it("returns the preferred contact method while keeping sensitive fields out of the select", async () => {
+it("returns player and guardian display details while keeping sensitive fields out of the select", async () => {
   h.read(registrations, { value: 1 });
   h.read(registrations, {
     id: 1,
     status: "pending_payment",
     reservationExpiresAt: NOW,
+    playerPreferredName: "Johnny",
+    playerJerseySize: "extra_large",
     guardianPreferredContactMethod: "text",
   });
   const result = await registrationQuery();
   expect(result.registrations[0].status).toBe("expired");
+  expect(result.registrations[0].playerPreferredName).toBe("Johnny");
+  expect(result.registrations[0].playerJerseySize).toBe("extra_large");
   expect(result.registrations[0].guardianPreferredContactMethod).toBe("text");
   const fields = h.queries(registrations)[1].fields as object;
-  expect(Object.keys(fields)).toContain("guardianPreferredContactMethod");
+  expect(Object.keys(fields)).toEqual(
+    expect.arrayContaining([
+      "playerPreferredName",
+      "playerJerseySize",
+      "guardianPreferredContactMethod",
+    ]),
+  );
   expect(Object.keys(fields)).not.toEqual(
     expect.arrayContaining([
       "medicalInformationEncrypted",
@@ -146,40 +186,39 @@ it("returns the preferred contact method while keeping sensitive fields out of t
   );
 });
 
-it("displays the preferred contact method in desktop and mobile registration views", async () => {
+it("displays player and guardian details in desktop and mobile registration views", async () => {
   h.read(registrations, { value: 1 });
-  h.read(registrations, {
-    id: 1,
-    status: "cancelled",
-    createdAt: NOW,
-    startsOn: null,
-    endsOn: null,
-    reservationExpiresAt: null,
-    waitlistedAt: null,
-    packagePriceCents: 15_000,
-    currency: "cad",
-    paymentId: null,
-    paymentStatus: null,
-    paymentMethod: null,
-    manualPaymentReference: null,
-    paidAt: null,
-    playerName: "Test Player",
-    guardianName: "Test Guardian",
-    guardianEmail: "guardian@example.com",
-    guardianPhone: "519-555-0100",
-    guardianPreferredContactMethod: "text",
-    trainingGroupName: "Test Group",
-    programPackageName: "Test Package",
-  });
+  h.read(registrations, registrationDisplayRow());
 
   const page = await adminRegistrationsPage({
     searchParams: Promise.resolve({}),
   });
   const html = renderToStaticMarkup(page);
 
+  expect(html.match(/Preferred name: Johnny/g)).toHaveLength(2);
+  expect(html.match(/Jersey size: Extra Large/g)).toHaveLength(2);
   expect(html.match(/Preferred contact: Text message/g)).toHaveLength(2);
   expect(html).toContain('href="mailto:guardian@example.com"');
   expect(html).toContain('href="tel:519-555-0100"');
+});
+
+it("omits a missing preferred name and labels a missing jersey size", async () => {
+  h.read(registrations, { value: 1 });
+  h.read(
+    registrations,
+    registrationDisplayRow({
+      playerPreferredName: "   ",
+      playerJerseySize: null,
+    }),
+  );
+
+  const page = await adminRegistrationsPage({
+    searchParams: Promise.resolve({}),
+  });
+  const html = renderToStaticMarkup(page);
+
+  expect(html).not.toContain("Preferred name:");
+  expect(html.match(/Jersey size: Not provided/g)).toHaveLength(2);
 });
 describe.each(["waitlist", "group"] as const)("protected %s action", (kind) => {
   const table = kind === "waitlist" ? waitlistEntries : trainingGroups;

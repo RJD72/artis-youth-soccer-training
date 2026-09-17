@@ -142,6 +142,30 @@ function formatPaymentMethod(paymentMethod: string): string {
   return paymentMethod === "e_transfer" ? "E-transfer" : "Stripe";
 }
 
+function formatJerseySize(jerseySize: string | null): string {
+  const normalizedSize = jerseySize?.trim().toLowerCase();
+
+  if (!normalizedSize) {
+    return "Not provided";
+  }
+
+  const labels: Record<string, string> = {
+    small: "Small",
+    medium: "Medium",
+    large: "Large",
+    extra_large: "Extra Large",
+  };
+
+  return (
+    labels[normalizedSize] ??
+    normalizedSize
+      .split("_")
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ")
+  );
+}
+
 function formatPreferredContactMethod(
   preferredContactMethod: AdminRegistration["guardianPreferredContactMethod"],
 ): string {
@@ -415,6 +439,14 @@ function RegistrationTable({
                 <p className="font-semibold text-artis-navy">
                   {registration.playerName}
                 </p>
+                {registration.playerPreferredName?.trim() ? (
+                  <p className="mt-1 text-xs text-artis-slate">
+                    Preferred name: {registration.playerPreferredName.trim()}
+                  </p>
+                ) : null}
+                <p className="mt-1 text-xs text-artis-slate">
+                  Jersey size: {formatJerseySize(registration.playerJerseySize)}
+                </p>
                 <p className="mt-1 text-xs text-artis-slate">
                   Registration #{registration.id}
                 </p>
@@ -512,6 +544,14 @@ function RegistrationCards({
               <h2 className="mt-2 text-xl font-semibold text-artis-navy">
                 {registration.playerName}
               </h2>
+              {registration.playerPreferredName?.trim() ? (
+                <p className="mt-2 text-sm text-artis-slate">
+                  Preferred name: {registration.playerPreferredName.trim()}
+                </p>
+              ) : null}
+              <p className="mt-1 text-sm text-artis-slate">
+                Jersey size: {formatJerseySize(registration.playerJerseySize)}
+              </p>
             </div>
             <StatusBadge status={registration.status} />
           </div>
