@@ -162,7 +162,6 @@ const registrationFieldOrder: RegistrationFormFieldName[] = [
   "email",
   "primaryPhone",
   "secondaryPhone",
-  "preferredContactMethod",
   "emergencyContactDifferent",
   "emergencyContactName",
   "emergencyContactRelationship",
@@ -785,19 +784,6 @@ function GuardianInformationSection({
           maxLength={30}
           error={fieldErrors.secondaryPhone}
         />
-        <SelectField
-          id="preferredContactMethod"
-          name="preferredContactMethod"
-          label="Preferred method of contact *"
-          defaultValue="email"
-          required
-          className="sm:col-span-2"
-          error={fieldErrors.preferredContactMethod}
-        >
-          <option value="email">Email</option>
-          <option value="phone">Phone</option>
-          <option value="text">Text message</option>
-        </SelectField>
       </div>
     </section>
   );

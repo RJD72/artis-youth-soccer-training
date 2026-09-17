@@ -42,7 +42,7 @@ describe("create pending registration", () => {
     expect(sqlSelectedField(h.queries(registrations)[0], "occupiedSpots").sql).toBe("count(distinct `registrations`.`player_id`)");
     expect(h.writes()).toEqual([]);
   });
-  it("reuses an existing guardian email without verification for a new child", async () => {
+  it("allows multiple children to reuse an existing guardian email", async () => {
     initial(); h.read(guardians, guardian); h.read(players); h.read(registrations, { occupiedSpots: 1 }); h.read(guardians, guardian); h.read(players);
     h.results.push({ insertId: 0 }, { insertId: 4 }, { insertId: 5 }, { insertId: 6 }, { insertId: 7 });
     expect(await create(submission(), FUTURE)).toMatchObject({ status: "created", registrationId: 5, paymentId: 7 });
@@ -60,6 +60,12 @@ describe("create pending registration", () => {
     newFamily(); h.results.push({ insertId: 3 }, { insertId: 4 }, { insertId: 5 }, { insertId: 6 }, { insertId: 7 });
     expect(await create({ ...submission(), paymentMethod }, FUTURE)).toEqual({ status: "created", registrationId: 5, paymentId: 7, paymentMethod, manualPaymentReference: paymentMethod === "e_transfer" ? "ARTIS-7" : null, trainingGroupSlug: "development", startsOn: "2026-10-01", endsOn: "2026-12-31", subtotalCents: 10000, taxCents: 1300, totalCents: 11300, currency: "CAD" });
     expect(h.writes().slice(0, 5).map(op => op.table)).toEqual([guardians, players, registrations, legalAcceptances, payments]);
+    expect(h.writes(guardians)[0].values).toEqual({
+      fullName: "Test Guardian",
+      email: "guardian@example.com",
+      phone: "519-555-0123",
+      secondaryPhone: null,
+    });
     const saved = h.writes(players)[0].values as Record<string, string>;
     expect(decryptRegistrationText(saved.medicalInformationEncrypted)).toBe("Synthetic medical note");
     expect(decryptRegistrationText(saved.coachInformationEncrypted)).toBe("Synthetic coach note");
@@ -78,7 +84,7 @@ describe("create pending registration", () => {
     expect(h.operations.at(-1)?.kind).toBe("commit");
   });
   it("rechecks concurrent guardian details without overwriting them", async () => {
-    const concurrentGuardian = { ...guardian, id: 9, fullName: "Different Guardian", phone: "5195559999", secondaryPhone: "5195558888", preferredContactMethod: "phone" };
+    const concurrentGuardian = { ...guardian, id: 9, fullName: "Different Guardian", phone: "5195559999", secondaryPhone: "5195558888" };
     initial(); h.read(guardians); h.read(registrations, { occupiedSpots: 0 }); h.read(guardians, concurrentGuardian); h.read(players);
     h.results.push({ insertId: 0 }, { insertId: 4 }, { insertId: 5 }, { insertId: 6 }, { insertId: 7 });
     expect(await create(submission(), FUTURE)).toMatchObject({ status: "created", registrationId: 5, paymentId: 7 });

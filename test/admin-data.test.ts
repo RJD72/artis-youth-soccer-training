@@ -44,7 +44,6 @@ function registrationDisplayRow(overrides: Record<string, unknown> = {}) {
     guardianName: "Test Guardian",
     guardianEmail: "guardian@example.com",
     guardianPhone: "519-555-0100",
-    guardianPreferredContactMethod: "text",
     trainingGroupName: "Test Group",
     programPackageName: "Test Package",
     ...overrides,
@@ -167,7 +166,6 @@ it("returns player and guardian display details while keeping sensitive fields o
     photoVideoConsent: false,
     playerPreferredName: "Johnny",
     playerJerseySize: "extra_large",
-    guardianPreferredContactMethod: "text",
   });
   const result = await registrationQuery();
   expect(result.registrations[0].status).toBe("expired");
@@ -175,7 +173,6 @@ it("returns player and guardian display details while keeping sensitive fields o
   expect(result.registrations[0].photoVideoConsent).toBe(false);
   expect(result.registrations[0].playerPreferredName).toBe("Johnny");
   expect(result.registrations[0].playerJerseySize).toBe("extra_large");
-  expect(result.registrations[0].guardianPreferredContactMethod).toBe("text");
   const fields = h.queries(registrations)[1].fields as object;
   expect(Object.keys(fields)).toEqual(
     expect.arrayContaining([
@@ -183,7 +180,6 @@ it("returns player and guardian display details while keeping sensitive fields o
       "photoVideoConsent",
       "playerPreferredName",
       "playerJerseySize",
-      "guardianPreferredContactMethod",
     ]),
   );
   expect(Object.keys(fields)).not.toEqual(
@@ -207,7 +203,7 @@ it("displays player and guardian details in desktop and mobile registration view
   expect(html.match(/Photo\/video permission: No/g)).toHaveLength(2);
   expect(html.match(/Preferred name: Johnny/g)).toHaveLength(2);
   expect(html.match(/Jersey size: Extra Large/g)).toHaveLength(2);
-  expect(html.match(/Preferred contact: Text message/g)).toHaveLength(2);
+  expect(html).not.toContain("Preferred contact:");
   expect(html).toContain('href="mailto:guardian@example.com"');
   expect(html).toContain('href="tel:519-555-0100"');
 });

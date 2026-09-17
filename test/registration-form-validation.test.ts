@@ -20,7 +20,6 @@ const validFields: Readonly<Record<string, string>> = {
   email: "priya@example.com",
   primaryPhone: "(519) 555-0123",
   secondaryPhone: "519-555-0199",
-  preferredContactMethod: "email",
   authorizedRegistrantConfirmed: "on",
   informationAccuracyConfirmed: "on",
   participationWaiverAccepted: "on",
@@ -218,7 +217,6 @@ describe("validateRegistrationSubmission", () => {
         trainingGroupId: "0",
         programPackageId: "2.5",
         jerseySize: "huge",
-        preferredContactMethod: "carrier_pigeon",
         paymentMethod: "cash",
       }),
     );
@@ -227,7 +225,6 @@ describe("validateRegistrationSubmission", () => {
       trainingGroupId: "Choose a training group.",
       programPackageId: "Choose a program term.",
       jerseySize: "Choose a valid jersey size or leave this field blank.",
-      preferredContactMethod: "Choose a preferred contact method.",
       paymentMethod: "Choose a payment method.",
     });
   });

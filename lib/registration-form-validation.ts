@@ -4,8 +4,6 @@
 
 import "server-only";
 
-export type PreferredContactMethod = "email" | "phone" | "text";
-
 export type RegistrationPaymentMethod = "stripe" | "e_transfer";
 
 export type JerseySize = "small" | "medium" | "large" | "extra_large";
@@ -28,7 +26,6 @@ export type ValidatedRegistrationSubmission = {
   email: string;
   primaryPhone: string;
   secondaryPhone: string | null;
-  preferredContactMethod: PreferredContactMethod;
   usesDifferentEmergencyContact: boolean;
   emergencyContactName: string;
   emergencyContactRelationship: string;
@@ -62,7 +59,6 @@ export type RegistrationFormFieldName =
   | "email"
   | "primaryPhone"
   | "secondaryPhone"
-  | "preferredContactMethod"
   | "emergencyContactDifferent"
   | "emergencyContactName"
   | "emergencyContactRelationship"
@@ -381,11 +377,6 @@ export function validateRegistrationSubmission(
   const email = readRequiredText(formData, "email", 254);
   const primaryPhone = readRequiredText(formData, "primaryPhone", 30);
   const secondaryPhone = readOptionalText(formData, "secondaryPhone", 30);
-  const preferredContactMethod = readEnum(formData, "preferredContactMethod", [
-    "email",
-    "phone",
-    "text",
-  ] as const);
   const usesDifferentEmergencyContact = readCheckbox(
     formData,
     "emergencyContactDifferent",
@@ -536,12 +527,6 @@ export function validateRegistrationSubmission(
   );
   addParsedValueError(
     fieldErrors,
-    "preferredContactMethod",
-    preferredContactMethod,
-    "Choose a preferred contact method.",
-  );
-  addParsedValueError(
-    fieldErrors,
     "emergencyContactDifferent",
     usesDifferentEmergencyContact,
     "Choose whether the emergency contact is different from the guardian.",
@@ -638,7 +623,6 @@ export function validateRegistrationSubmission(
     !email.valid ||
     !primaryPhone.valid ||
     !secondaryPhone.valid ||
-    !preferredContactMethod.valid ||
     !usesDifferentEmergencyContact.valid ||
     !emergencyContactName.valid ||
     !emergencyContactRelationship.valid ||
@@ -818,7 +802,6 @@ export function validateRegistrationSubmission(
       email: normalizedEmail,
       primaryPhone: primaryPhone.value,
       secondaryPhone: secondaryPhone.value,
-      preferredContactMethod: preferredContactMethod.value,
       usesDifferentEmergencyContact: usesDifferentEmergencyContact.value,
       emergencyContactName: finalEmergencyContactName,
       emergencyContactRelationship: finalEmergencyContactRelationship,

@@ -227,7 +227,6 @@ export async function createPendingRegistration(
           fullName: guardians.fullName,
           phone: guardians.phone,
           secondaryPhone: guardians.secondaryPhone,
-          preferredContactMethod: guardians.preferredContactMethod,
         })
         .from(guardians)
         .where(eq(guardians.email, submission.email))
@@ -313,7 +312,6 @@ export async function createPendingRegistration(
           email: submission.email,
           phone: submission.primaryPhone,
           secondaryPhone: submission.secondaryPhone,
-          preferredContactMethod: submission.preferredContactMethod,
         })
         .onDuplicateKeyUpdate({
           set: { email: submission.email },
@@ -325,7 +323,6 @@ export async function createPendingRegistration(
           fullName: guardians.fullName,
           phone: guardians.phone,
           secondaryPhone: guardians.secondaryPhone,
-          preferredContactMethod: guardians.preferredContactMethod,
         })
         .from(guardians)
         .where(eq(guardians.email, submission.email))

@@ -17,7 +17,6 @@ const informationCollected = [
   "Coach information provided as part of registration",
   "Parent or guardian name and relationship to the player",
   "Email address and telephone numbers",
-  "Preferred contact method",
   "Emergency contact information",
   "Program, training group, and registration information",
   "Payment method, payment status, transaction references, and related payment information",

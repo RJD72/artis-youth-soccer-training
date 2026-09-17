@@ -15,7 +15,6 @@ export const formFields: Record<string, string> = {
   guardianRelationship: "Parent",
   email: "guardian@example.com",
   primaryPhone: "519-555-0123",
-  preferredContactMethod: "email",
   authorizedRegistrantConfirmed: "on",
   informationAccuracyConfirmed: "on",
   participationWaiverAccepted: "on",
@@ -55,7 +54,6 @@ export const guardian = {
   fullName: "Test Guardian",
   phone: "5195550123",
   secondaryPhone: null,
-  preferredContactMethod: "email",
 };
 export const legal = [
   "participation_waiver",
