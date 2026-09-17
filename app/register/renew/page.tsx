@@ -8,24 +8,24 @@ import RenewalRequestForm from "./renewal-request-form";
 export const metadata: Metadata = {
   title: "Renew Training",
   description:
-    "Request a secure renewal link for an existing ARTIS Soccer Academy player.",
+    "Renew training for an existing ARTIS Soccer Academy player.",
 };
 
 const renewalSteps = [
   {
     title: "Confirm the player",
     description:
-      "Enter the guardian email, player name and birth date from the original registration.",
+      "Enter the guardian email, player name, and date of birth from the original registration.",
   },
   {
-    title: "Open the secure link",
+    title: "Review renewal options",
     description:
-      "If the information matches, the guardian will receive an email link that expires after 30 minutes.",
+      "If the information matches, you will continue directly to the available renewal packages.",
   },
   {
     title: "Choose the next package",
     description:
-      "Review the current training period, select the next package and complete payment.",
+      "Review the next training period, select a package, and complete payment.",
   },
 ] as const;
 

@@ -8,19 +8,21 @@
 import { redirect } from "next/navigation";
 
 import {
-  createPendingRenewal,
+  createPendingRenewalForPlayer,
   type PendingRenewalRejectionCode,
   type PendingRenewalSubmission,
 } from "@/lib/create-pending-renewal";
 import { createRegistrationPaymentReference } from "@/lib/registration-payment-reference";
+import { readRenewalPlayerReference } from "@/lib/renewal-player-reference";
 
 const maximumUnsignedInteger = 4_294_967_295;
-const renewalTokenPattern = /^[A-Za-z0-9_-]{43}$/;
 
 type RenewalPaymentMethod = PendingRenewalSubmission["paymentMethod"];
 
 type ValidatedRenewalActionSubmission = {
-  token: string;
+  player: string;
+  expires: string;
+  signature: string;
   renewal: PendingRenewalSubmission;
 };
 
@@ -91,7 +93,9 @@ function isHoneypotFilled(formData: FormData): boolean {
 function validateRenewalSubmission(
   formData: FormData,
 ): ValidatedRenewalActionSubmission | null {
-  const token = getTextField(formData, "token");
+  const player = getTextField(formData, "player");
+  const expires = getTextField(formData, "expires");
+  const signature = getTextField(formData, "signature");
   const programPackageId = getDatabaseId(formData, "programPackageId");
   const paymentMethod = getPaymentMethod(formData);
   const authorizedRegistrantConfirmed = getCheckboxValue(
@@ -115,8 +119,18 @@ function validateRenewalSubmission(
   const photoVideoConsent = getCheckboxValue(formData, "photoVideoConsent");
 
   if (
-    token === null ||
-    !renewalTokenPattern.test(token) ||
+    formData.has("token") ||
+    player === null ||
+    player === "" ||
+    expires === null ||
+    expires === "" ||
+    signature === null ||
+    signature === ""
+  ) {
+    return null;
+  }
+
+  if (
     programPackageId === null ||
     paymentMethod === null ||
     authorizedRegistrantConfirmed !== true ||
@@ -131,7 +145,9 @@ function validateRenewalSubmission(
   }
 
   return {
-    token,
+    player,
+    expires,
+    signature,
     renewal: {
       programPackageId,
       paymentMethod,
@@ -169,7 +185,7 @@ function buildPaymentPageUrl(
 
 function logRenewalCheckoutFailure(error: unknown): void {
   // Database messages may contain query parameters. Never log FormData, the
-  // raw token, names, contact details, consent choices, or the error message.
+  // signed reference, names, contact details, consents, or the error message.
   const errorType = error instanceof Error ? error.name : "UnknownError";
 
   console.error("Pending renewal creation failed.", { errorType });
@@ -189,10 +205,23 @@ export async function submitRenewal(
     return { status: "error", code: "invalid-form" };
   }
 
-  let outcome: Awaited<ReturnType<typeof createPendingRenewal>>;
+  let outcome: Awaited<ReturnType<typeof createPendingRenewalForPlayer>>;
 
   try {
-    outcome = await createPendingRenewal(validation.token, validation.renewal);
+    const reference = readRenewalPlayerReference(
+      validation.player,
+      validation.expires,
+      validation.signature,
+    );
+
+    if (reference === null) {
+      return { status: "error", code: "invalid-token" };
+    }
+
+    outcome = await createPendingRenewalForPlayer(
+      reference.playerId,
+      validation.renewal,
+    );
   } catch (error) {
     logRenewalCheckoutFailure(error);
 

@@ -61,6 +61,12 @@ export default async function RegisterPage({
               A parent or guardian must provide the information needed to
               register the player before continuing to secure payment.
             </p>
+            <Link
+              href="/register/renew"
+              className="mt-1 inline-flex min-h-12 w-fit items-center justify-center rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold leading-5 text-artis-navy"
+            >
+              Renew Training
+            </Link>
             <p className="max-w-[900px] text-[13px] font-medium leading-[19px] xl:text-sm xl:leading-5">
               Required fields are marked with an asterisk (*).
             </p>

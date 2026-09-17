@@ -9,7 +9,11 @@ import {
 
 import { trainingGroups, waitlistEntries } from "@/db/schema";
 
-import { databaseHarness, sqlQuery } from "./database-harness";
+import {
+  databaseHarness,
+  sqlQuery,
+  sqlSelectedField,
+} from "./database-harness";
 
 const h = databaseHarness();
 
@@ -43,7 +47,7 @@ beforeEach(() => {
 });
 
 describe("admin dashboard capacity summaries", () => {
-  it("includes waiting families for each training group", async () => {
+  it("counts each player once and includes waiting families", async () => {
     h.read(trainingGroups, {
       id: 1,
       displayName: "Ages 8–10",
@@ -74,6 +78,18 @@ describe("admin dashboard capacity summaries", () => {
         waitingFamilies: 3,
       },
     ]);
+    expect(
+      sqlSelectedField(
+        h.queries(trainingGroups)[0],
+        "occupiedSpots",
+      ).sql,
+    ).toBe("count(distinct `registrations`.`player_id`)");
+    expect(
+      sqlSelectedField(
+        h.queries(waitlistEntries)[0],
+        "waitingFamilies",
+      ).sql,
+    ).toBe("count(`waitlist_entries`.`id`)");
   });
 
   it("uses zero when a group has no waiting families", async () => {

@@ -241,6 +241,7 @@ async function queryAdminRegistrations(
       guardianName: guardians.fullName,
       guardianEmail: guardians.email,
       guardianPhone: guardians.phone,
+      guardianPreferredContactMethod: guardians.preferredContactMethod,
       trainingGroupName: trainingGroups.displayName,
       programPackageName: programPackages.displayName,
     })

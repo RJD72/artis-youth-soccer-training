@@ -117,10 +117,8 @@ const registrationErrorMessages: Record<RegistrationActionErrorCode, string> = {
     "Registration is temporarily unavailable while the required policies are being updated.",
   "already-registered":
     "This player already has a current registration for the selected training group.",
-  "guardian-verification-required":
-    "Check this email address for a secure verification link. Keep this page open, open the link, then return here and choose your payment method again. Check the junk folder if the email does not arrive.",
   "renewal-required":
-    "This player has registered before. Returning-player renewal is not available yet, so please contact ARTIS Soccer Academy for assistance.",
+    "This player already has a registration history with ARTIS Soccer Academy. Please return to the registration page and choose Renew Training.",
 };
 
 const shortDayNames: Record<string, string> = {
@@ -1245,6 +1243,10 @@ export default function ProgramSelector({
       : actionState.status === "error" && actionState.code !== "invalid-form"
         ? registrationErrorMessages[actionState.code]
         : null;
+  const shouldOfferRenewal =
+    actionState.status === "error" &&
+    (actionState.code === "already-registered" ||
+      actionState.code === "renewal-required");
 
   useEffect(() => {
     if (actionState.status !== "error" || !formRef.current) {
@@ -1375,34 +1377,47 @@ export default function ProgramSelector({
             ) : null}
 
             <div className="flex flex-col items-stretch gap-4 sm:items-start">
-              <button
-                type="submit"
-                name="paymentMethod"
-                value="stripe"
-                disabled={isPending}
-                className={`min-h-12 rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold text-artis-white disabled:opacity-60 sm:w-[300px] ${
-                  fieldErrors.paymentMethod
-                    ? "ring-2 ring-artis-error ring-offset-2"
-                    : ""
-                }`}
-              >
-                {isPending
-                  ? "Submitting registration…"
-                  : "Continue to Secure Payment"}
-              </button>
-              <button
-                type="submit"
-                name="paymentMethod"
-                value="e_transfer"
-                disabled={isPending}
-                className={`min-h-12 rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold text-artis-navy disabled:opacity-60 sm:w-[250px] ${
-                  fieldErrors.paymentMethod
-                    ? "ring-2 ring-artis-error ring-offset-2"
-                    : ""
-                }`}
-              >
-                {isPending ? "Submitting registration…" : "Pay by E-transfer"}
-              </button>
+              {shouldOfferRenewal ? (
+                <Link
+                  href="/register/renew"
+                  className="inline-flex min-h-12 w-full items-center justify-center rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold text-artis-navy sm:w-[250px]"
+                >
+                  Renew Training
+                </Link>
+              ) : (
+                <>
+                  <button
+                    type="submit"
+                    name="paymentMethod"
+                    value="stripe"
+                    disabled={isPending}
+                    className={`min-h-12 rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold text-artis-white disabled:opacity-60 sm:w-[300px] ${
+                      fieldErrors.paymentMethod
+                        ? "ring-2 ring-artis-error ring-offset-2"
+                        : ""
+                    }`}
+                  >
+                    {isPending
+                      ? "Submitting registration…"
+                      : "Continue to Secure Payment"}
+                  </button>
+                  <button
+                    type="submit"
+                    name="paymentMethod"
+                    value="e_transfer"
+                    disabled={isPending}
+                    className={`min-h-12 rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold text-artis-navy disabled:opacity-60 sm:w-[250px] ${
+                      fieldErrors.paymentMethod
+                        ? "ring-2 ring-artis-error ring-offset-2"
+                        : ""
+                    }`}
+                  >
+                    {isPending
+                      ? "Submitting registration…"
+                      : "Pay by E-transfer"}
+                  </button>
+                </>
+              )}
               <FieldError
                 id="paymentMethod"
                 message={fieldErrors.paymentMethod}
@@ -1413,21 +1428,23 @@ export default function ProgramSelector({
               >
                 Back to Training Options
               </Link>
-              <p className="text-[13px] font-medium leading-[19px] text-artis-slate">
-                Credit or debit card continues to secure Stripe checkout.
-                E-transfer submits the registration and opens payment
-                instructions.
-              </p>
+              {shouldOfferRenewal ? null : (
+                <p className="text-[13px] font-medium leading-[19px] text-artis-slate">
+                  Credit or debit card continues to secure Stripe checkout.
+                  E-transfer submits the registration and opens payment
+                  instructions.
+                </p>
+              )}
             </div>
           </section>
         </div>
 
         <aside className="order-1 space-y-6 xl:order-2 xl:sticky xl:top-6">
-          <RegistrationProgress />
+          {/* <RegistrationProgress />
           <SelectedTrainingSummary
             group={selectedGroup}
             programPackage={selectedPackage}
-          />
+          /> */}
           <section className="rounded-[10px] bg-artis-soft-gold p-5">
             <h2 className="font-semibold leading-[23px]">Before payment</h2>
             <p className="mt-2.5 text-sm leading-5 text-artis-slate">

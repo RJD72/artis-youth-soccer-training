@@ -58,7 +58,7 @@ export default function RenewalRequestForm() {
 
   const statusMessage =
     actionState.status === "submitted"
-      ? "If the information matches our records, a renewal link has been sent to the guardian email address. Please check the inbox and junk folder."
+      ? "We could not continue with those details. Please check the guardian email, player name, and date of birth and try again. If this player has not registered with ARTIS before, start a new registration."
       : actionState.status === "error"
         ? errorMessages[actionState.code]
         : null;
@@ -78,18 +78,30 @@ export default function RenewalRequestForm() {
       </h1>
 
       <p className="mt-3 max-w-[640px] text-base leading-[26px] text-artis-slate xl:text-[17px] xl:leading-[25px]">
-        Enter the information used for the player’s original registration. We
-        will email the guardian a secure link to continue.
+        Enter the information used for the player’s original registration to
+        continue with the renewal.
       </p>
 
       {statusMessage ? (
-        <output
-          id="renewal-request-status"
-          aria-live="polite"
+        <div
           className={`mt-5 block rounded-[10px] border bg-artis-white px-4 py-3 text-sm leading-6 ${statusClassName}`}
         >
-          {statusMessage}
-        </output>
+          <output
+            id="renewal-request-status"
+            aria-live="polite"
+            className="block"
+          >
+            {statusMessage}
+          </output>
+          {actionState.status === "submitted" ? (
+            <Link
+              href="/register"
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-[10px] bg-artis-navy px-5 py-3 font-semibold leading-5 text-artis-white transition-opacity hover:opacity-90"
+            >
+              Register for Training
+            </Link>
+          ) : null}
+        </div>
       ) : null}
 
       <div
@@ -166,13 +178,13 @@ export default function RenewalRequestForm() {
         disabled={isPending}
         className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-[10px] bg-artis-navy px-6 py-3.5 text-[15px] font-semibold leading-5 text-artis-white transition-opacity disabled:opacity-60 xl:w-auto"
       >
-        {isPending ? "Sending…" : "Email Renewal Link"}
+        {isPending ? "Checking…" : "Continue to Renewal"}
       </button>
 
       <p className="mt-4 max-w-[640px] text-[13px] leading-5 text-artis-slate">
-        For privacy, this page will show the same confirmation whether or not
-        the information matches an existing player. Renewal links expire after
-        30 minutes.
+        For privacy, ARTIS will not indicate which individual detail did not
+        match. Please make sure the information is entered as it appeared on the
+        original registration.
       </p>
 
       <Link

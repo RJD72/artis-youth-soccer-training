@@ -142,6 +142,19 @@ function formatPaymentMethod(paymentMethod: string): string {
   return paymentMethod === "e_transfer" ? "E-transfer" : "Stripe";
 }
 
+function formatPreferredContactMethod(
+  preferredContactMethod: AdminRegistration["guardianPreferredContactMethod"],
+): string {
+  switch (preferredContactMethod) {
+    case "email":
+      return "Email";
+    case "phone":
+      return "Phone";
+    case "text":
+      return "Text message";
+  }
+}
+
 function formatPaymentStatus(paymentStatus: string): string {
   switch (paymentStatus) {
     case "pending":
@@ -422,6 +435,12 @@ function RegistrationTable({
                 >
                   {registration.guardianPhone}
                 </a>
+                <p className="mt-2 text-xs text-artis-slate">
+                  Preferred contact:{" "}
+                  {formatPreferredContactMethod(
+                    registration.guardianPreferredContactMethod,
+                  )}
+                </p>
               </td>
               <td className="px-4 py-4">
                 <p className="text-sm font-medium text-artis-navy">
@@ -518,6 +537,12 @@ function RegistrationCards({
                 >
                   {registration.guardianPhone}
                 </a>
+              </dd>
+              <dd className="mt-2 text-xs text-artis-slate">
+                Preferred contact:{" "}
+                {formatPreferredContactMethod(
+                  registration.guardianPreferredContactMethod,
+                )}
               </dd>
             </div>
 

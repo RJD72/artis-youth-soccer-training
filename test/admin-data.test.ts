@@ -7,6 +7,7 @@ import {
   it,
   jest,
 } from "@jest/globals";
+import { renderToStaticMarkup } from "react-dom/server";
 import { registrations, waitlistEntries, trainingGroups } from "@/db/schema";
 import { databaseHarness, NOW, sqlQuery } from "./database-harness";
 const h = databaseHarness();
@@ -14,6 +15,7 @@ const admin = jest.fn<() => Promise<unknown>>();
 const sync = jest.fn<() => Promise<void>>();
 const revalidate = jest.fn();
 let registrationQuery: typeof import("@/lib/admin-registrations").getAdminRegistrations;
+let adminRegistrationsPage: typeof import("@/app/admin/registrations/page").default;
 let waitlistQuery: typeof import("@/lib/admin-waitlist").getAdminWaitlist;
 let waitlistAction: typeof import("@/app/admin/waitlist/actions").updateWaitlistEntryStatus;
 let groupAction: typeof import("@/app/admin/actions").updateTrainingGroupRegistrationStatus;
@@ -26,6 +28,8 @@ beforeAll(async () => {
   jest.doMock("next/cache", () => ({ revalidatePath: revalidate }));
   ({ getAdminRegistrations: registrationQuery } =
     await import("@/lib/admin-registrations"));
+  ({ default: adminRegistrationsPage } =
+    await import("@/app/admin/registrations/page"));
   ({ getAdminWaitlist: waitlistQuery } = await import("@/lib/admin-waitlist"));
   ({ updateWaitlistEntryStatus: waitlistAction } =
     await import("@/app/admin/waitlist/actions"));
@@ -121,22 +125,61 @@ describe.each(["registrations", "waitlist"] as const)(
     });
   },
 );
-it("maps expired pending reservations to expired without exposing medical/provider fields", async () => {
+it("returns the preferred contact method while keeping sensitive fields out of the select", async () => {
   h.read(registrations, { value: 1 });
   h.read(registrations, {
     id: 1,
     status: "pending_payment",
     reservationExpiresAt: NOW,
+    guardianPreferredContactMethod: "text",
   });
   const result = await registrationQuery();
   expect(result.registrations[0].status).toBe("expired");
+  expect(result.registrations[0].guardianPreferredContactMethod).toBe("text");
   const fields = h.queries(registrations)[1].fields as object;
+  expect(Object.keys(fields)).toContain("guardianPreferredContactMethod");
   expect(Object.keys(fields)).not.toEqual(
     expect.arrayContaining([
       "medicalInformationEncrypted",
       "stripePaymentIntentId",
     ]),
   );
+});
+
+it("displays the preferred contact method in desktop and mobile registration views", async () => {
+  h.read(registrations, { value: 1 });
+  h.read(registrations, {
+    id: 1,
+    status: "cancelled",
+    createdAt: NOW,
+    startsOn: null,
+    endsOn: null,
+    reservationExpiresAt: null,
+    waitlistedAt: null,
+    packagePriceCents: 15_000,
+    currency: "cad",
+    paymentId: null,
+    paymentStatus: null,
+    paymentMethod: null,
+    manualPaymentReference: null,
+    paidAt: null,
+    playerName: "Test Player",
+    guardianName: "Test Guardian",
+    guardianEmail: "guardian@example.com",
+    guardianPhone: "519-555-0100",
+    guardianPreferredContactMethod: "text",
+    trainingGroupName: "Test Group",
+    programPackageName: "Test Package",
+  });
+
+  const page = await adminRegistrationsPage({
+    searchParams: Promise.resolve({}),
+  });
+  const html = renderToStaticMarkup(page);
+
+  expect(html.match(/Preferred contact: Text message/g)).toHaveLength(2);
+  expect(html).toContain('href="mailto:guardian@example.com"');
+  expect(html).toContain('href="tel:519-555-0100"');
 });
 describe.each(["waitlist", "group"] as const)("protected %s action", (kind) => {
   const table = kind === "waitlist" ? waitlistEntries : trainingGroups;

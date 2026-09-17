@@ -11,7 +11,6 @@ export default function robots(): MetadataRoute.Robots {
         "/admin/",
         "/api/",
         "/register/payment/",
-        "/register/verify-guardian/",
         "/register/renew/verify/",
         "/register/waitlist/confirmation/",
       ],

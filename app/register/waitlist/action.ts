@@ -5,7 +5,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { and, count, eq, gt, inArray, or } from "drizzle-orm";
+import { and, countDistinct, eq, gt, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import { registrations, trainingGroups, waitlistEntries } from "@/db/schema";
@@ -192,7 +192,7 @@ export async function joinWaitlist(formData: FormData) {
       const now = new Date();
       const [occupancy] = await transaction
         .select({
-          occupiedSpots: count(registrations.id),
+          occupiedSpots: countDistinct(registrations.playerId),
         })
         .from(registrations)
         .where(

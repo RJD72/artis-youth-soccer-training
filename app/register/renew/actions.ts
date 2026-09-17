@@ -1,20 +1,15 @@
-// This public Server Action accepts a returning family's identity details and
-// requests a short-lived renewal link. Every valid-looking submission receives
-// the same response so the page never confirms whether a child is registered.
+// This public Server Action matches a returning player and redirects to
+// renewal checkout with a signed, short-lived player reference.
 
 "use server";
 
-import { after } from "next/server";
-import { eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
 
-import { db } from "@/db";
-import { renewalVerificationTokens } from "@/db/schema";
 import {
-  createRenewalVerificationRequest,
-  type RenewalVerificationIdentity,
-} from "@/lib/create-renewal-verification-request";
-import { getRenewalVerificationTokenHash } from "@/lib/renewal-verification-token";
-import { sendRenewalVerificationEmail } from "@/lib/send-renewal-verification-email";
+  findRenewalPlayer,
+  type RenewalPlayerIdentity,
+} from "@/lib/find-renewal-player";
+import { createRenewalPlayerReference } from "@/lib/renewal-player-reference";
 
 export type RenewalRequestActionState =
   | {
@@ -27,11 +22,6 @@ export type RenewalRequestActionState =
       status: "error";
       code: "invalid-form" | "unable-to-submit";
     };
-
-type CreatedRenewalRequest = Extract<
-  Awaited<ReturnType<typeof createRenewalVerificationRequest>>,
-  { status: "created" }
->;
 
 function getTextField(formData: FormData, fieldName: string): string | null {
   const value = formData.get(fieldName);
@@ -84,7 +74,7 @@ function isValidPastDate(value: string | null): value is string {
 
 function validateSubmission(
   formData: FormData,
-): RenewalVerificationIdentity | null {
+): RenewalPlayerIdentity | null {
   const guardianEmail =
     getTextField(formData, "guardianEmail")?.toLowerCase() ?? null;
   const playerFullName = getTextField(formData, "playerFullName");
@@ -116,48 +106,10 @@ function isHoneypotFilled(formData: FormData): boolean {
   );
 }
 
-function logRenewalFailure(stage: "request" | "email", error: unknown): void {
-  // Do not log names, email addresses, birth dates, raw tokens, FormData, or
-  // database messages because they may contain private query parameters.
+function logRenewalLookupFailure(error: unknown): void {
   const errorType = error instanceof Error ? error.name : "UnknownError";
 
-  console.error("Renewal verification failed.", { stage, errorType });
-}
-
-async function removeUndeliveredToken(token: string): Promise<void> {
-  const tokenHash = getRenewalVerificationTokenHash(token);
-
-  if (tokenHash === null) {
-    return;
-  }
-
-  await db
-    .delete(renewalVerificationTokens)
-    .where(eq(renewalVerificationTokens.tokenHash, tokenHash));
-}
-
-async function deliverRenewalEmail(
-  request: CreatedRenewalRequest,
-): Promise<void> {
-  try {
-    await sendRenewalVerificationEmail({
-      guardianName: request.guardianName,
-      guardianEmail: request.guardianEmail,
-      playerName: request.playerName,
-      token: request.token,
-      expiresAt: request.expiresAt,
-    });
-  } catch (error) {
-    logRenewalFailure("email", error);
-
-    try {
-      // A failed delivery must not leave an unknown link blocking another
-      // request during the resend cooldown.
-      await removeUndeliveredToken(request.token);
-    } catch (cleanupError) {
-      logRenewalFailure("request", cleanupError);
-    }
-  }
+  console.error("Renewal player lookup failed.", { errorType });
 }
 
 export async function requestRenewalVerification(
@@ -176,23 +128,26 @@ export async function requestRenewalVerification(
     return { status: "error", code: "invalid-form" };
   }
 
-  let outcome: Awaited<ReturnType<typeof createRenewalVerificationRequest>>;
+  let result: Awaited<ReturnType<typeof findRenewalPlayer>>;
 
   try {
-    outcome = await createRenewalVerificationRequest(identity);
+    result = await findRenewalPlayer(identity);
   } catch (error) {
-    logRenewalFailure("request", error);
+    logRenewalLookupFailure(error);
 
     return { status: "error", code: "unable-to-submit" };
   }
 
-  if (outcome.status === "created") {
-    // Sending after the response avoids a timing difference that could reveal
-    // whether the supplied identity matched a player in the database.
-    after(() => deliverRenewalEmail(outcome));
+  if (result.status === "not-found") {
+    return { status: "submitted" };
   }
 
-  // This response is intentionally identical for a match, a non-match, and a
-  // request suppressed by the five-minute resend cooldown.
-  return { status: "submitted" };
+  const reference = createRenewalPlayerReference(result.playerId);
+  const parameters = new URLSearchParams({
+    player: reference.player,
+    expires: reference.expires,
+    signature: reference.signature,
+  });
+
+  redirect(`/register/renew/verify?${parameters.toString()}`);
 }

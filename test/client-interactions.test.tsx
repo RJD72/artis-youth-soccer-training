@@ -208,22 +208,32 @@ describe("registration client interactions with mocked actions", () => {
     expect(firstName).not.toHaveAttribute("aria-invalid");
     expect(email).toHaveAttribute("aria-invalid", "true");
   });
-  it("shows guardian-verification guidance and keeps the form values", async () => {
-    registrationAction.mockResolvedValue({
-      status: "error",
-      code: "guardian-verification-required",
-    });
-    const { container } = render(
-      <Program trainingGroups={[group]} programPackages={[program]} />,
-    );
-    const name = screen.getByLabelText(/Child’s first name/);
-    fireEvent.change(name, { target: { value: "Test" } });
-    await submit(container.querySelector("form")!);
-    expect(name).toHaveValue("Test");
-    expect(container.querySelector("output")?.textContent).toMatch(
-      /email|verif/i,
-    );
-  });
+  it.each(["already-registered", "renewal-required"] as const)(
+    "offers renewal instead of payment for %s",
+    async (code) => {
+      registrationAction.mockResolvedValue({ status: "error", code });
+      const { container } = render(
+        <Program trainingGroups={[group]} programPackages={[program]} />,
+      );
+      await submit(container.querySelector("form")!);
+      expect(
+        screen.getByRole("link", { name: "Renew Training" }),
+      ).toHaveAttribute("href", "/register/renew");
+      expect(
+        screen.queryByRole("button", { name: "Continue to Secure Payment" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Pay by E-transfer" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/Credit or debit card continues to secure Stripe/),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Back to Training Options" }),
+      ).toBeInTheDocument();
+      expect(container.querySelector("output")).toBeInTheDocument();
+    },
+  );
   it("keeps full and manually closed groups visible with waitlist links instead of radio inputs", () => {
     const { container } = render(
       <Program
@@ -310,13 +320,19 @@ describe("contact and renewal request UX", () => {
     expect(name).toHaveValue("");
     expect(contactAction).toHaveBeenCalledTimes(1);
   });
-  it("shows enumeration-resistant renewal request success", async () => {
+  it("shows a privacy-safe renewal response with a new-registration path", async () => {
     renewalAction.mockResolvedValue({ status: "submitted" });
     const { container } = render(<Renewal />);
     await submit(container.querySelector("form")!);
-    expect(container.querySelector("output")?.textContent).toMatch(
-      /match|email|link/i,
+    expect(container.querySelector("output")?.textContent).toContain(
+      "We could not continue with those details. Please check the guardian email, player name, and date of birth and try again.",
     );
+    expect(
+      screen.getByRole("link", { name: "Register for Training" }),
+    ).toHaveAttribute("href", "/register");
+    expect(
+      screen.getByRole("button", { name: "Continue to Renewal" }),
+    ).toBeInTheDocument();
     expect(renewalAction).toHaveBeenCalledTimes(1);
   });
 });

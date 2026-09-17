@@ -431,12 +431,7 @@ function SuccessPage({
       >
         Return to Home
       </Link>
-      <a
-        href="#registration-summary"
-        className="inline-flex min-h-12 items-center justify-center rounded-[10px] bg-artis-gold px-6 py-3.5 text-[15px] font-semibold leading-5 text-artis-navy"
-      >
-        View Registration Details
-      </a>
+
       <SupportLink />
     </section>
   );

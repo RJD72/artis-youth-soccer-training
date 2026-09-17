@@ -15,7 +15,12 @@ import {
   weeklySchedules,
 } from "@/db/schema";
 
-import { databaseHarness, NOW, sqlQuery } from "./database-harness";
+import {
+  databaseHarness,
+  NOW,
+  sqlQuery,
+  sqlSelectedField,
+} from "./database-harness";
 
 const h = databaseHarness();
 const sync = jest.fn<(now: Date) => Promise<void>>();
@@ -46,7 +51,7 @@ afterEach(() => {
 });
 
 describe("registration options and capacity summaries", () => {
-  it("returns selectable groups separately while preserving full and manually closed groups for display", async () => {
+  it("counts each player once while preserving full and closed groups for display", async () => {
     h.read(
       trainingGroups,
       { id: 1, capacity: 10, registrationOpen: true, occupiedSpots: 8 },
@@ -113,6 +118,12 @@ describe("registration options and capacity summaries", () => {
       expect.arrayContaining(["active", "scheduled", "pending_payment"]),
     );
     expect(join.sql).toContain("reservation_expires_at");
+    expect(
+      sqlSelectedField(
+        h.queries(trainingGroups)[0],
+        "occupiedSpots",
+      ).sql,
+    ).toBe("count(distinct `registrations`.`player_id`)");
 
     expect(sqlQuery(h.queries(programPackages)[0]).params).toEqual([true]);
     expect(h.queries(programPackages)[0].order).toEqual([

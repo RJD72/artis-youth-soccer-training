@@ -7,33 +7,29 @@ import {
   it,
   jest,
 } from "@jest/globals";
-import {
-  guardianVerificationTokens,
-  renewalVerificationTokens,
-} from "@/db/schema";
 import { verifyRegistrationPaymentReference } from "@/lib/registration-payment-reference";
-import { databaseHarness, NOW, FUTURE, sqlQuery } from "./database-harness";
+import { databaseHarness, NOW } from "./database-harness";
 import { registrationForm } from "./registration-fixtures";
 const h = databaseHarness();
 const createRegistration =
   jest.fn<
     typeof import("@/lib/create-pending-registration").createPendingRegistration
   >();
-const createRenewal =
-  jest.fn<typeof import("@/lib/create-pending-renewal").createPendingRenewal>();
-const guardianRequest =
+const createRenewalForPlayer =
   jest.fn<
-    typeof import("@/lib/create-guardian-verification-request").createGuardianVerificationRequest
+    typeof import("@/lib/create-pending-renewal").createPendingRenewalForPlayer
   >();
-const renewalRequest =
+const findRenewalPlayer =
+  jest.fn<typeof import("@/lib/find-renewal-player").findRenewalPlayer>();
+const createRenewalPlayerReference =
   jest.fn<
-    typeof import("@/lib/create-renewal-verification-request").createRenewalVerificationRequest
+    typeof import("@/lib/renewal-player-reference").createRenewalPlayerReference
   >();
-const guardianEmail = jest.fn<(...args: unknown[]) => Promise<void>>();
-const renewalEmail = jest.fn<(...args: unknown[]) => Promise<void>>();
+const readRenewalPlayerReference =
+  jest.fn<
+    typeof import("@/lib/renewal-player-reference").readRenewalPlayerReference
+  >();
 const pendingEmail = jest.fn<(...args: unknown[]) => Promise<void>>();
-const getToken = jest.fn<() => Promise<string | null>>();
-const clearToken = jest.fn<() => Promise<void>>();
 const redirect = jest.fn((url: string): never => {
   throw Object.assign(new Error("NEXT_REDIRECT"), {
     digest: `NEXT_REDIRECT;replace;${url};307;`,
@@ -58,13 +54,10 @@ const created = {
   totalCents: 11300,
   currency: "CAD",
 };
-const verification = {
-  status: "created" as const,
-  guardianName: "Test Guardian",
-  guardianEmail: "guardian@example.com",
-  playerName: "Test Player",
-  token,
-  expiresAt: FUTURE,
+const renewalPlayerReference = {
+  player: "4",
+  expires: "1790000000",
+  signature: "a".repeat(64),
 };
 beforeAll(async () => {
   jest.doMock("@/db", () => ({ db: h.db }));
@@ -76,23 +69,12 @@ beforeAll(async () => {
     createPendingRegistration: createRegistration,
   }));
   jest.doMock("@/lib/create-pending-renewal", () => ({
-    createPendingRenewal: createRenewal,
+    createPendingRenewalForPlayer: createRenewalForPlayer,
   }));
-  jest.doMock("@/lib/create-guardian-verification-request", () => ({
-    createGuardianVerificationRequest: guardianRequest,
-  }));
-  jest.doMock("@/lib/create-renewal-verification-request", () => ({
-    createRenewalVerificationRequest: renewalRequest,
-  }));
-  jest.doMock("@/lib/guardian-verification-session", () => ({
-    getGuardianVerificationSessionToken: getToken,
-    clearGuardianVerificationSession: clearToken,
-  }));
-  jest.doMock("@/lib/send-guardian-verification-email", () => ({
-    sendGuardianVerificationEmail: guardianEmail,
-  }));
-  jest.doMock("@/lib/send-renewal-verification-email", () => ({
-    sendRenewalVerificationEmail: renewalEmail,
+  jest.doMock("@/lib/find-renewal-player", () => ({ findRenewalPlayer }));
+  jest.doMock("@/lib/renewal-player-reference", () => ({
+    createRenewalPlayerReference,
+    readRenewalPlayerReference,
   }));
   jest.doMock("@/lib/send-e-transfer-pending-notification-email", () => ({
     sendETransferPendingNotificationEmail: pendingEmail,
@@ -113,13 +95,10 @@ beforeEach(() => {
   });
   jest.spyOn(console, "error").mockImplementation(() => {});
   createRegistration.mockReset().mockResolvedValue(created);
-  createRenewal.mockReset().mockResolvedValue(created);
-  guardianRequest.mockReset().mockResolvedValue(verification);
-  renewalRequest.mockReset().mockResolvedValue(verification);
-  getToken.mockReset().mockResolvedValue(token);
-  clearToken.mockReset().mockResolvedValue();
-  guardianEmail.mockReset().mockResolvedValue();
-  renewalEmail.mockReset().mockResolvedValue();
+  createRenewalForPlayer.mockReset().mockResolvedValue(created);
+  findRenewalPlayer.mockReset().mockResolvedValue({ status: "found", playerId: 4 });
+  createRenewalPlayerReference.mockReset().mockReturnValue(renewalPlayerReference);
+  readRenewalPlayerReference.mockReset().mockReturnValue({ playerId: 4 });
   pendingEmail.mockReset().mockResolvedValue();
 });
 afterEach(() => {
@@ -183,7 +162,6 @@ describe("registration server action", () => {
         new Date(
           NOW.getTime() + (paymentMethod === "stripe" ? 3600000 : 86400000),
         ),
-        token,
       );
       const url = new URL(redirect.mock.calls[0][0], "https://academy.example");
       expect(url.pathname).toBe(
@@ -201,7 +179,6 @@ describe("registration server action", () => {
       ).toEqual({ registrationId: 1, paymentId: 2, method: paymentMethod });
       expect(url.toString()).not.toContain(token);
       expect(url.toString()).not.toContain("guardian");
-      expect(clearToken).toHaveBeenCalled();
       if (paymentMethod === "e_transfer") {
         expect(pendingEmail).not.toHaveBeenCalled();
         await deferred[0]();
@@ -209,39 +186,6 @@ describe("registration server action", () => {
       }
     },
   );
-  it.each([true, false])(
-    "requests guardian verification, including suppressed requests: %p",
-    async (suppressed) => {
-      createRegistration.mockResolvedValue({
-        status: "rejected",
-        code: "guardian-verification-required",
-      });
-      if (suppressed)
-        guardianRequest.mockResolvedValue({ status: "not-created" });
-      expect(await register({ status: "idle" }, registrationForm())).toEqual({
-        status: "error",
-        code: "guardian-verification-required",
-      });
-      expect(guardianRequest).toHaveBeenCalledWith("guardian@example.com");
-      expect(guardianEmail).toHaveBeenCalledTimes(suppressed ? 0 : 1);
-    },
-  );
-  it("removes only the hashed undelivered verification token after email failure", async () => {
-    createRegistration.mockResolvedValue({
-      status: "rejected",
-      code: "guardian-verification-required",
-    });
-    guardianEmail.mockRejectedValue(new Error("synthetic-private-error"));
-    expect(await register({ status: "idle" }, registrationForm())).toEqual({
-      status: "error",
-      code: "unable-to-submit",
-    });
-    expect(h.writes(guardianVerificationTokens)).toHaveLength(1);
-    expect(sqlQuery(h.writes()[0]).params).not.toContain(token);
-    expect(JSON.stringify(jest.mocked(console.error).mock.calls)).not.toContain(
-      "synthetic-private-error",
-    );
-  });
   it("returns a safe state after database failure", async () => {
     createRegistration.mockRejectedValue(
       new Error("guardian@example.com synthetic-private-error"),
@@ -254,8 +198,7 @@ describe("registration server action", () => {
       "guardian@example.com",
     );
   });
-  it("preserves successful registration despite cookie cleanup and deferred notification errors", async () => {
-    clearToken.mockRejectedValue(new Error("Synthetic cookie failure"));
+  it("preserves successful registration despite deferred notification errors", async () => {
     pendingEmail.mockRejectedValue(new Error("Synthetic email failure"));
     createRegistration.mockResolvedValue({
       ...created,
@@ -270,22 +213,23 @@ describe("registration server action", () => {
     await expect(deferred[0]()).resolves.toBeUndefined();
   });
 });
-function renewalForm(changes: Record<string, string> = {}) {
-  return registrationForm({ token, ...changes });
+function signedReferenceRenewalForm(changes: Record<string, string> = {}) {
+  return registrationForm({ ...renewalPlayerReference, ...changes });
 }
 describe("verified renewal checkout action", () => {
   it.each<Record<string, string>>([
-    { token: "bad" },
     { programPackageId: "01" },
     { paymentMethod: "cash" },
     { cancellationPolicyAccepted: "false" },
     { photoVideoConsent: "unexpected" },
   ])("rejects malformed fields %p", async (change) => {
-    expect(await renew({ status: "idle" }, renewalForm(change))).toEqual({
+    expect(
+      await renew({ status: "idle" }, signedReferenceRenewalForm(change)),
+    ).toEqual({
       status: "error",
       code: "invalid-form",
     });
-    expect(createRenewal).not.toHaveBeenCalled();
+    expect(createRenewalForPlayer).not.toHaveBeenCalled();
   });
   it.each([
     "invalid-token",
@@ -298,8 +242,10 @@ describe("verified renewal checkout action", () => {
     "legal-documents-unavailable",
     "group-full",
   ] as const)("maps %s rejection", async (code) => {
-    createRenewal.mockResolvedValue({ status: "rejected", code });
-    expect(await renew({ status: "idle" }, renewalForm())).toEqual({
+    createRenewalForPlayer.mockResolvedValue({ status: "rejected", code });
+    expect(
+      await renew({ status: "idle" }, signedReferenceRenewalForm()),
+    ).toEqual({
       status: "error",
       code,
     });
@@ -307,9 +253,12 @@ describe("verified renewal checkout action", () => {
   it.each(["stripe", "e_transfer"] as const)(
     "preserves %s redirect exceptions and signed identifiers",
     async (paymentMethod) => {
-      createRenewal.mockResolvedValue({ ...created, paymentMethod });
+      createRenewalForPlayer.mockResolvedValue({ ...created, paymentMethod });
       await expect(
-        renew({ status: "idle" }, renewalForm({ paymentMethod })),
+        renew(
+          { status: "idle" },
+          signedReferenceRenewalForm({ paymentMethod }),
+        ),
       ).rejects.toThrow("NEXT_REDIRECT");
       const url = new URL(redirect.mock.calls[0][0], "https://academy.example");
       expect(url.pathname).toBe(
@@ -319,12 +268,88 @@ describe("verified renewal checkout action", () => {
       expect(url.toString()).not.toContain(token);
     },
   );
+  it("uses a valid signed player reference for renewal checkout", async () => {
+    await expect(
+      renew({ status: "idle" }, signedReferenceRenewalForm()),
+    ).rejects.toThrow("NEXT_REDIRECT");
+    expect(readRenewalPlayerReference).toHaveBeenCalledWith(
+      "4",
+      "1790000000",
+      "a".repeat(64),
+    );
+    expect(createRenewalForPlayer).toHaveBeenCalledWith(
+      4,
+      expect.objectContaining({
+        programPackageId: expect.any(Number),
+        paymentMethod: expect.any(String),
+      }),
+    );
+    const url = new URL(redirect.mock.calls[0][0], "https://academy.example");
+    expect(url.pathname).toBe("/register/payment/stripe");
+    expect(url.searchParams.has("signature")).toBe(true);
+    expect(url.toString()).not.toContain(token);
+  });
+  it("rejects an invalid signed player reference", async () => {
+    readRenewalPlayerReference.mockReturnValue(null);
+    expect(
+      await renew({ status: "idle" }, signedReferenceRenewalForm()),
+    ).toEqual({ status: "error", code: "invalid-token" });
+    expect(createRenewalForPlayer).not.toHaveBeenCalled();
+    expect(redirect).not.toHaveBeenCalled();
+  });
+  it("returns a safe error when signed reference validation throws", async () => {
+    readRenewalPlayerReference.mockImplementation(() => {
+      throw new Error("synthetic-private-error");
+    });
+    expect(
+      await renew({ status: "idle" }, signedReferenceRenewalForm()),
+    ).toEqual({ status: "error", code: "unable-to-submit" });
+    expect(JSON.stringify(jest.mocked(console.error).mock.calls)).not.toContain(
+      "synthetic-private-error",
+    );
+  });
+  it.each([
+    {
+      name: "both token and signed-player-reference fields",
+      form: () => {
+        const form = signedReferenceRenewalForm();
+        form.set("token", token);
+        return form;
+      },
+    },
+    {
+      name: "an incomplete signed player reference",
+      form: () => {
+        const form = signedReferenceRenewalForm();
+        form.delete("signature");
+        return form;
+      },
+    },
+    {
+      name: "neither token nor a signed player reference",
+      form: () => registrationForm(),
+    },
+  ])("rejects $name", async ({ form }) => {
+    expect(await renew({ status: "idle" }, form())).toEqual({
+      status: "error",
+      code: "invalid-form",
+    });
+    expect(createRenewalForPlayer).not.toHaveBeenCalled();
+    expect(readRenewalPlayerReference).not.toHaveBeenCalled();
+  });
   it("blocks spam and safely maps service errors", async () => {
     expect(
-      await renew({ status: "idle" }, renewalForm({ website: "bot" })),
+      await renew(
+        { status: "idle" },
+        signedReferenceRenewalForm({ website: "bot" }),
+      ),
     ).toEqual({ status: "error", code: "unable-to-submit" });
-    createRenewal.mockRejectedValue(new Error("synthetic-private-error"));
-    expect(await renew({ status: "idle" }, renewalForm())).toEqual({
+    createRenewalForPlayer.mockRejectedValue(
+      new Error("synthetic-private-error"),
+    );
+    expect(
+      await renew({ status: "idle" }, signedReferenceRenewalForm()),
+    ).toEqual({
       status: "error",
       code: "unable-to-submit",
     });
@@ -343,30 +368,38 @@ function identityForm(changes: Record<string, string> = {}) {
   }).forEach(([key, value]) => form.set(key, value));
   return form;
 }
-describe("renewal verification request action", () => {
-  it.each(["created", "not-created"] as const)(
-    "returns the same enumeration-resistant response for %s",
-    async (status) => {
-      renewalRequest.mockResolvedValue(
-        status === "created" ? verification : { status },
-      );
-      expect(await requestRenewal({ status: "idle" }, identityForm())).toEqual({
-        status: "submitted",
-      });
-      expect(renewalRequest).toHaveBeenCalledWith({
-        guardianEmail: "guardian@example.com",
-        playerFullName: "Test Player",
-        dateOfBirth: "2015-06-15",
-      });
-      expect(renewalEmail).not.toHaveBeenCalled();
-      if (status === "created") {
-        await deferred[0]();
-        expect(renewalEmail).toHaveBeenCalledWith(
-          expect.objectContaining({ token, playerName: "Test Player" }),
-        );
-      }
-    },
-  );
+describe("renewal player lookup action", () => {
+  it("redirects a matched player directly to renewal options", async () => {
+    await expect(
+      requestRenewal({ status: "idle" }, identityForm()),
+    ).rejects.toThrow("NEXT_REDIRECT");
+    expect(findRenewalPlayer).toHaveBeenCalledWith({
+      guardianEmail: "guardian@example.com",
+      playerFullName: "Test Player",
+      dateOfBirth: "2015-06-15",
+    });
+    expect(createRenewalPlayerReference).toHaveBeenCalledWith(4);
+    const url = new URL(redirect.mock.calls[0][0], "https://academy.example");
+    expect(url.pathname).toBe("/register/renew/verify");
+    expect(Array.from(url.searchParams.entries())).toEqual([
+      ["player", "4"],
+      ["expires", "1790000000"],
+      ["signature", "a".repeat(64)],
+    ]);
+    const decodedUrl = decodeURIComponent(url.toString());
+    expect(decodedUrl).not.toContain("guardian@example.com");
+    expect(decodedUrl).not.toContain("Test Player");
+    expect(decodedUrl).not.toContain("2015-06-15");
+    expect(deferred).toEqual([]);
+  });
+  it("returns the generic submitted state when no player matches", async () => {
+    findRenewalPlayer.mockResolvedValue({ status: "not-found" });
+    expect(await requestRenewal({ status: "idle" }, identityForm())).toEqual({
+      status: "submitted",
+    });
+    expect(redirect).not.toHaveBeenCalled();
+    expect(createRenewalPlayerReference).not.toHaveBeenCalled();
+  });
   it.each<Record<string, string>>([
     { guardianEmail: "bad" },
     { dateOfBirth: "2026-02-30" },
@@ -376,7 +409,7 @@ describe("renewal verification request action", () => {
     expect(
       await requestRenewal({ status: "idle" }, identityForm(change)),
     ).toEqual({ status: "error", code: "invalid-form" });
-    expect(renewalRequest).not.toHaveBeenCalled();
+    expect(findRenewalPlayer).not.toHaveBeenCalled();
   });
   it("returns submitted for honeypot without querying", async () => {
     expect(
@@ -385,25 +418,24 @@ describe("renewal verification request action", () => {
         identityForm({ website: "bot" }),
       ),
     ).toEqual({ status: "submitted" });
-    expect(renewalRequest).not.toHaveBeenCalled();
+    expect(findRenewalPlayer).not.toHaveBeenCalled();
   });
-  it("handles deferred email failure and deletes only its hashed token", async () => {
-    renewalEmail.mockRejectedValue(new Error("synthetic-private-error"));
-    expect(await requestRenewal({ status: "idle" }, identityForm())).toEqual({
-      status: "submitted",
-    });
-    await deferred[0]();
-    expect(h.writes(renewalVerificationTokens)).toHaveLength(1);
-    expect(sqlQuery(h.writes()[0]).params).not.toContain(token);
-    expect(JSON.stringify(jest.mocked(console.error).mock.calls)).not.toContain(
-      "synthetic-private-error",
+  it("returns a safe error when renewal player lookup fails", async () => {
+    findRenewalPlayer.mockRejectedValue(
+      new Error("guardian@example.com synthetic-private-error"),
     );
-  });
-  it("maps database failure to safe error", async () => {
-    renewalRequest.mockRejectedValue(new Error("synthetic-private-error"));
     expect(await requestRenewal({ status: "idle" }, identityForm())).toEqual({
       status: "error",
       code: "unable-to-submit",
     });
+    expect(console.error).toHaveBeenCalledWith(
+      "Renewal player lookup failed.",
+      { errorType: "Error" },
+    );
+    const loggedOutput = JSON.stringify(jest.mocked(console.error).mock.calls);
+    expect(loggedOutput).not.toContain("guardian@example.com");
+    expect(loggedOutput).not.toContain("synthetic-private-error");
+    expect(redirect).not.toHaveBeenCalled();
+    expect(createRenewalPlayerReference).not.toHaveBeenCalled();
   });
 });

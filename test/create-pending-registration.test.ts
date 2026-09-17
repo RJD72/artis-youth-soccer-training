@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { guardians, guardianVerificationTokens, legalDocuments, legalAcceptances, payments, players, programPackages, registrations, trainingGroups } from "@/db/schema";
+import { guardians, legalDocuments, legalAcceptances, payments, players, programPackages, registrations, trainingGroups } from "@/db/schema";
 import { decryptRegistrationText } from "@/lib/registration-encryption";
-import { databaseHarness, NOW, FUTURE, sqlQuery } from "./database-harness";
+import { databaseHarness, NOW, FUTURE, sqlQuery, sqlSelectedField } from "./database-harness";
 import { group, program, guardian, legal, submission } from "./registration-fixtures";
 const h = databaseHarness();
 let create: typeof import("@/lib/create-pending-registration").createPendingRegistration;
@@ -33,20 +33,28 @@ describe("create pending registration", () => {
     h.read(trainingGroups, group); h.read(programPackages, program); h.read(legalDocuments, legal[0], legal[0], legal[2]);
     expect(await create(submission(), FUTURE)).toMatchObject({ code: "legal-documents-unavailable" }); expect(h.writes()).toEqual([]);
   });
-  it.each([2, 3])("rejects full capacity including pending reservations: %i", async occupiedSpots => {
+  it.each([2, 3])("rejects full unique-player capacity including pending reservations: %i", async occupiedSpots => {
     initial(); h.read(guardians); h.read(registrations, { occupiedSpots });
     expect(await create(submission(), FUTURE)).toMatchObject({ code: "group-full" });
     const query = sqlQuery(h.queries(registrations)[0]);
     expect(query.params).toEqual(expect.arrayContaining([1, "scheduled", "active", "pending_payment"]));
-    expect(query.sql).toContain("reservation_expires_at"); expect(h.writes()).toEqual([]);
+    expect(query.sql).toContain("reservation_expires_at");
+    expect(sqlSelectedField(h.queries(registrations)[0], "occupiedSpots").sql).toBe("count(distinct `registrations`.`player_id`)");
+    expect(h.writes()).toEqual([]);
   });
-  it("requires verification before reusing an existing email", async () => {
-    initial(); h.read(guardians, guardian);
-    expect(await create(submission(), FUTURE)).toMatchObject({ code: "guardian-verification-required" }); expect(h.writes()).toEqual([]);
+  it("reuses an existing guardian email without verification for a new child", async () => {
+    initial(); h.read(guardians, guardian); h.read(players); h.read(registrations, { occupiedSpots: 1 }); h.read(guardians, guardian); h.read(players);
+    h.results.push({ insertId: 0 }, { insertId: 4 }, { insertId: 5 }, { insertId: 6 }, { insertId: 7 });
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "created", registrationId: 5, paymentId: 7 });
+    expect(h.operations.find(op => op.kind === "upsert")?.values).toEqual({ set: { email: "guardian@example.com" } });
+    expect(h.writes(players)).toHaveLength(1);
+    expect(h.writes(players)[0]).toMatchObject({ kind: "insert", values: { guardianId: guardian.id, fullName: "Test Player", dateOfBirth: "2015-06-15" } });
+    expect(h.writes(registrations)[0].values).toMatchObject({ playerId: 4 });
+    expect(h.operations.at(-1)?.kind).toBe("commit");
   });
   it.each([false, true])("routes an existing player to duplicate/renewal handling (%p)", async active => {
-    initial(); h.read(guardians, guardian); h.read(guardianVerificationTokens, { id: 6 }); h.read(players, { id: 4 }); h.read(registrations, ...(active ? [{ id: 1 }] : []));
-    expect(await create(submission(), FUTURE, "a".repeat(43))).toMatchObject({ code: active ? "already-registered" : "renewal-required" }); expect(h.writes()).toEqual([]);
+    initial(); h.read(guardians, guardian); h.read(players, { id: 4 }); h.read(registrations, ...(active ? [{ id: 1 }] : []));
+    expect(await create(submission(), FUTURE)).toMatchObject({ code: active ? "already-registered" : "renewal-required" }); expect(h.writes()).toEqual([]);
   });
   it.each(["stripe", "e_transfer"] as const)("persists a complete %s registration with encrypted notes and trusted price", async paymentMethod => {
     newFamily(); h.results.push({ insertId: 3 }, { insertId: 4 }, { insertId: 5 }, { insertId: 6 }, { insertId: 7 });
@@ -60,17 +68,26 @@ describe("create pending registration", () => {
     expect(h.writes(payments)[0].values).toMatchObject({ registrationId: 5, paymentMethod, totalCents: 11300, status: "pending" });
     expect(h.queries(trainingGroups)[0].lock).toBe("update"); expect(h.operations.at(-1)?.kind).toBe("commit");
   });
-  it("consumes verified guardian token only after saving all records", async () => {
-    initial(); h.read(guardians, guardian); h.read(guardianVerificationTokens, { id: 6 }); h.read(players); h.read(registrations, { occupiedSpots: 0 }); h.read(guardians, guardian); h.read(players);
-    expect(await create(submission(), FUTURE, "a".repeat(43))).toMatchObject({ status: "created" });
-    expect(h.writes().at(-1)).toMatchObject({ table: guardianVerificationTokens, values: { consumedAt: NOW } });
-    const params = sqlQuery(h.queries(guardianVerificationTokens)[0]).params;
-    expect(params).not.toContain("a".repeat(43)); expect(params).toContain(3);
+  it("does not require a guardian verification token when reusing an existing email", async () => {
+    initial(); h.read(guardians, guardian); h.read(players); h.read(registrations, { occupiedSpots: 0 }); h.read(guardians, guardian); h.read(players);
+    h.results.push({ insertId: 0 }, { insertId: 4 }, { insertId: 5 }, { insertId: 6 }, { insertId: 7 });
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "created", registrationId: 5, paymentId: 7 });
+    expect(h.operations.filter(op => op.kind === "select").map(op => op.table)).toEqual([trainingGroups, programPackages, legalDocuments, guardians, players, registrations, guardians, players]);
+    expect(h.writes().map(op => ({ kind: op.kind, table: op.table }))).toEqual([guardians, players, registrations, legalAcceptances, payments].map(table => ({ kind: "insert", table })));
+    expect(h.reads).toEqual([]);
+    expect(h.operations.at(-1)?.kind).toBe("commit");
   });
   it("rechecks concurrent guardian details without overwriting them", async () => {
-    initial(); h.read(guardians); h.read(registrations, { occupiedSpots: 0 }); h.read(guardians, { ...guardian, fullName: "Different Guardian" });
-    expect(await create(submission(), FUTURE)).toMatchObject({ code: "guardian-verification-required" });
-    expect(h.operations.find(op => op.kind === "upsert")?.values).toEqual({ set: { email: "guardian@example.com" } }); expect(h.writes(players)).toEqual([]);
+    const concurrentGuardian = { ...guardian, id: 9, fullName: "Different Guardian", phone: "5195559999", secondaryPhone: "5195558888", preferredContactMethod: "phone" };
+    initial(); h.read(guardians); h.read(registrations, { occupiedSpots: 0 }); h.read(guardians, concurrentGuardian); h.read(players);
+    h.results.push({ insertId: 0 }, { insertId: 4 }, { insertId: 5 }, { insertId: 6 }, { insertId: 7 });
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "created", registrationId: 5, paymentId: 7 });
+    expect(h.operations.filter(op => op.kind === "upsert")).toEqual([{ kind: "upsert", table: guardians, values: { set: { email: "guardian@example.com" } } }]);
+    expect(h.writes(guardians)).toHaveLength(1);
+    expect(h.writes(guardians)[0].kind).toBe("insert");
+    expect(h.writes(players)).toHaveLength(1);
+    expect(h.writes(players)[0]).toMatchObject({ kind: "insert", values: { guardianId: concurrentGuardian.id, fullName: "Test Player" } });
+    expect(h.operations.at(-1)?.kind).toBe("commit");
   });
   it.each([1, 2, 4])("rejects invalid insert ID at write %i and bubbles rollback", async index => {
     newFamily(); h.results.push(...Array.from({ length: index }, () => ({ insertId: 1 })), { insertId: 0 });

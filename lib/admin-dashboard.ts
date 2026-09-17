@@ -3,7 +3,7 @@
 
 import "server-only";
 
-import { and, count, eq, gt, inArray, or } from "drizzle-orm";
+import { and, count, countDistinct, eq, gt, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import { registrations, trainingGroups, waitlistEntries } from "@/db/schema";
@@ -22,7 +22,7 @@ export async function getTrainingGroupCapacitySummaries() {
       maximumAge: trainingGroups.maximumAge,
       capacity: trainingGroups.capacity,
       registrationOpen: trainingGroups.registrationOpen,
-      occupiedSpots: count(registrations.id),
+      occupiedSpots: countDistinct(registrations.playerId),
     })
     .from(trainingGroups)
     .leftJoin(

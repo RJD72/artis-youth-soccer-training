@@ -4,9 +4,10 @@ import Link from "next/link";
 import SiteFooter from "../../../components/site-footer";
 import SiteHeader from "../../../components/site-header";
 import {
-  getRenewalOptions,
+  getRenewalOptionsForPlayer,
   type RenewalOptionsResult,
 } from "@/lib/renewal-options";
+import { readRenewalPlayerReference } from "@/lib/renewal-player-reference";
 
 import RenewalCheckoutForm from "./renewal-checkout-form";
 
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Complete Training Renewal",
   description:
-    "Review and complete a verified ARTIS Soccer Academy training renewal.",
+    "Review and complete an ARTIS Soccer Academy training renewal.",
   robots: {
     index: false,
     follow: false,
@@ -24,7 +25,9 @@ export const metadata: Metadata = {
 
 type RenewalVerificationPageProps = {
   searchParams: Promise<{
-    token?: string | string[];
+    player?: string | string[];
+    expires?: string | string[];
+    signature?: string | string[];
   }>;
 };
 
@@ -85,14 +88,14 @@ function getBlockedPanelContent(result: BlockedRenewal): StatusPanelContent {
         eyebrow: "Payment already pending",
         title: `A renewal payment is already open for ${result.playerName}.`,
         description:
-          "Only one payment reservation may be active at a time. Return to the original payment page to finish it, or wait for that reservation to expire before requesting another renewal link.",
+          "Only one payment reservation may be active at a time. Return to the original payment page to finish it, or wait for that reservation to expire before starting another renewal.",
         ...(result.reservationExpiresAt
           ? {
               detail: `The current payment reservation expires ${formatTorontoDateTime(result.reservationExpiresAt)}.`,
             }
           : {}),
         primaryHref: "/register/renew",
-        primaryLabel: "Request Another Link Later",
+        primaryLabel: "Return to Renewal Later",
         secondaryHref: "/contact",
         secondaryLabel: "Contact ARTIS",
       };
@@ -119,7 +122,7 @@ function getBlockedPanelContent(result: BlockedRenewal): StatusPanelContent {
         eyebrow: "Renewal unavailable",
         title: "We could not find a completed registration to renew.",
         description:
-          "The secure link matched a player, but the system could not confirm the paid registration history needed to safely calculate the next training period.",
+          "We found the player, but the system could not confirm the paid registration history needed to calculate the next training period.",
         primaryHref: "/contact",
         primaryLabel: "Contact ARTIS",
         secondaryHref: "/register",
@@ -133,7 +136,7 @@ function getBlockedPanelContent(result: BlockedRenewal): StatusPanelContent {
         description:
           "No renewal package is currently available for this player’s age, group, and training dates. Please contact ARTIS if you need help.",
         primaryHref: "/register/renew",
-        primaryLabel: "Request a New Link Later",
+        primaryLabel: "Return to Renewal Later",
         secondaryHref: "/contact",
         secondaryLabel: "Contact ARTIS",
       };
@@ -180,16 +183,16 @@ function StatusPanel({ content }: { content: StatusPanelContent }) {
   );
 }
 
-function InvalidRenewalLink() {
+function InvalidRenewalReference() {
   return (
     <StatusPanel
       content={{
-        eyebrow: "Renewal link unavailable",
-        title: "This secure renewal link is no longer valid.",
+        eyebrow: "Renewal unavailable",
+        title: "This renewal session is no longer valid.",
         description:
-          "The link may have expired, already been used, or been copied incorrectly. Renewal links are single-use and expire after 30 minutes to protect the player’s information.",
+          "Please return to the renewal page and enter the player information again to continue.",
         primaryHref: "/register/renew",
-        primaryLabel: "Request a New Renewal Link",
+        primaryLabel: "Return to Renewal",
         secondaryHref: "/",
         secondaryLabel: "Return to Home",
       }}
@@ -201,8 +204,16 @@ export default async function RenewalVerificationPage({
   searchParams,
 }: RenewalVerificationPageProps) {
   const parameters = await searchParams;
-  const token = getSingleSearchParameter(parameters.token);
-  const result = await getRenewalOptions(token);
+  const player = getSingleSearchParameter(parameters.player);
+  const expires = getSingleSearchParameter(parameters.expires);
+  const signature = getSingleSearchParameter(parameters.signature);
+  const reference =
+    player !== null && expires !== null && signature !== null
+      ? readRenewalPlayerReference(player, expires, signature)
+      : null;
+  const result: RenewalOptionsResult = reference
+    ? await getRenewalOptionsForPlayer(reference.playerId)
+    : { status: "invalid-token" };
 
   return (
     <div className="flex min-h-screen flex-col bg-artis-off-white text-artis-navy">
@@ -213,15 +224,17 @@ export default async function RenewalVerificationPage({
           aria-label="Complete training renewal"
           className="mx-auto w-full max-w-[1280px] px-5 py-12 sm:px-8 xl:px-0 xl:py-20"
         >
-          {result.status === "invalid-token" ? <InvalidRenewalLink /> : null}
+          {result.status === "invalid-token" ? <InvalidRenewalReference /> : null}
 
           {result.status === "blocked" ? (
             <StatusPanel content={getBlockedPanelContent(result)} />
           ) : null}
 
-          {result.status === "ready" && token ? (
+          {result.status === "ready" && player !== null && expires !== null && signature !== null ? (
             <RenewalCheckoutForm
-              token={token}
+              player={player}
+              expires={expires}
+              signature={signature}
               playerName={result.playerName}
               paidThrough={result.paidThrough}
               renewsOn={result.renewsOn}

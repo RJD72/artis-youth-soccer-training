@@ -80,5 +80,18 @@ export function sqlQuery(operation: Operation) {
   if (!operation.where) throw new Error("Expected a SQL predicate");
   return new MySqlDialect().sqlToQuery(operation.where);
 }
+
+export function sqlSelectedField(operation: Operation, fieldName: string) {
+  const field = (
+    operation.fields as Record<string, unknown> | undefined
+  )?.[fieldName];
+
+  if (!(field instanceof SQL)) {
+    throw new Error(`Expected SQL selected field: ${fieldName}`);
+  }
+
+  return new MySqlDialect().sqlToQuery(field);
+}
+
 export const NOW = new Date("2026-09-07T12:00:00.000Z");
 export const FUTURE = new Date("2026-09-08T12:00:00.000Z");

@@ -8,10 +8,10 @@ import {
   jest,
 } from "@jest/globals";
 import {
-  renewalVerificationTokens,
   legalDocuments,
   legalAcceptances,
   payments,
+  players,
   programPackages,
   registrations,
   trainingGroups,
@@ -20,10 +20,8 @@ import { databaseHarness, NOW, sqlQuery } from "./database-harness";
 import { group, program, legal } from "./registration-fixtures";
 const h = databaseHarness();
 const sync = jest.fn<() => Promise<void>>();
-let create: typeof import("@/lib/create-pending-renewal").createPendingRenewal;
-const token = "a".repeat(43);
+let create: typeof import("@/lib/create-pending-renewal").createPendingRenewalForPlayer;
 const identity = {
-  tokenId: 1,
   playerId: 4,
   playerName: "Test Player",
   dateOfBirth: "2015-06-15",
@@ -46,7 +44,7 @@ beforeAll(async () => {
   jest.doMock("@/lib/synchronize-registration-statuses", () => ({
     synchronizeRegistrationStatuses: sync,
   }));
-  ({ createPendingRenewal: create } =
+  ({ createPendingRenewalForPlayer: create } =
     await import("@/lib/create-pending-renewal"));
 });
 beforeEach(() => {
@@ -59,7 +57,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 function initial(paidThrough = "2026-09-30") {
-  h.read(renewalVerificationTokens, identity);
+  h.read(players, identity);
   h.read(registrations);
   h.read(registrations);
   h.read(registrations, { trainingGroupId: 1, guardianRelationship: "Parent" });
@@ -70,10 +68,10 @@ function initial(paidThrough = "2026-09-30") {
   h.read(registrations, { occupiedSpots: 1 });
 }
 describe("pending renewal", () => {
-  it.each([null, "", "bad", "a".repeat(44)])(
-    "rejects malformed token without database calls",
-    async (value) => {
-      expect(await create(value, submission)).toEqual({
+  it.each([0, -1, Number.NaN, 4_294_967_296])(
+    "rejects invalid player ID %p without database calls",
+    async (playerId) => {
+      expect(await create(playerId, submission)).toEqual({
         status: "rejected",
         code: "invalid-token",
       });
@@ -88,21 +86,18 @@ describe("pending renewal", () => {
     { marketingConsent: "yes" },
   ])("rejects invalid submission %p", async (change) => {
     expect(
-      await create(token, { ...submission, ...change } as typeof submission),
+      await create(4, { ...submission, ...change } as typeof submission),
     ).toEqual({ status: "rejected", code: "invalid-submission" });
     expect(h.db.transaction).not.toHaveBeenCalled();
   });
-  it("rejects unavailable, expired or consumed verification via locked token predicates", async () => {
-    h.read(renewalVerificationTokens);
-    expect(await create(token, submission)).toEqual({
+  it("rejects a missing player through the locked identity lookup", async () => {
+    h.read(players);
+    expect(await create(4, submission)).toEqual({
       status: "rejected",
       code: "invalid-token",
     });
-    const query = sqlQuery(h.queries(renewalVerificationTokens)[0]);
-    expect(query.sql).toContain("consumed_at");
-    expect(query.sql).toContain("expires_at");
-    expect(query.params).not.toContain(token);
-    expect(h.queries(renewalVerificationTokens)[0].lock).toBe("update");
+    expect(sqlQuery(h.queries(players)[0]).params).toContain(4);
+    expect(h.queries(players)[0].lock).toBe("update");
   });
   it.each([
     [1, "payment-pending"],
@@ -112,7 +107,7 @@ describe("pending renewal", () => {
     async (index, code) => {
       initial();
       h.reads[index].rows = [{ id: 8 }];
-      expect(await create(token, submission)).toEqual({
+      expect(await create(4, submission)).toEqual({
         status: "rejected",
         code,
       });
@@ -129,7 +124,7 @@ describe("pending renewal", () => {
     async (index, code) => {
       initial();
       h.reads[index].rows = [];
-      expect(await create(token, submission)).toEqual({
+      expect(await create(4, submission)).toEqual({
         status: "rejected",
         code,
       });
@@ -139,14 +134,14 @@ describe("pending renewal", () => {
   it("rejects age mismatch at renewal date", async () => {
     initial();
     h.reads[0].rows = [{ ...identity, dateOfBirth: "2013-01-01" }];
-    expect(await create(token, submission)).toMatchObject({
+    expect(await create(4, submission)).toMatchObject({
       code: "age-mismatch",
     });
   });
   it("rejects full group and counts other players with overlapping reserved periods", async () => {
     initial();
     h.reads[8].rows = [{ occupiedSpots: 2 }];
-    expect(await create(token, submission)).toMatchObject({
+    expect(await create(4, submission)).toMatchObject({
       code: "group-full",
     });
     const query = sqlQuery(h.queries(registrations).at(-1)!);
@@ -164,11 +159,11 @@ describe("pending renewal", () => {
     expect(h.writes()).toEqual([]);
   });
   it.each(["stripe", "e_transfer"] as const)(
-    "saves trusted %s amounts, relationships, dates and token consumption",
+    "saves trusted %s amounts, relationships and dates",
     async (paymentMethod) => {
       initial();
       h.results.push({ insertId: 5 }, { insertId: 6 }, { insertId: 7 });
-      expect(await create(token, { ...submission, paymentMethod })).toEqual({
+      expect(await create(4, { ...submission, paymentMethod })).toEqual({
         status: "created",
         registrationId: 5,
         paymentId: 7,
@@ -199,17 +194,13 @@ describe("pending renewal", () => {
           NOW.getTime() + (paymentMethod === "stripe" ? 3600000 : 86400000),
         ),
       });
-      expect(h.writes().at(-1)).toMatchObject({
-        table: renewalVerificationTokens,
-        values: { consumedAt: NOW },
-      });
       expect(h.queries(trainingGroups)[0].lock).toBe("update");
     },
   );
   it("allows a returning player when new-family registration is closed", async () => {
     initial();
     h.reads[4].rows = [{ ...group, registrationOpen: false }];
-    expect(await create(token, submission)).toMatchObject({
+    expect(await create(4, submission)).toMatchObject({
       status: "created",
     });
   });
@@ -221,7 +212,7 @@ describe("pending renewal", () => {
     "preserves admin-adjusted paid-through date %s",
     async (paidThrough, startsOn, endsOn) => {
       initial(paidThrough);
-      expect(await create(token, submission)).toMatchObject({
+      expect(await create(4, submission)).toMatchObject({
         status: "created",
         startsOn,
         endsOn,
@@ -230,13 +221,13 @@ describe("pending renewal", () => {
   );
   it("rejects corrupt stored calendar dates", async () => {
     initial("2026-02-30");
-    await expect(create(token, submission)).rejects.toThrow(
+    await expect(create(4, submission)).rejects.toThrow(
       "stored registration date",
     );
     expect(h.committed).toEqual([]);
   });
-  it.each([0, 2, 3])(
-    "rolls back failed insert/token write %i",
+  it.each([0, 2])(
+    "rolls back failed insert %i",
     async (index) => {
       initial();
       h.results.push(
@@ -246,14 +237,14 @@ describe("pending renewal", () => {
         })),
         { insertId: 0, affectedRows: 0 },
       );
-      await expect(create(token, submission)).rejects.toThrow(/could not be/);
+      await expect(create(4, submission)).rejects.toThrow(/could not be/);
       expect(h.committed).toEqual([]);
       expect(h.operations.at(-1)?.kind).toBe("rollback");
     },
   );
   it("propagates synchronization failure before the transaction", async () => {
     sync.mockRejectedValue(new Error("Synthetic synchronization failure"));
-    await expect(create(token, submission)).rejects.toThrow(
+    await expect(create(4, submission)).rejects.toThrow(
       "Synthetic synchronization failure",
     );
     expect(h.db.transaction).not.toHaveBeenCalled();

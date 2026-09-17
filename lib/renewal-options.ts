@@ -1,6 +1,6 @@
 // This server-only reader prepares the safe information shown after a guardian
-// opens a valid renewal link. It does not consume the token or reserve a place;
-// the final renewal transaction must re-read and lock every important record.
+// matches a player. It does not reserve a place; the final renewal transaction
+// must re-read and lock every important record.
 
 import "server-only";
 
@@ -16,7 +16,6 @@ import {
 } from "@/db/schema";
 import { calculateAgeOnDate, calculateRegistrationPeriod } from "@/lib/registration-calculations";
 import { synchronizeRegistrationStatuses } from "@/lib/synchronize-registration-statuses";
-import { verifyRenewalVerificationToken } from "@/lib/verify-renewal-verification-token";
 
 type RenewalProgramPackage = {
   id: number;
@@ -47,7 +46,6 @@ export type RenewalOptionsResult =
       status: "ready";
       playerId: number;
       playerName: string;
-      tokenExpiresAt: Date;
       paidThrough: string | null;
       renewsOn: string;
       trainingGroup: {
@@ -57,6 +55,24 @@ export type RenewalOptionsResult =
       };
       programPackages: RenewalProgramPackage[];
     };
+
+const maximumUnsignedInteger = 4_294_967_295;
+
+function isValidPlayerId(value: number): boolean {
+  return (
+    Number.isSafeInteger(value) && value > 0 && value <= maximumUnsignedInteger
+  );
+}
+
+async function findPlayerById(playerId: number) {
+  const [player] = await db
+    .select({ id: players.id, fullName: players.fullName })
+    .from(players)
+    .where(eq(players.id, playerId))
+    .limit(1);
+
+  return player ?? null;
+}
 
 function getTorontoCalendarDate(value: Date): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -223,16 +239,33 @@ async function getActiveProgramPackages(): Promise<RenewalProgramPackage[]> {
     .orderBy(programPackages.displayOrder);
 }
 
-export async function getRenewalOptions(
-  token: unknown,
+export async function getRenewalOptionsForPlayer(
+  playerId: number,
   now: Date = new Date(),
 ): Promise<RenewalOptionsResult> {
-  const verification = await verifyRenewalVerificationToken(token, now);
-
-  if (verification.status === "invalid") {
+  if (!isValidPlayerId(playerId)) {
     return { status: "invalid-token" };
   }
 
+  const player = await findPlayerById(playerId);
+
+  if (!player) {
+    return { status: "invalid-token" };
+  }
+
+  return getSharedRenewalOptions({
+    playerId: player.id,
+    playerName: player.fullName,
+  }, now);
+}
+
+async function getSharedRenewalOptions(
+  player: {
+    playerId: number;
+    playerName: string;
+  },
+  now: Date,
+): Promise<RenewalOptionsResult> {
   await synchronizeRegistrationStatuses(now);
 
   const today = getTorontoCalendarDate(now);
@@ -243,10 +276,10 @@ export async function getRenewalOptions(
     paidThrough,
     packages,
   ] = await Promise.all([
-    findPendingPayment(verification.playerId, now),
-    findUpcomingRegistration(verification.playerId, today),
-    findLatestRegistration(verification.playerId),
-    findLatestPaidThrough(verification.playerId),
+    findPendingPayment(player.playerId, now),
+    findUpcomingRegistration(player.playerId, today),
+    findLatestRegistration(player.playerId),
+    findLatestPaidThrough(player.playerId),
     getActiveProgramPackages(),
   ]);
 
@@ -254,7 +287,7 @@ export async function getRenewalOptions(
     return {
       status: "blocked",
       reason: "payment-pending",
-      playerName: verification.playerName,
+      playerName: player.playerName,
       reservationExpiresAt,
     };
   }
@@ -263,7 +296,7 @@ export async function getRenewalOptions(
     return {
       status: "blocked",
       reason: "upcoming-registration",
-      playerName: verification.playerName,
+      playerName: player.playerName,
       paidThrough: upcomingRegistration.endsOn,
     };
   }
@@ -272,7 +305,7 @@ export async function getRenewalOptions(
     return {
       status: "blocked",
       reason: "registration-history-unavailable",
-      playerName: verification.playerName,
+      playerName: player.playerName,
     };
   }
 
@@ -292,7 +325,7 @@ export async function getRenewalOptions(
           .from(registrations)
           .where(and(
             eq(registrations.trainingGroupId, latestRegistration.trainingGroupId),
-            ne(registrations.playerId, verification.playerId),
+            ne(registrations.playerId, player.playerId),
             isNotNull(registrations.startsOn),
             isNotNull(registrations.endsOn),
             lte(registrations.startsOn, endsOn),
@@ -310,16 +343,15 @@ export async function getRenewalOptions(
     return {
       status: "blocked",
       reason: "packages-unavailable",
-      playerName: verification.playerName,
+      playerName: player.playerName,
       ...(paidThrough ? { paidThrough } : {}),
     };
   }
 
   return {
     status: "ready",
-    playerId: verification.playerId,
-    playerName: verification.playerName,
-    tokenExpiresAt: verification.expiresAt,
+    playerId: player.playerId,
+    playerName: player.playerName,
     paidThrough,
     renewsOn,
     trainingGroup: {

@@ -1,5 +1,5 @@
 // This server-only service creates a pending renewal for an existing player.
-// The token, package, dates, price, legal documents, duplicate checks and
+// The player, package, dates, price, legal documents, duplicate checks and
 // capacity are all verified again while the relevant MySQL rows are locked.
 
 import "server-only";
@@ -13,7 +13,6 @@ import {
   gte,
   inArray,
   isNotNull,
-  isNull,
   lte,
   ne,
   or,
@@ -28,7 +27,6 @@ import {
   players,
   programPackages,
   registrations,
-  renewalVerificationTokens,
   trainingGroups,
 } from "@/db/schema";
 import {
@@ -38,7 +36,6 @@ import {
   type RegistrationPricing,
 } from "@/lib/registration-calculations";
 import { createManualPaymentReference } from "@/lib/registration-payment-reference";
-import { getRenewalVerificationTokenHash } from "@/lib/renewal-verification-token";
 import { synchronizeRegistrationStatuses } from "@/lib/synchronize-registration-statuses";
 
 const requiredLegalDocumentTypes = [
@@ -100,7 +97,6 @@ export type PendingRenewalCreationOutcome =
     };
 
 type LockedRenewalIdentity = {
-  tokenId: number;
   playerId: number;
   playerName: string;
   dateOfBirth: string;
@@ -150,7 +146,6 @@ type SavedPayment = {
 };
 
 type RenewalTransactionContext = {
-  tokenHash: string;
   submission: PendingRenewalSubmission;
   now: Date;
   today: string;
@@ -278,30 +273,21 @@ function calculateRenewalPeriod(
   };
 }
 
-async function lockRenewalIdentity(
+async function lockPlayerIdentity(
   transaction: DatabaseTransaction,
-  tokenHash: string,
-  now: Date,
+  playerId: number,
 ): Promise<LockedRenewalIdentity | null> {
   const [identity] = await transaction
     .select({
-      tokenId: renewalVerificationTokens.id,
       playerId: players.id,
       playerName: players.fullName,
       dateOfBirth: players.dateOfBirth,
       guardianId: guardians.id,
       guardianName: guardians.fullName,
     })
-    .from(renewalVerificationTokens)
-    .innerJoin(players, eq(renewalVerificationTokens.playerId, players.id))
+    .from(players)
     .innerJoin(guardians, eq(players.guardianId, guardians.id))
-    .where(
-      and(
-        eq(renewalVerificationTokens.tokenHash, tokenHash),
-        isNull(renewalVerificationTokens.consumedAt),
-        gt(renewalVerificationTokens.expiresAt, now),
-      ),
-    )
+    .where(eq(players.id, playerId))
     .limit(1)
     .for("update");
 
@@ -609,41 +595,11 @@ async function savePendingPayment(
   return { paymentId, manualPaymentReference };
 }
 
-async function consumeToken(
+async function executeRenewalForIdentity(
   transaction: DatabaseTransaction,
-  tokenId: number,
-  now: Date,
-): Promise<void> {
-  const [updateResult] = await transaction
-    .update(renewalVerificationTokens)
-    .set({ consumedAt: now })
-    .where(
-      and(
-        eq(renewalVerificationTokens.id, tokenId),
-        isNull(renewalVerificationTokens.consumedAt),
-        gt(renewalVerificationTokens.expiresAt, now),
-      ),
-    );
-
-  if (updateResult.affectedRows !== 1) {
-    throw new Error("The renewal token could not be consumed.");
-  }
-}
-
-async function executeRenewalTransaction(
-  transaction: DatabaseTransaction,
+  identity: LockedRenewalIdentity,
   context: RenewalTransactionContext,
 ): Promise<PendingRenewalCreationOutcome> {
-  const identity = await lockRenewalIdentity(
-    transaction,
-    context.tokenHash,
-    context.now,
-  );
-
-  if (!identity) {
-    return rejectRenewal("invalid-token");
-  }
-
   if (
     await findActivePendingPayment(transaction, identity.playerId, context.now)
   ) {
@@ -747,8 +703,6 @@ async function executeRenewalTransaction(
     context.submission.paymentMethod,
   );
 
-  await consumeToken(transaction, identity.tokenId, context.now);
-
   return {
     status: "created",
     registrationId,
@@ -765,13 +719,11 @@ async function executeRenewalTransaction(
   };
 }
 
-export async function createPendingRenewal(
-  token: unknown,
+export async function createPendingRenewalForPlayer(
+  playerId: number,
   submission: PendingRenewalSubmission,
 ): Promise<PendingRenewalCreationOutcome> {
-  const tokenHash = getRenewalVerificationTokenHash(token);
-
-  if (tokenHash === null) {
+  if (!isValidDatabaseId(playerId)) {
     return rejectRenewal("invalid-token");
   }
 
@@ -784,7 +736,6 @@ export async function createPendingRenewal(
   await synchronizeRegistrationStatuses(now);
 
   const context: RenewalTransactionContext = {
-    tokenHash,
     submission,
     now,
     today: getTorontoCalendarDate(now),
@@ -793,7 +744,13 @@ export async function createPendingRenewal(
     ),
   };
 
-  return db.transaction((transaction) =>
-    executeRenewalTransaction(transaction, context),
-  );
+  return db.transaction(async (transaction) => {
+    const identity = await lockPlayerIdentity(transaction, playerId);
+
+    if (!identity) {
+      return rejectRenewal("invalid-token");
+    }
+
+    return executeRenewalForIdentity(transaction, identity, context);
+  });
 }

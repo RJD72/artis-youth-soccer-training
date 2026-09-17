@@ -20,7 +20,9 @@ type RenewalProgramPackage = {
 };
 
 type RenewalCheckoutFormProps = {
-  token: string;
+  player: string;
+  expires: string;
+  signature: string;
   playerName: string;
   paidThrough: string | null;
   renewsOn: string;
@@ -67,7 +69,7 @@ const renewalErrorMessages: Record<RenewalCheckoutActionErrorCode, string> = {
   "unable-to-submit":
     "We could not create the renewal right now. Please wait a moment and try again.",
   "invalid-token":
-    "This renewal link has expired or has already been used. Please request a new link.",
+    "This renewal session is no longer valid. Please return to the renewal page and enter the player information again.",
   "invalid-submission":
     "The renewal information could not be validated. Please review the form and try again.",
   "invalid-selection":
@@ -327,14 +329,8 @@ function OrderSummary({
   );
 }
 
-export default function RenewalCheckoutForm({
-  token,
-  playerName,
-  paidThrough,
-  renewsOn,
-  trainingGroup,
-  programPackages,
-}: RenewalCheckoutFormProps) {
+export default function RenewalCheckoutForm(props: RenewalCheckoutFormProps) {
+  const { playerName, paidThrough, renewsOn, trainingGroup, programPackages } = props;
   const [selectedPackageId, setSelectedPackageId] = useState(
     programPackages[0]?.id ?? 0,
   );
@@ -370,7 +366,9 @@ export default function RenewalCheckoutForm({
       }
       className="grid items-start gap-7 xl:grid-cols-[minmax(0,720px)_480px] xl:gap-16"
     >
-      <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="player" value={props.player} />
+      <input type="hidden" name="expires" value={props.expires} />
+      <input type="hidden" name="signature" value={props.signature} />
 
       <div
         aria-hidden="true"
@@ -570,7 +568,7 @@ export default function RenewalCheckoutForm({
             href="/register/renew"
             className="mt-5 inline-flex text-sm font-semibold leading-5 underline decoration-artis-border underline-offset-4 hover:decoration-artis-navy"
           >
-            Request a Different Renewal Link
+            Return to Renewal
           </Link>
         </section>
       </section>

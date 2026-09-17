@@ -9,7 +9,7 @@ import {
 
 import { registrations, trainingGroups, waitlistEntries } from "@/db/schema";
 
-import { databaseHarness } from "./database-harness";
+import { databaseHarness, sqlSelectedField } from "./database-harness";
 
 const h = databaseHarness();
 
@@ -63,6 +63,28 @@ function createWaitlistForm() {
 }
 
 describe("public waitlist action", () => {
+  it("treats multiple qualifying rows for one player as one occupied spot", async () => {
+    h.read(trainingGroups, {
+      id: 1,
+      slug: "ages-8-10",
+      capacity: 2,
+      registrationOpen: true,
+    });
+    h.read(registrations, { occupiedSpots: 1 });
+
+    await expect(joinWaitlist(createWaitlistForm())).rejects.toThrow(
+      "redirect:/register/waitlist?error=space-available&group=ages-8-10",
+    );
+
+    expect(
+      sqlSelectedField(
+        h.queries(registrations)[0],
+        "occupiedSpots",
+      ).sql,
+    ).toBe("count(distinct `registrations`.`player_id`)");
+    expect(h.writes(waitlistEntries)).toEqual([]);
+  });
+
   it("allows the waitlist when registration is closed even if capacity remains", async () => {
     h.read(trainingGroups, {
       id: 1,

@@ -6,7 +6,7 @@
 
 import "server-only";
 
-import { and, count, eq, gt, inArray, or } from "drizzle-orm";
+import { and, countDistinct, eq, gt, inArray, or } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -32,7 +32,7 @@ export async function getRegistrationOptions() {
         maximumAge: trainingGroups.maximumAge,
         capacity: trainingGroups.capacity,
         registrationOpen: trainingGroups.registrationOpen,
-        occupiedSpots: count(registrations.id),
+        occupiedSpots: countDistinct(registrations.playerId),
       })
       .from(trainingGroups)
       .leftJoin(
