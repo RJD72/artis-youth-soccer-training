@@ -31,6 +31,8 @@ function registrationDisplayRow(overrides: Record<string, unknown> = {}) {
     waitlistedAt: null,
     packagePriceCents: 15_000,
     currency: "cad",
+    marketingConsent: true,
+    photoVideoConsent: false,
     paymentId: null,
     paymentStatus: null,
     paymentMethod: null,
@@ -161,18 +163,24 @@ it("returns player and guardian display details while keeping sensitive fields o
     id: 1,
     status: "pending_payment",
     reservationExpiresAt: NOW,
+    marketingConsent: true,
+    photoVideoConsent: false,
     playerPreferredName: "Johnny",
     playerJerseySize: "extra_large",
     guardianPreferredContactMethod: "text",
   });
   const result = await registrationQuery();
   expect(result.registrations[0].status).toBe("expired");
+  expect(result.registrations[0].marketingConsent).toBe(true);
+  expect(result.registrations[0].photoVideoConsent).toBe(false);
   expect(result.registrations[0].playerPreferredName).toBe("Johnny");
   expect(result.registrations[0].playerJerseySize).toBe("extra_large");
   expect(result.registrations[0].guardianPreferredContactMethod).toBe("text");
   const fields = h.queries(registrations)[1].fields as object;
   expect(Object.keys(fields)).toEqual(
     expect.arrayContaining([
+      "marketingConsent",
+      "photoVideoConsent",
       "playerPreferredName",
       "playerJerseySize",
       "guardianPreferredContactMethod",
@@ -195,6 +203,8 @@ it("displays player and guardian details in desktop and mobile registration view
   });
   const html = renderToStaticMarkup(page);
 
+  expect(html.match(/Updates &amp; news: Yes/g)).toHaveLength(2);
+  expect(html.match(/Photo\/video permission: No/g)).toHaveLength(2);
   expect(html.match(/Preferred name: Johnny/g)).toHaveLength(2);
   expect(html.match(/Jersey size: Extra Large/g)).toHaveLength(2);
   expect(html.match(/Preferred contact: Text message/g)).toHaveLength(2);

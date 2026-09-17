@@ -142,6 +142,10 @@ function formatPaymentMethod(paymentMethod: string): string {
   return paymentMethod === "e_transfer" ? "E-transfer" : "Stripe";
 }
 
+function formatConsent(consent: boolean): string {
+  return consent ? "Yes" : "No";
+}
+
 function formatJerseySize(jerseySize: string | null): string {
   const normalizedSize = jerseySize?.trim().toLowerCase();
 
@@ -419,6 +423,9 @@ function RegistrationTable({
               Package
             </th>
             <th scope="col" className="px-4 py-3.5 text-xs font-semibold">
+              Consents
+            </th>
+            <th scope="col" className="px-4 py-3.5 text-xs font-semibold">
               Status
             </th>
             <th scope="col" className="px-4 py-3.5 text-xs font-semibold">
@@ -494,6 +501,15 @@ function RegistrationTable({
                     registration.packagePriceCents,
                     registration.currency,
                   )}
+                </p>
+              </td>
+              <td className="px-4 py-4 text-xs leading-5 text-artis-slate">
+                <p>
+                  Updates &amp; news: {formatConsent(registration.marketingConsent)}
+                </p>
+                <p className="mt-1">
+                  Photo/video permission:{" "}
+                  {formatConsent(registration.photoVideoConsent)}
                 </p>
               </td>
               <td className="px-4 py-4">
@@ -623,6 +639,21 @@ function RegistrationCards({
                 {registration.waitlistedAt ? (
                   <p>Waitlisted {formatDateTime(registration.waitlistedAt)}</p>
                 ) : null}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-artis-slate">
+                Consents
+              </dt>
+              <dd className="mt-1 text-sm leading-6 text-artis-slate">
+                <p>
+                  Updates &amp; news: {formatConsent(registration.marketingConsent)}
+                </p>
+                <p>
+                  Photo/video permission:{" "}
+                  {formatConsent(registration.photoVideoConsent)}
+                </p>
               </dd>
             </div>
 

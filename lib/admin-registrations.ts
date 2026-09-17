@@ -232,6 +232,8 @@ async function queryAdminRegistrations(
       waitlistedAt: registrations.waitlistedAt,
       packagePriceCents: registrations.packagePriceCents,
       currency: registrations.currency,
+      marketingConsent: registrations.marketingConsent,
+      photoVideoConsent: registrations.photoVideoConsent,
       paymentId: payments.id,
       paymentStatus: payments.status,
       paymentMethod: payments.paymentMethod,
