@@ -18,6 +18,7 @@ import {
   registrations,
   trainingGroups,
 } from "@/db/schema";
+import { sendStripePaidRegistrationNotificationEmail } from "@/lib/send-stripe-paid-registration-notification-email";
 import { sendStripeRegistrationConfirmationEmail } from "@/lib/send-stripe-registration-confirmation-email";
 
 const MAX_STRIPE_SESSION_ID_LENGTH = 255;
@@ -60,9 +61,12 @@ export async function sendConfirmedStripeRegistrationEmail(
         endsOn: registrations.endsOn,
         guardianName: guardians.fullName,
         guardianEmail: guardians.email,
+        guardianPhone: guardians.phone,
         playerName: players.fullName,
         trainingGroupName: trainingGroups.displayName,
         programPackageName: programPackages.displayName,
+        amountCents: payments.totalCents,
+        currency: payments.currency,
       })
       .from(payments)
       .innerJoin(registrations, eq(payments.registrationId, registrations.id))
@@ -114,6 +118,20 @@ export async function sendConfirmedStripeRegistrationEmail(
       startsOn: registration.startsOn,
       endsOn: registration.endsOn,
       registrationStatus: registration.registrationStatus,
+    });
+
+    await sendStripePaidRegistrationNotificationEmail({
+      registrationId: registration.registrationId,
+      playerName: registration.playerName,
+      guardianName: registration.guardianName,
+      guardianEmail: registration.guardianEmail,
+      guardianPhone: registration.guardianPhone,
+      trainingGroupName: registration.trainingGroupName,
+      programPackageName: registration.programPackageName,
+      amountCents: registration.amountCents,
+      currency: registration.currency,
+      startsOn: registration.startsOn,
+      endsOn: registration.endsOn,
     });
 
     const [updateResult] = await transaction

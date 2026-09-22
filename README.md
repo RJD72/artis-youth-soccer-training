@@ -16,6 +16,19 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Transactional email configuration
+
+`STRIPE_REGISTRATION_NOTIFICATION_EMAIL` is the server-only recipient for
+internal ARTIS notifications after a Stripe registration payment succeeds. If
+it is not configured, the application falls back to
+`E_TRANSFER_NOTIFICATION_EMAIL`, then `CONTACT_FORM_RECIPIENT_EMAIL`.
+
+```dotenv
+STRIPE_REGISTRATION_NOTIFICATION_EMAIL=
+```
+
+Do not prefix this variable with `NEXT_PUBLIC_`.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

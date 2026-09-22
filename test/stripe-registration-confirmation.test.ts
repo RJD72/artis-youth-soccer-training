@@ -11,11 +11,14 @@ import { payments } from "@/db/schema";
 import { databaseHarness, NOW } from "./database-harness";
 
 import type { StripeRegistrationConfirmation } from "@/lib/send-stripe-registration-confirmation-email";
+import type { StripePaidRegistrationNotification } from "@/lib/send-stripe-paid-registration-notification-email";
 
 const h = databaseHarness();
 
 const sendConfirmation =
   jest.fn<(confirmation: StripeRegistrationConfirmation) => Promise<void>>();
+const sendAcademyNotification =
+  jest.fn<(notification: StripePaidRegistrationNotification) => Promise<void>>();
 
 let sendConfirmedStripeRegistrationEmail: typeof import("@/lib/send-confirmed-stripe-registration-email").sendConfirmedStripeRegistrationEmail;
 
@@ -28,9 +31,12 @@ const confirmedRegistration = {
   endsOn: "2026-10-31",
   guardianName: "Test Guardian",
   guardianEmail: "guardian@example.com",
+  guardianPhone: "519-555-0123",
   playerName: "Test Player",
   trainingGroupName: "Ages 8–10",
   programPackageName: "1 Month",
+  amountCents: 11_300,
+  currency: "CAD",
 };
 
 beforeAll(async () => {
@@ -42,6 +48,13 @@ beforeAll(async () => {
     sendStripeRegistrationConfirmationEmail: sendConfirmation,
   }));
 
+  jest.doMock(
+    "@/lib/send-stripe-paid-registration-notification-email",
+    () => ({
+      sendStripePaidRegistrationNotificationEmail: sendAcademyNotification,
+    }),
+  );
+
   ({ sendConfirmedStripeRegistrationEmail } =
     await import("@/lib/send-confirmed-stripe-registration-email"));
 });
@@ -50,10 +63,12 @@ beforeEach(() => {
   h.reset();
   sendConfirmation.mockReset();
   sendConfirmation.mockResolvedValue();
+  sendAcademyNotification.mockReset();
+  sendAcademyNotification.mockResolvedValue();
 });
 
 describe("confirmed Stripe registration email", () => {
-  it("sends the confirmation and records the sent timestamp", async () => {
+  it("sends both emails and records the sent timestamp", async () => {
     h.read(payments, confirmedRegistration);
 
     await expect(
@@ -61,6 +76,7 @@ describe("confirmed Stripe registration email", () => {
     ).resolves.toBe("sent");
 
     expect(sendConfirmation).toHaveBeenCalledTimes(1);
+    expect(sendAcademyNotification).toHaveBeenCalledTimes(1);
 
     expect(sendConfirmation).toHaveBeenCalledWith({
       registrationId: 1,
@@ -73,6 +89,24 @@ describe("confirmed Stripe registration email", () => {
       endsOn: "2026-10-31",
       registrationStatus: "scheduled",
     });
+
+    expect(sendAcademyNotification).toHaveBeenCalledWith({
+      registrationId: 1,
+      playerName: "Test Player",
+      guardianName: "Test Guardian",
+      guardianEmail: "guardian@example.com",
+      guardianPhone: "519-555-0123",
+      trainingGroupName: "Ages 8–10",
+      programPackageName: "1 Month",
+      amountCents: 11_300,
+      currency: "CAD",
+      startsOn: "2026-10-01",
+      endsOn: "2026-10-31",
+    });
+
+    expect(sendConfirmation.mock.invocationCallOrder[0]).toBeLessThan(
+      sendAcademyNotification.mock.invocationCallOrder[0],
+    );
 
     expect(h.queries(payments)[0].lock).toBe("update");
 
@@ -96,6 +130,7 @@ describe("confirmed Stripe registration email", () => {
     ).resolves.toBe("already-sent");
 
     expect(sendConfirmation).not.toHaveBeenCalled();
+    expect(sendAcademyNotification).not.toHaveBeenCalled();
     expect(h.writes(payments)).toEqual([]);
   });
 
@@ -107,6 +142,7 @@ describe("confirmed Stripe registration email", () => {
     ).resolves.toBe("unavailable");
 
     expect(sendConfirmation).not.toHaveBeenCalled();
+    expect(sendAcademyNotification).not.toHaveBeenCalled();
     expect(h.writes(payments)).toEqual([]);
   });
 
@@ -121,10 +157,11 @@ describe("confirmed Stripe registration email", () => {
     ).resolves.toBe("unavailable");
 
     expect(sendConfirmation).not.toHaveBeenCalled();
+    expect(sendAcademyNotification).not.toHaveBeenCalled();
     expect(h.writes(payments)).toEqual([]);
   });
 
-  it("does not record the email as sent when Resend fails", async () => {
+  it("does not notify ARTIS or record the timestamp when the guardian email fails", async () => {
     h.read(payments, confirmedRegistration);
 
     sendConfirmation.mockRejectedValueOnce(
@@ -136,11 +173,29 @@ describe("confirmed Stripe registration email", () => {
     ).rejects.toThrow("Email provider unavailable");
 
     expect(sendConfirmation).toHaveBeenCalledTimes(1);
+    expect(sendAcademyNotification).not.toHaveBeenCalled();
     expect(h.writes(payments)).toEqual([]);
 
     expect(
       h.operations.some((operation) => operation.kind === "rollback"),
     ).toBe(true);
+  });
+
+  it("does not record the timestamp when the ARTIS notification fails", async () => {
+    h.read(payments, confirmedRegistration);
+
+    sendAcademyNotification.mockRejectedValueOnce(
+      new Error("Email provider unavailable"),
+    );
+
+    await expect(
+      sendConfirmedStripeRegistrationEmail("cs_fixture", NOW),
+    ).rejects.toThrow("Email provider unavailable");
+
+    expect(sendConfirmation).toHaveBeenCalledTimes(1);
+    expect(sendAcademyNotification).toHaveBeenCalledTimes(1);
+    expect(h.writes(payments)).toEqual([]);
+    expect(h.operations.at(-1)?.kind).toBe("rollback");
   });
 
   it("throws if the sent timestamp cannot be recorded", async () => {
@@ -157,6 +212,7 @@ describe("confirmed Stripe registration email", () => {
     );
 
     expect(sendConfirmation).toHaveBeenCalledTimes(1);
+    expect(sendAcademyNotification).toHaveBeenCalledTimes(1);
 
     expect(
       h.operations.some((operation) => operation.kind === "rollback"),
@@ -172,6 +228,7 @@ describe("confirmed Stripe registration email", () => {
 
       expect(h.db.transaction).not.toHaveBeenCalled();
       expect(sendConfirmation).not.toHaveBeenCalled();
+      expect(sendAcademyNotification).not.toHaveBeenCalled();
     },
   );
 
@@ -182,5 +239,6 @@ describe("confirmed Stripe registration email", () => {
 
     expect(h.db.transaction).not.toHaveBeenCalled();
     expect(sendConfirmation).not.toHaveBeenCalled();
+    expect(sendAcademyNotification).not.toHaveBeenCalled();
   });
 });
