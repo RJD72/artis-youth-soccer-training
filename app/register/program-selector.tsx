@@ -115,6 +115,8 @@ const registrationErrorMessages: Record<RegistrationActionErrorCode, string> = {
     "The player’s age does not match the selected training group at the program start date.",
   "legal-documents-unavailable":
     "Registration is temporarily unavailable while the required policies are being updated.",
+  "payment-pending":
+    "A previous payment attempt is still being finalized. Please wait a few minutes and try again.",
   "already-registered":
     "This player already has a current registration for the selected training group.",
   "renewal-required":

@@ -13,6 +13,36 @@ beforeEach(() => {
 afterEach(() => { jest.useRealTimers(); jest.restoreAllMocks(); });
 function initial() { h.read(trainingGroups, group); h.read(programPackages, program); h.read(legalDocuments, ...legal); }
 function newFamily() { initial(); h.read(guardians); h.read(registrations, { occupiedSpots: 1 }); h.read(guardians, guardian); h.read(players); }
+const historicalAttempt = {
+  registrationId: 10,
+  registrationStatus: "cancelled",
+  trainingGroupId: group.id,
+  startsOn: "2026-10-01",
+  endsOn: "2026-12-31",
+  reservationExpiresAt: new Date("2026-09-06T12:00:00.000Z"),
+  packagePriceCents: 10000,
+  registrationCurrency: "CAD",
+  paymentId: 11,
+  paymentStatus: "cancelled",
+  paymentMethod: "stripe",
+  manualPaymentReference: null,
+  stripeCheckoutSessionId: null,
+  subtotalCents: 10000,
+  taxCents: 1300,
+  totalCents: 11300,
+  paymentCurrency: "CAD",
+} as const;
+function existingPlayerHistory(...rows: object[]) {
+  initial();
+  h.read(guardians, guardian);
+  h.read(players, { id: 4 });
+  h.read(registrations, ...rows);
+}
+function prepareFreshAttemptResults(cleanup = false) {
+  h.read(registrations, { occupiedSpots: 0 });
+  if (cleanup) h.results.push({ affectedRows: 1 }, { affectedRows: 1 });
+  h.results.push({ insertId: 5 }, { insertId: 6 }, { insertId: 7 });
+}
 describe("create pending registration", () => {
   it.each([NOW, new Date("invalid")])("rejects non-future reservation expiry", async expiry => {
     await expect(create(submission(), expiry)).rejects.toThrow(TypeError); expect(h.db.transaction).not.toHaveBeenCalled();
@@ -38,6 +68,7 @@ describe("create pending registration", () => {
     expect(await create(submission(), FUTURE)).toMatchObject({ code: "group-full" });
     const query = sqlQuery(h.queries(registrations)[0]);
     expect(query.params).toEqual(expect.arrayContaining([1, "scheduled", "active", "pending_payment"]));
+    expect(query.params).not.toEqual(expect.arrayContaining(["expired", "cancelled"]));
     expect(query.sql).toContain("reservation_expires_at");
     expect(sqlSelectedField(h.queries(registrations)[0], "occupiedSpots").sql).toBe("count(distinct `registrations`.`player_id`)");
     expect(h.writes()).toEqual([]);
@@ -52,9 +83,85 @@ describe("create pending registration", () => {
     expect(h.writes(registrations)[0].values).toMatchObject({ playerId: 4 });
     expect(h.operations.at(-1)?.kind).toBe("commit");
   });
-  it.each([false, true])("routes an existing player to duplicate/renewal handling (%p)", async active => {
-    initial(); h.read(guardians, guardian); h.read(players, { id: 4 }); h.read(registrations, ...(active ? [{ id: 1 }] : []));
-    expect(await create(submission(), FUTURE)).toMatchObject({ code: active ? "already-registered" : "renewal-required" }); expect(h.writes()).toEqual([]);
+  it.each(["scheduled", "active"] as const)("rejects a %s registration as already registered", async registrationStatus => {
+    existingPlayerHistory({ ...historicalAttempt, registrationStatus, paymentStatus: "succeeded" });
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "rejected", code: "already-registered" });
+    expect(h.writes()).toEqual([]);
+  });
+  it("routes a player with successful payment history to renewal", async () => {
+    existingPlayerHistory({ ...historicalAttempt, registrationStatus: "expired", paymentStatus: "succeeded" });
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "rejected", code: "renewal-required" });
+    expect(h.writes()).toEqual([]);
+  });
+  it("keeps successful payment history on the verified renewal path even with a newer pending attempt", async () => {
+    existingPlayerHistory(
+      { ...historicalAttempt, registrationId: 8, paymentId: 9, registrationStatus: "expired", paymentStatus: "succeeded" },
+      { ...historicalAttempt, registrationStatus: "pending_payment", paymentStatus: "pending", reservationExpiresAt: FUTURE },
+    );
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "rejected", code: "renewal-required" });
+    expect(h.writes()).toEqual([]);
+  });
+  it.each([
+    ["stripe", null],
+    ["e_transfer", "ARTIS-11"],
+  ] as const)("resumes an active pending %s attempt with stored routing and pricing", async (paymentMethod, manualPaymentReference) => {
+    existingPlayerHistory({ ...historicalAttempt, registrationStatus: "pending_payment", paymentStatus: "pending", paymentMethod, manualPaymentReference, reservationExpiresAt: FUTURE });
+    expect(await create({ ...submission(), paymentMethod: paymentMethod === "stripe" ? "e_transfer" : "stripe" }, FUTURE)).toEqual({
+      status: "resumed",
+      registrationId: 10,
+      paymentId: 11,
+      paymentMethod,
+      manualPaymentReference,
+      trainingGroupSlug: "development",
+      startsOn: "2026-10-01",
+      endsOn: "2026-12-31",
+      subtotalCents: 10000,
+      taxCents: 1300,
+      totalCents: 11300,
+      currency: "CAD",
+    });
+    expect(h.writes()).toEqual([]);
+  });
+  it("blocks an active pending attempt in another training group", async () => {
+    existingPlayerHistory({ ...historicalAttempt, registrationStatus: "pending_payment", paymentStatus: "pending", trainingGroupId: 99, reservationExpiresAt: FUTURE });
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "rejected", code: "payment-pending" });
+    expect(h.writes()).toEqual([]);
+  });
+  it("blocks an expired Stripe attempt that still has a Checkout Session", async () => {
+    existingPlayerHistory({ ...historicalAttempt, registrationStatus: "pending_payment", paymentStatus: "pending", stripeCheckoutSessionId: "cs_existing" });
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "rejected", code: "payment-pending" });
+    expect(h.writes()).toEqual([]);
+  });
+  it.each(["cancelled", "failed"] as const)("creates a fresh attempt after a terminal %s Stripe payment", async paymentStatus => {
+    existingPlayerHistory({ ...historicalAttempt, paymentStatus });
+    prepareFreshAttemptResults();
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "created", registrationId: 5, paymentId: 7 });
+    expect(h.writes(players)).toEqual([]);
+    expect(h.writes(guardians)).toEqual([]);
+    expect(h.writes(registrations)[0].values).toMatchObject({ playerId: 4 });
+    expect(sqlQuery(h.queries(registrations)[1]).sql).toContain("<> ?");
+    expect(sqlQuery(h.queries(registrations)[1]).params).toContain(4);
+  });
+  it.each([
+    ["stripe", null],
+    ["e_transfer", null],
+  ] as const)("safely cancels an expired local %s attempt before creating a fresh one", async (paymentMethod, stripeCheckoutSessionId) => {
+    existingPlayerHistory({ ...historicalAttempt, registrationStatus: "pending_payment", paymentStatus: "pending", paymentMethod, stripeCheckoutSessionId });
+    prepareFreshAttemptResults(true);
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "created", registrationId: 5, paymentId: 7 });
+    expect(h.writes(payments)[0].values).toEqual({ status: "cancelled" });
+    expect(h.writes(registrations)[0].values).toEqual({ status: "cancelled", cancelledAt: NOW, reservationExpiresAt: null });
+    expect(h.writes(players)).toEqual([]);
+    expect(h.writes(guardians)).toEqual([]);
+    expect(h.writes(registrations)[1].values).toMatchObject({ playerId: 4, status: "pending_payment" });
+  });
+  it("creates a fresh attempt for an orphan existing player", async () => {
+    existingPlayerHistory();
+    prepareFreshAttemptResults();
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "created", registrationId: 5, paymentId: 7 });
+    expect(h.writes(players)).toEqual([]);
+    expect(h.writes(guardians)).toEqual([]);
+    expect(h.writes(registrations)[0].values).toMatchObject({ playerId: 4 });
   });
   it.each(["stripe", "e_transfer"] as const)("persists a complete %s registration with encrypted notes and trusted price", async paymentMethod => {
     newFamily(); h.results.push({ insertId: 3 }, { insertId: 4 }, { insertId: 5 }, { insertId: 6 }, { insertId: 7 });
@@ -94,6 +201,18 @@ describe("create pending registration", () => {
     expect(h.writes(players)).toHaveLength(1);
     expect(h.writes(players)[0]).toMatchObject({ kind: "insert", values: { guardianId: concurrentGuardian.id, fullName: "Test Player" } });
     expect(h.operations.at(-1)?.kind).toBe("commit");
+  });
+  it("uses the same recovery rules for a player found after the guardian upsert", async () => {
+    initial();
+    h.read(guardians);
+    h.read(registrations, { occupiedSpots: 0 });
+    h.read(guardians, guardian);
+    h.read(players, { id: 4 });
+    h.read(registrations, { ...historicalAttempt, registrationStatus: "pending_payment", paymentStatus: "pending", reservationExpiresAt: FUTURE });
+    expect(await create(submission(), FUTURE)).toMatchObject({ status: "resumed", registrationId: 10, paymentId: 11 });
+    expect(h.writes(players)).toEqual([]);
+    expect(h.writes(registrations)).toEqual([]);
+    expect(h.writes(payments)).toEqual([]);
   });
   it.each([1, 2, 4])("rejects invalid insert ID at write %i and bubbles rollback", async index => {
     newFamily(); h.results.push(...Array.from({ length: index }, () => ({ insertId: 1 })), { insertId: 0 });

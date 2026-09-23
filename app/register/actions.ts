@@ -137,7 +137,10 @@ export async function submitRegistration(
   );
   const paymentPagePath = getPaymentPagePath(outcome.paymentMethod);
 
-  if (outcome.paymentMethod === "e_transfer") {
+  if (
+    outcome.status === "created" &&
+    outcome.paymentMethod === "e_transfer"
+  ) {
     after(() =>
       notifyAcademyOfPendingETransfer(
         outcome.registrationId,

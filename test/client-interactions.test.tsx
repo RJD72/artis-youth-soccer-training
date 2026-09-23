@@ -234,6 +234,27 @@ describe("registration client interactions with mocked actions", () => {
       expect(container.querySelector("output")).toBeInTheDocument();
     },
   );
+  it("shows a finalizing message without offering renewal for payment-pending", async () => {
+    registrationAction.mockResolvedValue({
+      status: "error",
+      code: "payment-pending",
+    });
+    const { container } = render(
+      <Program trainingGroups={[group]} programPackages={[program]} />,
+    );
+    await submit(container.querySelector("form")!);
+    expect(
+      screen.getByText(
+        "A previous payment attempt is still being finalized. Please wait a few minutes and try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Renew Training" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Continue to Secure Payment" }),
+    ).toBeInTheDocument();
+  });
   it("keeps full and manually closed groups visible with waitlist links instead of radio inputs", () => {
     const { container } = render(
       <Program

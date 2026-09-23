@@ -128,6 +128,7 @@ describe("registration server action", () => {
     "age-mismatch",
     "already-registered",
     "renewal-required",
+    "payment-pending",
     "group-full",
     "registration-closed",
     "invalid-selection",
@@ -186,6 +187,46 @@ describe("registration server action", () => {
       }
     },
   );
+  it("redirects a resumed Stripe attempt with a fresh signed payment reference", async () => {
+    createRegistration.mockResolvedValue({
+      ...created,
+      status: "resumed",
+      registrationId: 9,
+      paymentId: 10,
+    });
+    await expect(
+      register({ status: "idle" }, registrationForm()),
+    ).rejects.toThrow("NEXT_REDIRECT");
+    const url = new URL(redirect.mock.calls[0][0], "https://academy.example");
+    expect(url.pathname).toBe("/register/payment/stripe");
+    expect(
+      verifyRegistrationPaymentReference(
+        url.searchParams.get("registration")!,
+        url.searchParams.get("payment")!,
+        url.searchParams.get("method")!,
+        url.searchParams.get("expires")!,
+        url.searchParams.get("signature")!,
+      ),
+    ).toEqual({ registrationId: 9, paymentId: 10, method: "stripe" });
+    expect(url.toString()).not.toContain("guardian");
+    expect(deferred).toEqual([]);
+  });
+  it("does not notify the academy when an e-transfer attempt is resumed", async () => {
+    createRegistration.mockResolvedValue({
+      ...created,
+      status: "resumed",
+      paymentMethod: "e_transfer",
+      manualPaymentReference: "ARTIS-2",
+    });
+    await expect(
+      register(
+        { status: "idle" },
+        registrationForm({ paymentMethod: "e_transfer" }),
+      ),
+    ).rejects.toThrow("NEXT_REDIRECT");
+    expect(pendingEmail).not.toHaveBeenCalled();
+    expect(deferred).toEqual([]);
+  });
   it("returns a safe state after database failure", async () => {
     createRegistration.mockRejectedValue(
       new Error("guardian@example.com synthetic-private-error"),
