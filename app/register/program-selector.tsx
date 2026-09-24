@@ -1063,9 +1063,6 @@ function ProgramSelection({
                     <span className="mt-1 block text-sm leading-5 text-artis-slate">
                       {formatScheduleOverview(group.weeklySchedule)}
                     </span>
-                    <span className="mt-1 block text-xs font-semibold text-artis-slate">
-                      {group.availableSpots} of {group.capacity} spots available
-                    </span>
                   </span>
                   <input
                     type="radio"

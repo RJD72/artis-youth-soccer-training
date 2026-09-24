@@ -255,7 +255,7 @@ describe("registration client interactions with mocked actions", () => {
       screen.getByRole("button", { name: "Continue to Secure Payment" }),
     ).toBeInTheDocument();
   });
-  it("keeps full and manually closed groups visible with waitlist links instead of radio inputs", () => {
+  it("hides public availability counts while keeping full groups on the waitlist path", () => {
     const { container } = render(
       <Program
         trainingGroups={[group]}
@@ -279,6 +279,12 @@ describe("registration client interactions with mocked actions", () => {
     );
 
     expect(selectableGroup).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        `${group.availableSpots} of ${group.capacity} spots available`,
+      ),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/spots available/i)).not.toBeInTheDocument();
     expect(manuallyClosedInput).not.toBeInTheDocument();
     expect(capacityFullInput).not.toBeInTheDocument();
     expect(screen.getAllByText("Group Full")).toHaveLength(2);
