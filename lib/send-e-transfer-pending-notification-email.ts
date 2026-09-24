@@ -16,6 +16,7 @@ import {
   trainingGroups,
 } from "@/db/schema";
 import ETransferPendingNotificationEmail, {
+  type ETransferNotificationType,
   type ETransferPendingNotificationEmailProps,
 } from "@/emails/e-transfer-pending-notification-email";
 import {
@@ -30,9 +31,9 @@ const PAYMENT_REFERENCE_PATTERN = /^[A-Za-z0-9-]{1,50}$/;
 const MAX_NAME_LENGTH = 100;
 const MAX_LABEL_LENGTH = 150;
 const MAX_EMAIL_LENGTH = 254;
-const EMAIL_SUBJECT_PREFIX = "New e-transfer registration awaiting payment";
-
 type PendingNotificationDetails = ETransferPendingNotificationEmailProps;
+
+export type { ETransferNotificationType };
 
 const torontoDateTimeFormatter = new Intl.DateTimeFormat("en-CA", {
   dateStyle: "medium",
@@ -148,6 +149,7 @@ function getAcademyNotificationRecipient(): string {
 async function getPendingNotificationDetails(
   registrationIdValue: number,
   paymentIdValue: number,
+  notificationType: ETransferNotificationType,
 ): Promise<PendingNotificationDetails> {
   const registrationId = getDatabaseId(
     registrationIdValue,
@@ -201,6 +203,7 @@ async function getPendingNotificationDetails(
   }
 
   return {
+    notificationType,
     playerName: normalizeText(
       record.playerName,
       "The player name",
@@ -231,8 +234,13 @@ async function getPendingNotificationDetails(
 }
 
 function createPlainTextMessage(details: PendingNotificationDetails): string {
+  const intro =
+    details.notificationType === "registration"
+      ? "A parent or guardian selected e-transfer for a new registration."
+      : "A parent or guardian selected e-transfer for a training renewal.";
+
   return [
-    "A parent or guardian selected e-transfer for a new registration.",
+    intro,
     "",
     "Payment status: Awaiting e-transfer",
     "This email does not confirm that payment was received.",
@@ -274,11 +282,17 @@ function getResendErrorSummary(error: unknown): {
 export async function sendETransferPendingNotificationEmail(
   registrationId: number,
   paymentId: number,
+  notificationType: ETransferNotificationType,
 ): Promise<void> {
   const details = await getPendingNotificationDetails(
     registrationId,
     paymentId,
+    notificationType,
   );
+  const subjectPrefix =
+    notificationType === "registration"
+      ? "New e-transfer registration awaiting payment"
+      : "E-transfer renewal awaiting payment";
   let result: Awaited<
     ReturnType<ReturnType<typeof getResendClient>["emails"]["send"]>
   >;
@@ -288,7 +302,7 @@ export async function sendETransferPendingNotificationEmail(
       from: getResendFromAddress(),
       to: getAcademyNotificationRecipient(),
       replyTo: details.guardianEmail,
-      subject: `${EMAIL_SUBJECT_PREFIX}: ${details.paymentReference}`,
+      subject: `${subjectPrefix}: ${details.paymentReference}`,
       react: ETransferPendingNotificationEmail(details),
       text: createPlainTextMessage(details),
     });

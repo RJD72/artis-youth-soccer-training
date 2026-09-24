@@ -10,6 +10,8 @@ import { getTrainingGroupCapacitySummaries } from "@/lib/admin-dashboard";
 import { updateTrainingGroupRegistrationStatus } from "./actions";
 import { SignOutButton } from "./sign-out-button";
 
+const SHOW_AVAILABLE_SPOTS = false;
+
 export default async function AdminPage() {
   const session = await requireAdminSession();
   const trainingGroupSummaries = await getTrainingGroupCapacitySummaries();
@@ -89,7 +91,9 @@ export default async function AdminPage() {
             Training Group Capacity
           </h2>
           <p className="mt-2 max-w-2xl leading-7 text-artis-slate">
-            See how many places are occupied and available in each age group.
+            {SHOW_AVAILABLE_SPOTS
+              ? "See how many places are occupied and available in each age group."
+              : "See how many places are occupied and the total capacity for each age group."}
           </p>
 
           {trainingGroupSummaries.length > 0 ? (
@@ -120,7 +124,11 @@ export default async function AdminPage() {
                     </span>
                   </div>
 
-                  <dl className="mt-6 grid grid-cols-3 gap-3 text-center">
+                  <dl
+                    className={`mt-6 grid gap-3 text-center ${
+                      SHOW_AVAILABLE_SPOTS ? "grid-cols-3" : "grid-cols-2"
+                    }`}
+                  >
                     <div className="rounded-xl bg-artis-off-white p-3">
                       <dt className="text-xs font-medium uppercase tracking-wide text-artis-slate">
                         Occupied
@@ -130,14 +138,16 @@ export default async function AdminPage() {
                       </dd>
                     </div>
 
-                    <div className="rounded-xl bg-artis-off-white p-3">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-artis-slate">
-                        Available
-                      </dt>
-                      <dd className="mt-1 text-2xl font-bold text-artis-success">
-                        {group.availableSpots}
-                      </dd>
-                    </div>
+                    {SHOW_AVAILABLE_SPOTS ? (
+                      <div className="rounded-xl bg-artis-off-white p-3">
+                        <dt className="text-xs font-medium uppercase tracking-wide text-artis-slate">
+                          Available
+                        </dt>
+                        <dd className="mt-1 text-2xl font-bold text-artis-success">
+                          {group.availableSpots}
+                        </dd>
+                      </div>
+                    ) : null}
 
                     <div className="rounded-xl bg-artis-off-white p-3">
                       <dt className="text-xs font-medium uppercase tracking-wide text-artis-slate">
@@ -152,9 +162,16 @@ export default async function AdminPage() {
                   {group.availableSpots > 0 && group.waitingFamilies > 0 ? (
                     <div className="mt-5 rounded-xl border border-artis-gold bg-artis-soft-gold p-4">
                       <p className="font-semibold text-artis-navy">
-                        {group.availableSpots}{" "}
-                        {group.availableSpots === 1 ? "spot is" : "spots are"}{" "}
-                        available and {group.waitingFamilies}{" "}
+                        {SHOW_AVAILABLE_SPOTS ? (
+                          <>
+                            {group.availableSpots}{" "}
+                            {group.availableSpots === 1
+                              ? "spot is"
+                              : "spots are"}{" "}
+                            available and{" "}
+                          </>
+                        ) : null}
+                        {group.waitingFamilies}{" "}
                         {group.waitingFamilies === 1
                           ? "waitlist entry needs"
                           : "waitlist entries need"}{" "}

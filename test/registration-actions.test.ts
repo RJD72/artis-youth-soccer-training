@@ -182,8 +182,12 @@ describe("registration server action", () => {
       expect(url.toString()).not.toContain("guardian");
       if (paymentMethod === "e_transfer") {
         expect(pendingEmail).not.toHaveBeenCalled();
+        expect(deferred).toHaveLength(1);
         await deferred[0]();
-        expect(pendingEmail).toHaveBeenCalledWith(1, 2);
+        expect(pendingEmail).toHaveBeenCalledWith(1, 2, "registration");
+      } else {
+        expect(deferred).toEqual([]);
+        expect(pendingEmail).not.toHaveBeenCalled();
       }
     },
   );
@@ -290,6 +294,8 @@ describe("verified renewal checkout action", () => {
       status: "error",
       code,
     });
+    expect(deferred).toEqual([]);
+    expect(pendingEmail).not.toHaveBeenCalled();
   });
   it.each(["stripe", "e_transfer"] as const)(
     "preserves %s redirect exceptions and signed identifiers",
@@ -307,8 +313,47 @@ describe("verified renewal checkout action", () => {
       );
       expect(url.searchParams.has("signature")).toBe(true);
       expect(url.toString()).not.toContain(token);
+      if (paymentMethod === "e_transfer") {
+        expect(pendingEmail).not.toHaveBeenCalled();
+        expect(deferred).toHaveLength(1);
+        await deferred[0]();
+        expect(pendingEmail).toHaveBeenCalledWith(1, 2, "renewal");
+      } else {
+        expect(deferred).toEqual([]);
+        expect(pendingEmail).not.toHaveBeenCalled();
+      }
     },
   );
+  it("preserves a successful renewal despite deferred notification errors", async () => {
+    pendingEmail.mockRejectedValue(
+      new Error("guardian@example.com synthetic-private-provider-error"),
+    );
+    createRenewalForPlayer.mockResolvedValue({
+      ...created,
+      paymentMethod: "e_transfer",
+    });
+
+    await expect(
+      renew(
+        { status: "idle" },
+        signedReferenceRenewalForm({ paymentMethod: "e_transfer" }),
+      ),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(redirect.mock.calls[0][0]).toContain(
+      "/register/payment/e-transfer",
+    );
+    expect(deferred).toHaveLength(1);
+    await expect(deferred[0]()).resolves.toBeUndefined();
+    expect(pendingEmail).toHaveBeenCalledWith(1, 2, "renewal");
+
+    const loggedOutput = JSON.stringify(
+      jest.mocked(console.error).mock.calls,
+    );
+    expect(loggedOutput).toContain("Error");
+    expect(loggedOutput).not.toContain("guardian@example.com");
+    expect(loggedOutput).not.toContain("synthetic-private-provider-error");
+  });
   it("uses a valid signed player reference for renewal checkout", async () => {
     await expect(
       renew({ status: "idle" }, signedReferenceRenewalForm()),

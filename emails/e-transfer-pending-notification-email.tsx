@@ -12,6 +12,7 @@ import {
 import type { CSSProperties, ReactNode } from "react";
 
 export type ETransferPendingNotificationEmailProps = {
+  notificationType: ETransferNotificationType;
   playerName: string;
   guardianName: string;
   guardianEmail: string;
@@ -23,6 +24,8 @@ export type ETransferPendingNotificationEmailProps = {
   amount: string;
   reservationExpiresAt: string;
 };
+
+export type ETransferNotificationType = "registration" | "renewal";
 
 type DetailRowProps = {
   label: string;
@@ -39,6 +42,7 @@ function DetailRow({ label, children }: DetailRowProps) {
 }
 
 export function ETransferPendingNotificationEmail({
+  notificationType,
   playerName,
   guardianName,
   guardianEmail,
@@ -50,24 +54,37 @@ export function ETransferPendingNotificationEmail({
   amount,
   reservationExpiresAt,
 }: ETransferPendingNotificationEmailProps) {
+  const copy =
+    notificationType === "registration"
+      ? {
+          preview: `E-transfer registration awaiting payment: ${playerName}`,
+          heading: "New e-transfer registration",
+          intro:
+            "A parent or guardian selected e-transfer for a new registration.",
+        }
+      : {
+          preview: `E-transfer renewal awaiting payment: ${playerName}`,
+          heading: "E-transfer renewal",
+          intro:
+            "A parent or guardian selected e-transfer for a training renewal.",
+        };
+
   return (
     <Html lang="en">
       <Head />
-      <Preview>E-transfer registration awaiting payment: {playerName}</Preview>
+      <Preview>{copy.preview}</Preview>
 
       <Body style={bodyStyle}>
         <Container style={containerStyle}>
           <Section style={headerStyle}>
             <Text style={academyNameStyle}>ARTIS SOCCER ACADEMY</Text>
             <Heading as="h1" style={headingStyle}>
-              New e-transfer registration
+              {copy.heading}
             </Heading>
           </Section>
 
           <Section style={contentStyle}>
-            <Text style={paragraphStyle}>
-              A parent or guardian selected e-transfer for a new registration.
-            </Text>
+            <Text style={paragraphStyle}>{copy.intro}</Text>
 
             <Section style={statusSectionStyle}>
               <Text style={statusLabelStyle}>PAYMENT STATUS</Text>

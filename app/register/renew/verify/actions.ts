@@ -6,6 +6,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 
 import {
   createPendingRenewalForPlayer,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/create-pending-renewal";
 import { createRegistrationPaymentReference } from "@/lib/registration-payment-reference";
 import { readRenewalPlayerReference } from "@/lib/renewal-player-reference";
+import { sendETransferPendingNotificationEmail } from "@/lib/send-e-transfer-pending-notification-email";
 
 const maximumUnsignedInteger = 4_294_967_295;
 
@@ -191,6 +193,27 @@ function logRenewalCheckoutFailure(error: unknown): void {
   console.error("Pending renewal creation failed.", { errorType });
 }
 
+async function notifyAcademyOfPendingETransferRenewal(
+  registrationId: number,
+  paymentId: number,
+): Promise<void> {
+  try {
+    await sendETransferPendingNotificationEmail(
+      registrationId,
+      paymentId,
+      "renewal",
+    );
+  } catch (error) {
+    // The renewal and payment records already exist, so an email outage must
+    // not prevent the parent from seeing the payment instructions.
+    const errorType = error instanceof Error ? error.name : "UnknownError";
+
+    console.error("Pending e-transfer renewal notification failed.", {
+      errorType,
+    });
+  }
+}
+
 export async function submitRenewal(
   _previousState: RenewalCheckoutActionState,
   formData: FormData,
@@ -238,6 +261,15 @@ export async function submitRenewal(
     outcome.paymentMethod,
   );
   const paymentPagePath = getPaymentPagePath(outcome.paymentMethod);
+
+  if (outcome.paymentMethod === "e_transfer") {
+    after(() =>
+      notifyAcademyOfPendingETransferRenewal(
+        outcome.registrationId,
+        outcome.paymentId,
+      ),
+    );
+  }
 
   redirect(buildPaymentPageUrl(paymentPagePath, reference));
 }

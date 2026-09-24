@@ -83,7 +83,11 @@ async function notifyAcademyOfPendingETransfer(
   paymentId: number,
 ): Promise<void> {
   try {
-    await sendETransferPendingNotificationEmail(registrationId, paymentId);
+    await sendETransferPendingNotificationEmail(
+      registrationId,
+      paymentId,
+      "registration",
+    );
   } catch (error) {
     // The registration and payment records already exist, so an email outage
     // must not prevent the parent from seeing the payment instructions.
