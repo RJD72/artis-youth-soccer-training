@@ -1,5 +1,6 @@
 // ARTIS SPONSORS PAGE — FIGMA-ALIGNED — AUGUST 22, 2026
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 import SiteFooter from "../components/site-footer";
@@ -11,28 +12,18 @@ export const metadata: Metadata = {
     "View ARTIS Soccer Academy sponsors and learn how to support the academy.",
 };
 
-const sponsorPlaceholders = [
-  "Sponsor position 1",
-  "Sponsor position 2",
-  "Sponsor position 3",
-  "Sponsor position 4",
-];
-
-function SponsorLogoPlaceholder({ label }: { label: string }) {
-  return (
-    <div
-      aria-label={`${label}: sponsor information coming soon`}
-      className="flex h-35 w-full max-w-69.5 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-artis-border bg-artis-white text-center xl:h-40 xl:w-75 xl:max-w-none"
-    >
-      <p className="text-sm font-semibold leading-5">
-        Sponsor logo coming soon
-      </p>
-      <p className="text-xs font-medium leading-4.5 tracking-[0.2px] text-artis-slate">
-        Sponsor details coming soon
-      </p>
-    </div>
-  );
-}
+const sponsors = [
+  {
+    name: "Townsend Tire",
+    image: "/images/sponsors/townsend-tire.png",
+    href: "https://www.townsendtire.ca/",
+  },
+  {
+    name: "Emerald Construction & Masonry",
+    image: "/images/sponsors/emerald-construction-masonry.jpeg",
+    href: "https://www.facebook.com/p/Emerald-Construction-Masonry-Blyth-100091943620697/",
+  },
+] as const;
 
 export default function SponsorsPage() {
   return (
@@ -46,12 +37,36 @@ export default function SponsorsPage() {
           </h1>
 
           <p className="mt-6 max-w-225 text-base leading-6.5 text-artis-slate xl:mt-7 xl:text-lg xl:leading-7.5">
-            Sponsor information will be added as partnerships are confirmed.
+            ARTIS Soccer Academy is proud to be supported by local businesses
+            and community partners.
           </p>
 
-          <div className="mt-6 flex flex-col gap-4 xl:mt-7 xl:grid xl:grid-cols-4 xl:gap-6">
-            {sponsorPlaceholders.map((label) => (
-              <SponsorLogoPlaceholder key={label} label={label} />
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:mt-7 xl:gap-6">
+            {sponsors.map((sponsor) => (
+              <a
+                key={sponsor.name}
+                href={sponsor.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Visit ${sponsor.name}`}
+                className="group flex min-h-64 flex-col overflow-hidden rounded-2xl border border-artis-border bg-artis-white transition hover:border-artis-gold hover:shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30 xl:min-h-72"
+              >
+                <span className="flex h-52 w-full items-center justify-center p-5 xl:h-60 xl:p-7">
+                  <span className="relative block size-full">
+                    <Image
+                      src={sponsor.image}
+                      alt={`${sponsor.name} logo`}
+                      fill
+                      sizes="(min-width: 1280px) 600px, (min-width: 640px) 50vw, 100vw"
+                      className="object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+                    />
+                  </span>
+                </span>
+
+                <span className="mt-auto border-t border-artis-border px-5 py-4 text-center text-sm font-semibold text-artis-slate transition-colors group-hover:text-artis-navy">
+                  {sponsor.name}
+                </span>
+              </a>
             ))}
           </div>
 
