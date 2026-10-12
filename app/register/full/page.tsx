@@ -19,7 +19,7 @@ type FullGroupPageProps = {
 
 const trainingGroups = {
   "ages-8-10": {
-    displayName: "Ages 8–10",
+    displayName: "Ages 7–10",
     capacity: 30,
   },
   "ages-11-13": {

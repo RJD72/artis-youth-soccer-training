@@ -16,9 +16,10 @@ import { programPackages, trainingGroups, weeklySchedules } from "../db/schema";
 
 const initialTrainingGroups: (typeof trainingGroups.$inferInsert)[] = [
   {
+    // Keep the existing identifier to preserve registrations and saved links.
     slug: "ages-8-10",
-    displayName: "Ages 8–10",
-    minimumAge: 8,
+    displayName: "Ages 7–10",
+    minimumAge: 7,
     maximumAge: 10,
     capacity: 30,
     registrationOpen: false,

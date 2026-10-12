@@ -18,7 +18,7 @@ type WaitlistPageProps = {
 };
 
 const trainingGroups = {
-  "ages-8-10": "Ages 8–10",
+  "ages-8-10": "Ages 7–10",
   "ages-11-13": "Ages 11–13",
 } as const;
 

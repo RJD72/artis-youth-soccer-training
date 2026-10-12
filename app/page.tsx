@@ -30,8 +30,8 @@ const principles = [
 const programs = [
   {
     slug: "ages-8-10",
-    age: "AGES 8–10",
-    title: "Ages 8–10 Soccer Development Program",
+    age: "AGES 7–10",
+    title: "Ages 7–10 Soccer Development Program",
     description:
       "A fun, positive and supportive foundation for learning the game.",
     focus: "Ball control · dribbling · passing · shooting · movement",
@@ -67,17 +67,17 @@ const schedule = [
   {
     day: "Tuesday",
     type: "Training",
-    times: ["Ages 8–10 · 6:00–7:00 PM", "Ages 11–13 · 7:00–8:00 PM"],
+    times: ["Ages 7–10 · 6:00–7:00 PM", "Ages 11–13 · 7:00–8:00 PM"],
   },
   {
     day: "Thursday",
     type: "Training",
-    times: ["Ages 8–10 · 6:00–7:00 PM", "Ages 11–13 · 7:00–8:00 PM"],
+    times: ["Ages 7–10 · 6:00–7:00 PM", "Ages 11–13 · 7:00–8:00 PM"],
   },
   {
     day: "Saturday",
     type: "Game / Match",
-    times: ["Ages 8–10 · 10:00–11:00 AM", "Ages 11–13 · 11:00 AM–12:00 PM"],
+    times: ["Ages 7–10 · 10:00–11:00 AM", "Ages 11–13 · 11:00 AM–12:00 PM"],
   },
 ];
 
@@ -92,7 +92,7 @@ const faqs = [
   {
     question: "What ages can register?",
     answer:
-      "ARTIS currently offers development programs for players ages 8–10 and 11–13.",
+      "ARTIS currently offers development programs for players ages 7–10 and 11–13.",
   },
   {
     question: "What should players bring?",

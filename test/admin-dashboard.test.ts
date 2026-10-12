@@ -50,8 +50,8 @@ describe("admin dashboard capacity summaries", () => {
   it("counts each player once and includes waiting families", async () => {
     h.read(trainingGroups, {
       id: 1,
-      displayName: "Ages 8–10",
-      minimumAge: 8,
+      displayName: "Ages 7–10",
+      minimumAge: 7,
       maximumAge: 10,
       capacity: 30,
       registrationOpen: true,
@@ -68,8 +68,8 @@ describe("admin dashboard capacity summaries", () => {
     expect(result).toEqual([
       {
         id: 1,
-        displayName: "Ages 8–10",
-        minimumAge: 8,
+        displayName: "Ages 7–10",
+        minimumAge: 7,
         maximumAge: 10,
         capacity: 30,
         registrationOpen: true,
@@ -95,8 +95,8 @@ describe("admin dashboard capacity summaries", () => {
   it("uses zero when a group has no waiting families", async () => {
     h.read(trainingGroups, {
       id: 1,
-      displayName: "Ages 8–10",
-      minimumAge: 8,
+      displayName: "Ages 7–10",
+      minimumAge: 7,
       maximumAge: 10,
       capacity: 30,
       registrationOpen: true,
