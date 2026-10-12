@@ -57,7 +57,7 @@ const manuallyClosedGroup = {
   ...group,
   id: 2,
   slug: "ages-8-10",
-  displayName: "Ages 8–10",
+  displayName: "Ages 7–10",
   registrationOpen: false,
   availableSpots: 3,
 };

@@ -59,6 +59,20 @@ describe("create pending registration", () => {
     h.read(trainingGroups, group); h.read(programPackages, program);
     expect(await create({ ...submission(), dateOfBirth: "2022-01-01" }, FUTURE)).toMatchObject({ code: "age-mismatch" }); expect(h.writes()).toEqual([]);
   });
+  it.each(["2019-10-01", "2016-10-01"])("accepts a player born %s in the 7–10 group at the start date", async dateOfBirth => {
+    h.read(trainingGroups, { ...group, minimumAge: 7, maximumAge: 10 });
+    h.read(programPackages, program); h.read(legalDocuments, ...legal);
+    h.read(guardians); h.read(registrations, { occupiedSpots: 0 });
+    h.read(guardians, guardian); h.read(players);
+    h.results.push({ insertId: 3 }, { insertId: 4 }, { insertId: 5 }, { insertId: 6 }, { insertId: 7 });
+    expect(await create({ ...submission(), dateOfBirth }, FUTURE)).toMatchObject({ status: "created", startsOn: "2026-10-01" });
+  });
+  it.each(["2019-10-02", "2015-10-01"])("rejects a player born %s outside the 7–10 start-date limits", async dateOfBirth => {
+    h.read(trainingGroups, { ...group, minimumAge: 7, maximumAge: 10 });
+    h.read(programPackages, program);
+    expect(await create({ ...submission(), dateOfBirth }, FUTURE)).toMatchObject({ status: "rejected", code: "age-mismatch" });
+    expect(h.writes()).toEqual([]);
+  });
   it("requires each published legal document", async () => {
     h.read(trainingGroups, group); h.read(programPackages, program); h.read(legalDocuments, legal[0], legal[0], legal[2]);
     expect(await create(submission(), FUTURE)).toMatchObject({ code: "legal-documents-unavailable" }); expect(h.writes()).toEqual([]);

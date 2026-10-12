@@ -212,7 +212,7 @@ describe("admin waitlist email action", () => {
       guardianName: "Taylor Smith",
       guardianEmail: "parent@example.com",
       childFirstName: "Charlie",
-      groupName: "Ages 8–10",
+      groupName: "Ages 7–10",
     });
 
     const result = await offerWaitlistSpot(initialState, createOfferFormData());
@@ -222,7 +222,7 @@ describe("admin waitlist email action", () => {
       guardianEmail: "parent@example.com",
       subject: "A spot is available at ARTIS Soccer Academy",
       message: expect.stringContaining(
-        "A spot is now available for Charlie in our Ages 8–10 program.",
+        "A spot is now available for Charlie in our Ages 7–10 program.",
       ),
     });
 
@@ -245,7 +245,7 @@ describe("admin waitlist email action", () => {
       guardianName: "Taylor Smith",
       guardianEmail: "parent@example.com",
       childFirstName: "Charlie",
-      groupName: "Ages 8–10",
+      groupName: "Ages 7–10",
     });
 
     sendAdminMessageEmail.mockRejectedValueOnce(
