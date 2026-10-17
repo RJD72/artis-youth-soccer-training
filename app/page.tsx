@@ -549,7 +549,7 @@ export default async function Home() {
 
             <div className="relative h-70 overflow-hidden rounded-2xl xl:h-90">
               <Image
-                src="/images/home/school-gym.jpg"
+                src="/images/home/training-location.png"
                 alt="Gymnasium at Central Huron Secondary School where ARTIS Soccer Academy training takes place"
                 fill
                 sizes="(min-width: 1280px) 520px, 100vw"

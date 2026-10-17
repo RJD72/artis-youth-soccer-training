@@ -23,6 +23,7 @@ const primaryNavigation: NavigationItem[] = [
   { href: "/#schedule", label: "Schedule", sectionId: "schedule" },
   { href: "/about", label: "About Us" },
   { href: "/coaches", label: "Coaches" },
+  { href: "/gallery", label: "Gallery" },
   { href: "/sponsors", label: "Sponsors" },
   { href: "/#faq", label: "FAQ", sectionId: "faq" },
   { href: "/contact", label: "Contact Us" },

@@ -4,6 +4,7 @@ import Link from "next/link";
 const footerNavigation = [
   { href: "/#training", label: "Training" },
   { href: "/about", label: "About" },
+  { href: "/gallery", label: "Gallery" },
   { href: "/#faq", label: "FAQ" },
   { href: "/privacy", label: "Privacy" },
 ];
