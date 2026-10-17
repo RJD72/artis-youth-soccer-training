@@ -504,7 +504,7 @@ export default async function Home() {
                 </p>
               </div>
               <Image
-                src="/images/home/personalized-jersey.jpg"
+                src="/images/home/personalized-jersey.png"
                 alt="ARTIS Soccer Academy personalized jersey"
                 width={2400}
                 height={1679}
