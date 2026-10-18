@@ -26,7 +26,11 @@ export default async function ContactPage({
   const defaultEnquiry =
     requestedTopic?.toLowerCase() === "sponsorship"
       ? "Sponsorship"
-      : "General Enquiry";
+      : requestedTopic?.toLowerCase() === "free-trial"
+        ? "Free Trial Training"
+        : requestedTopic?.toLowerCase() === "training"
+          ? "Training"
+          : "General Enquiry";
 
   return (
     <div className="min-h-screen bg-artis-off-white text-artis-navy">

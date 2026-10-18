@@ -296,6 +296,37 @@ export default async function Home() {
           </div>
         </section>
 
+        <section className="bg-artis-soft-gold">
+          <div className="mx-auto w-full max-w-[1280px] px-8 py-12 xl:px-0 xl:py-20">
+            <div className="max-w-[850px]">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-artis-navy">
+                Experience ARTIS
+              </p>
+              <h2 className="mt-3 text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
+                Come Train With Us – Try It for Free!
+              </h2>
+              <p className="mt-4 text-base leading-6 xl:text-lg xl:leading-7">
+                Curious about ARTIS? Come try one or two training sessions for free before committing!
+              </p>
+              <p className="mt-4 text-base leading-6 text-artis-slate">
+                Meet our coaches, experience the training, and see if it’s the right fit for you.
+              </p>
+              <p className="mt-4 text-base leading-6 text-artis-slate">
+                Just send us a quick message before coming so we can manage gym capacity.
+              </p>
+              <p className="mt-4 text-base font-semibold leading-6">
+                No pressure, no commitment — just come give it a try!
+              </p>
+              <Link
+                href="/contact?topic=free-trial"
+                className={`${primaryButton} mt-6`}
+              >
+                Request a Free Trial
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-artis-navy text-artis-white">
           <div className="mx-auto w-full max-w-[1280px] px-8 py-8 xl:px-0 xl:py-20">
             <h2 className="text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
@@ -488,6 +519,34 @@ export default async function Home() {
                   </p>
                 </article>
               ))}
+            </div>
+
+            <div className="mt-10 border-t border-artis-border pt-8">
+              <h3 className="text-2xl font-bold">Flexible Weekly Training</h3>
+              <p className="mt-3 max-w-[820px] text-base leading-6 text-artis-slate">
+                Can’t attend all three weekly sessions? Choose a flexible option that fits your schedule.
+                These weekly options are arranged directly with the academy, not through online checkout.
+              </p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <article className="rounded-2xl border border-artis-border bg-artis-off-white p-6">
+                  <h4 className="text-lg font-semibold">Once a Week</h4>
+                  <p className="mt-3 text-3xl font-bold">
+                    $50<span className="ml-1 text-sm font-medium text-artis-slate">/ week + HST</span>
+                  </p>
+                </article>
+                <article className="rounded-2xl border border-artis-border bg-artis-off-white p-6">
+                  <h4 className="text-lg font-semibold">Twice a Week</h4>
+                  <p className="mt-3 text-3xl font-bold">
+                    $100<span className="ml-1 text-sm font-medium text-artis-slate">/ week + HST</span>
+                  </p>
+                </article>
+              </div>
+              <Link
+                href="/contact?topic=training"
+                className={`${primaryButton} mt-6`}
+              >
+                Ask About Weekly Training
+              </Link>
             </div>
 
             <div className="mt-8 grid gap-6 rounded-2xl bg-artis-soft-gold p-6 xl:grid-cols-[1fr_360px] xl:items-center xl:p-8">
