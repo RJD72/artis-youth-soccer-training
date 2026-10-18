@@ -154,15 +154,15 @@ export default async function Home() {
 
       <main>
         <section className="bg-artis-deep-navy text-artis-white">
-          <div className="mx-auto grid w-full max-w-[1280px] gap-10 px-8 py-8 xl:grid-cols-[620px_520px] xl:items-center xl:gap-16 xl:px-0 xl:py-24">
+          <div className="mx-auto grid w-full max-w-7xl gap-10 px-8 py-8 xl:grid-cols-[620px_520px] xl:items-center xl:gap-16 xl:px-0 xl:py-24">
             <div>
               <p className="text-sm font-semibold uppercase leading-5 text-artis-gold xl:text-[17px] xl:leading-6">
                 Year-round player development
               </p>
-              <h1 className="mt-5 text-[38px] font-bold leading-[55px] xl:mt-6 xl:text-[58px] xl:leading-[84px]">
+              <h1 className="mt-5 text-[38px] font-bold leading-13.75 xl:mt-6 xl:text-[58px] xl:leading-21">
                 Master the Art. Build the Skill.
               </h1>
-              <div className="mt-5 text-[17px] leading-[25px] xl:mt-6 xl:max-w-[590px] xl:text-xl xl:leading-[29px]">
+              <div className="mt-5 text-[17px] leading-6.25 xl:mt-6 xl:max-w-147.5 xl:text-xl xl:leading-7.25">
                 <p>Develop Discipline. Grow Confidence. Love the Game.</p>
                 <p className="mt-5 hidden xl:block">
                   At ARTIS Soccer Academy, soccer is both an art and a skill.
@@ -186,9 +186,9 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="relative h-60 overflow-hidden rounded-2xl xl:h-[430px]">
+            <div className="relative h-60 overflow-hidden rounded-2xl xl:h-107.5">
               <Image
-                src="/images/home/hero-training.png"
+                src="/images/home/hero-training.webp"
                 alt="Youth soccer players taking part in an indoor training session"
                 fill
                 priority
@@ -200,11 +200,11 @@ export default async function Home() {
         </section>
 
         <section className="bg-artis-white">
-          <div className="mx-auto w-full max-w-[1280px] px-8 py-8 xl:px-0 xl:py-20">
+          <div className="mx-auto w-full max-w-7xl px-8 py-8 xl:px-0 xl:py-20">
             <p className="hidden text-[17px] font-semibold uppercase leading-6 text-artis-gold xl:block">
               Why parents choose a clearer training experience
             </p>
-            <h2 className="text-[30px] font-bold leading-[44px] xl:mt-8 xl:max-w-[900px] xl:text-[40px] xl:leading-[58px]">
+            <h2 className="text-[30px] font-bold leading-11 xl:mt-8 xl:max-w-225 xl:text-[40px] xl:leading-14.5">
               Development principles parents can understand.
             </h2>
 
@@ -214,10 +214,10 @@ export default async function Home() {
                   key={principle.title}
                   className="xl:rounded-[10px] xl:border xl:border-artis-border xl:bg-artis-off-white xl:p-6"
                 >
-                  <h3 className="text-lg font-semibold leading-[26px] xl:text-[19px] xl:leading-7">
+                  <h3 className="text-lg font-semibold leading-6.5 xl:text-[19px] xl:leading-7">
                     {principle.title}
                   </h3>
-                  <p className="mt-2 text-[15px] leading-[22px] text-artis-slate xl:mt-3">
+                  <p className="mt-2 text-[15px] leading-5.5 text-artis-slate xl:mt-3">
                     {principle.description}
                   </p>
                 </article>
@@ -227,16 +227,16 @@ export default async function Home() {
         </section>
 
         <section id="training" className="scroll-mt-24 bg-artis-off-white">
-          <div className="mx-auto w-full max-w-[1280px] px-8 py-8 xl:px-0 xl:py-20">
-            <h2 className="text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
+          <div className="mx-auto w-full max-w-7xl px-8 py-8 xl:px-0 xl:py-20">
+            <h2 className="text-[30px] font-bold leading-11 xl:text-[40px] xl:leading-14.5">
               Soccer Development Programs
             </h2>
-            <p className="mt-4 max-w-[850px] text-base leading-6 text-artis-slate xl:mt-8 xl:text-lg xl:leading-[26px]">
+            <p className="mt-4 max-w-212.5 text-base leading-6 text-artis-slate xl:mt-8 xl:text-lg xl:leading-6.5">
               Year-round opportunities for all experience levels, including
               beginners.
             </p>
 
-            <div className="mt-5 grid max-w-[864px] gap-6 md:grid-cols-2 xl:mt-8">
+            <div className="mt-5 grid max-w-216 gap-6 md:grid-cols-2 xl:mt-8">
               {programs.map((program) => {
                 const trainingGroup = trainingGroupAvailability.find(
                   (group) => group.slug === program.slug,
@@ -306,13 +306,16 @@ export default async function Home() {
                 Come Train With Us – Try It for Free!
               </h2>
               <p className="mt-4 text-base leading-6 xl:text-lg xl:leading-7">
-                Curious about ARTIS? Come try one or two training sessions for free before committing!
+                Curious about ARTIS? Come try one or two training sessions for
+                free before committing!
               </p>
               <p className="mt-4 text-base leading-6 text-artis-slate">
-                Meet our coaches, experience the training, and see if it’s the right fit for you.
+                Meet our coaches, experience the training, and see if it’s the
+                right fit for you.
               </p>
               <p className="mt-4 text-base leading-6 text-artis-slate">
-                Just send us a quick message before coming so we can manage gym capacity.
+                Just send us a quick message before coming so we can manage gym
+                capacity.
               </p>
               <p className="mt-4 text-base font-semibold leading-6">
                 No pressure, no commitment — just come give it a try!
@@ -362,7 +365,7 @@ export default async function Home() {
           <div className="mx-auto grid w-full max-w-[1280px] gap-5 px-8 py-8 xl:grid-cols-[520px_600px] xl:items-center xl:gap-16 xl:px-0 xl:py-20">
             <div className="relative h-55 overflow-hidden rounded-2xl xl:h-[380px]">
               <Image
-                src="/images/home/training-philosophy.png"
+                src="/images/home/training-philosophy.webp"
                 alt="Soccer coach explaining tactics to youth players during an indoor training session"
                 fill
                 sizes="(min-width: 1280px) 520px, 100vw"
@@ -476,7 +479,7 @@ export default async function Home() {
 
               <div className="relative h-full min-h-70 overflow-hidden rounded-2xl">
                 <Image
-                  src="/images/home/saturday-game.jpg"
+                  src="/images/home/saturday-game.webp"
                   alt="Youth soccer players taking part in a Saturday game session"
                   fill
                   sizes="(min-width: 1280px) 520px, 100vw"
@@ -488,15 +491,15 @@ export default async function Home() {
         </section>
 
         <section className="bg-artis-white">
-          <div className="mx-auto w-full max-w-[1280px] px-8 py-12 xl:px-0 xl:py-20">
-            <div className="max-w-[820px]">
-              <p className="text-xs font-semibold uppercase leading-[17px] text-artis-gold xl:text-[13px] xl:leading-[19px]">
+          <div className="mx-auto w-full max-w-7xl px-8 py-12 xl:px-0 xl:py-20">
+            <div className="max-w-205">
+              <p className="text-xs font-semibold uppercase leading-4.25 text-artis-gold xl:text-[13px] xl:leading-4.75">
                 Flexible commitments
               </p>
-              <h2 className="mt-3 text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
+              <h2 className="mt-3 text-[30px] font-bold leading-11 xl:text-[40px] xl:leading-14.5">
                 Training Packages
               </h2>
-              <p className="mt-4 text-base leading-6 text-artis-slate xl:text-lg xl:leading-[26px]">
+              <p className="mt-4 text-base leading-6 text-artis-slate xl:text-lg xl:leading-6.5">
                 Choose the fixed program period that works for your family.
                 Packages are prepaid and do not automatically renew.
               </p>
@@ -524,20 +527,27 @@ export default async function Home() {
             <div className="mt-10 border-t border-artis-border pt-8">
               <h3 className="text-2xl font-bold">Flexible Weekly Training</h3>
               <p className="mt-3 max-w-[820px] text-base leading-6 text-artis-slate">
-                Can’t attend all three weekly sessions? Choose a flexible option that fits your schedule.
-                These weekly options are arranged directly with the academy, not through online checkout.
+                Can’t attend all three weekly sessions? Choose a flexible option
+                that fits your schedule. These weekly options are arranged
+                directly with the academy, not through online checkout.
               </p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <article className="rounded-2xl border border-artis-border bg-artis-off-white p-6">
                   <h4 className="text-lg font-semibold">Once a Week</h4>
                   <p className="mt-3 text-3xl font-bold">
-                    $50<span className="ml-1 text-sm font-medium text-artis-slate">/ week + HST</span>
+                    $50
+                    <span className="ml-1 text-sm font-medium text-artis-slate">
+                      / week + HST
+                    </span>
                   </p>
                 </article>
                 <article className="rounded-2xl border border-artis-border bg-artis-off-white p-6">
                   <h4 className="text-lg font-semibold">Twice a Week</h4>
                   <p className="mt-3 text-3xl font-bold">
-                    $100<span className="ml-1 text-sm font-medium text-artis-slate">/ week + HST</span>
+                    $100
+                    <span className="ml-1 text-sm font-medium text-artis-slate">
+                      / week + HST
+                    </span>
                   </p>
                 </article>
               </div>
