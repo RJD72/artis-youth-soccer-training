@@ -23,6 +23,7 @@ const fieldBaseClassName =
 const enquiryTypes = [
   "General Enquiry",
   "Training",
+  "Free Trial Training",
   "Registration",
   "Sponsorship",
 ] as const;
