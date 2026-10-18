@@ -31,6 +31,7 @@ const RATE_LIMIT_CLEANUP_THRESHOLD = 500;
 const CONTACT_ENQUIRY_TYPES = [
   "General Enquiry",
   "Training",
+  "Free Trial Training",
   "Registration",
   "Sponsorship",
 ] as const satisfies readonly ContactEnquiryType[];
