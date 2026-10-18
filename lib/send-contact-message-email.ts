@@ -25,6 +25,7 @@ const EMAIL_SUBJECT_PREFIX = "ARTIS website enquiry";
 const CONTACT_ENQUIRY_TYPES = [
   "General Enquiry",
   "Training",
+  "Free Trial Training",
   "Registration",
   "Sponsorship",
 ] as const;
