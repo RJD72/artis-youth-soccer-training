@@ -67,12 +67,12 @@ const schedule = [
   {
     day: "Tuesday",
     type: "Training",
-    times: ["Ages 7–10 · 6:00–7:00 PM", "Ages 11–13 · 7:00–8:00 PM"],
+    times: ["Ages 7–10 · 6:30–7:30 PM", "Ages 11–13 · 7:30–8:30 PM"],
   },
   {
     day: "Thursday",
     type: "Training",
-    times: ["Ages 7–10 · 6:00–7:00 PM", "Ages 11–13 · 7:00–8:00 PM"],
+    times: ["Ages 7–10 · 6:30–7:30 PM", "Ages 11–13 · 7:30–8:30 PM"],
   },
   {
     day: "Saturday",
