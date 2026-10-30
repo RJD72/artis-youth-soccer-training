@@ -23,6 +23,11 @@ const sponsors = [
     image: "/images/sponsors/emerald-construction-masonry.jpeg",
     href: "https://www.facebook.com/p/Emerald-Construction-Masonry-Blyth-100091943620697/",
   },
+  {
+    name: "W. Glenn Hayter, CFP - Financial Advisor",
+    image: "/images/sponsors/desjardins.png",
+    href: "https://www.desjardins.com/on/en.html",
+  },
 ] as const;
 
 export default function SponsorsPage() {

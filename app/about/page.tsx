@@ -28,7 +28,7 @@ export default function AboutPage() {
 
           <div className="relative mt-6 h-48.75 w-full max-w-225 overflow-hidden rounded-2xl xl:mt-7 xl:h-128.5">
             <Image
-              src="/images/about/about-us.jpg"
+              src="/images/gallery/img_1585.webp"
               alt="ARTIS Soccer Academy"
               fill
               sizes="(min-width: 1280px) 900px, 100vw"
