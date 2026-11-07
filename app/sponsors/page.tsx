@@ -28,6 +28,11 @@ const sponsors = [
     image: "/images/sponsors/desjardins.png",
     href: "https://www.desjardins.com/on/en.html",
   },
+  {
+    name: "All Access Athletics",
+    image: "/images/sponsors/all-access-athletics.png",
+    href: "https://www.all-access-athletics.com/",
+  },
 ] as const;
 
 export default function SponsorsPage() {
