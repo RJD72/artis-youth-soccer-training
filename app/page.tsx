@@ -330,6 +330,52 @@ export default async function Home() {
           </div>
         </section>
 
+        <section aria-labelledby="financial-assistance-heading" className="bg-artis-white">
+          <div className="mx-auto grid w-full max-w-7xl gap-8 px-8 py-12 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:items-center xl:gap-16 xl:px-0 xl:py-20">
+            <a
+              href="https://www.all-access-athletics.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit All Access Athletics website"
+              className="flex items-center justify-center rounded-2xl border border-artis-border bg-artis-off-white p-8 transition hover:border-artis-gold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-artis-gold/30"
+            >
+              <Image
+                src="/images/sponsors/all-access-athletics.png"
+                alt="All Access Athletics logo"
+                width={480}
+                height={320}
+                sizes="(min-width: 768px) 350px, 100vw"
+                className="h-auto max-h-64 w-full object-contain"
+              />
+            </a>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-artis-gold">
+                Making soccer accessible
+              </p>
+              <h2
+                id="financial-assistance-heading"
+                className="mt-3 text-[30px] font-bold leading-11 xl:text-[40px] xl:leading-14.5"
+              >
+                Need Financial Assistance?
+              </h2>
+              <p className="mt-4 text-base leading-7 text-artis-slate xl:text-lg">
+                At ARTIS Soccer Academy, we believe every child deserves the
+                opportunity to play! We’re proud to help connect families with
+                All Access Athletics, an organization dedicated to breaking down
+                financial barriers and making youth sports more accessible.
+                Families needing financial assistance are encouraged to reach
+                out to learn more about available support.
+              </p>
+              <Link
+                href="/contact"
+                className={`${primaryButton} mt-6`}
+              >
+                Ask About Financial Assistance
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-artis-navy text-artis-white">
           <div className="mx-auto w-full max-w-[1280px] px-8 py-8 xl:px-0 xl:py-20">
             <h2 className="text-[30px] font-bold leading-[44px] xl:text-[40px] xl:leading-[58px]">
