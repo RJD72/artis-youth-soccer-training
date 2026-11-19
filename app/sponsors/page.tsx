@@ -34,9 +34,9 @@ const sponsors = [
     href: "https://www.all-access-athletics.com/",
   },
   {
-    name: "The Re-Bin",
+    name: "Anderson' Bin There",
     image: "/images/sponsors/bin-there.webp",
-    href: "",
+    href: "https://www.andersonsbinthere.ca/",
   },
 ] as const;
 
