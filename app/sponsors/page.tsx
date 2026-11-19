@@ -33,6 +33,11 @@ const sponsors = [
     image: "/images/sponsors/all-access-athletics.png",
     href: "https://www.all-access-athletics.com/",
   },
+  {
+    name: "The Re-Bin",
+    image: "/images/sponsors/bin-there.webp",
+    href: "",
+  },
 ] as const;
 
 export default function SponsorsPage() {
