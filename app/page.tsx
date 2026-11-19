@@ -330,7 +330,10 @@ export default async function Home() {
           </div>
         </section>
 
-        <section aria-labelledby="financial-assistance-heading" className="bg-artis-white">
+        <section
+          aria-labelledby="financial-assistance-heading"
+          className="bg-artis-white"
+        >
           <div className="mx-auto grid w-full max-w-7xl gap-8 px-8 py-12 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:items-center xl:gap-16 xl:px-0 xl:py-20">
             <a
               href="https://www.all-access-athletics.com/"
@@ -367,10 +370,10 @@ export default async function Home() {
                 out to learn more about available support.
               </p>
               <Link
-                href="/contact"
+                href="https://www.all-access-athletics.com/application-page"
                 className={`${primaryButton} mt-6`}
               >
-                Ask About Financial Assistance
+                Apply for Financial Assistance
               </Link>
             </div>
           </div>

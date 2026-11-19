@@ -29,9 +29,9 @@ const sponsors = [
     href: "https://www.desjardins.com/on/en.html",
   },
   {
-    name: "The Re-Bin",
+    name: "Anderson' Bin There",
     image: "/images/sponsors/bin-there.webp",
-    href: "",
+    href: "https://www.andersonsbinthere.ca/",
   },
 ] as const;
 
